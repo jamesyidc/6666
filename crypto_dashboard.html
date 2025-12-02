@@ -157,6 +157,43 @@
             font-weight: bold;
         }
 
+        /* 优先级等级样式 */
+        .priority-level-1 {
+            background-color: #ff0000 !important;  /* 等级1: 红色 */
+            color: white;
+            font-weight: bold;
+        }
+        
+        .priority-level-2 {
+            background-color: #ff6600 !important;  /* 等级2: 橙红色 */
+            color: white;
+            font-weight: bold;
+        }
+        
+        .priority-level-3 {
+            background-color: #ffaa00 !important;  /* 等级3: 橙色 */
+            color: black;
+            font-weight: bold;
+        }
+        
+        .priority-level-4 {
+            background-color: #ffff00 !important;  /* 等级4: 黄色 */
+            color: black;
+            font-weight: bold;
+        }
+        
+        .priority-level-5 {
+            background-color: #ccff00 !important;  /* 等级5: 黄绿色 */
+            color: black;
+            font-weight: bold;
+        }
+        
+        .priority-level-6 {
+            background-color: #99ff99 !important;  /* 等级6: 浅绿色 */
+            color: black;
+            font-weight: bold;
+        }
+
         /* 更新时间显示 */
         .update-time {
             text-align: center;
@@ -707,6 +744,7 @@
                             <th>当前价格</th>
                             <th>最高占比</th>
                             <th>最低占比</th>
+                            <th>优先级</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -717,6 +755,10 @@
                 // 如果是最高占比最高的行，添加绿色高亮
                 const isMaxRatio = row.symbol === maxRatio1Symbol;
                 const rowClass = isMaxRatio ? 'class="max-ratio-row"' : '';
+                
+                // 获取优先级等级（带样式）
+                const priorityLevel = row.priorityLevel || '-';
+                const priorityClass = priorityLevel !== '-' ? 'priority-level-' + priorityLevel : '';
                 
                 html += `
                     <tr ${rowClass}>
@@ -737,6 +779,7 @@
                         <td>${row.currentPrice}</td>
                         <td>${row.ratio1}</td>
                         <td>${row.ratio2}</td>
+                        <td class="${priorityClass}"><strong>${priorityLevel}</strong></td>
                     </tr>
                 `;
             });

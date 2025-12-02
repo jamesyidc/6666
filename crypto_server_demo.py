@@ -66,6 +66,42 @@ def index():
     response.headers['Expires'] = '0'
     return response
 
+def calculate_priority_level(ratio1_str, ratio2_str):
+    """
+    根据最高占比和最低占比计算优先级等级
+    
+    等级规则:
+    - 等级1: 最高占比>90 且 最低占比>120
+    - 等级2: 最高占比>80 且 最低占比>120
+    - 等级3: 最高占比>90 且 最低占比>110
+    - 等级4: 最高占比>70 且 最低占比>120
+    - 等级5: 最高占比>80 且 最低占比>110
+    - 等级6: 最高占比<80 且 最低占比<110
+    - 无等级: 不满足任何条件
+    """
+    try:
+        # 去除百分号并转换为浮点数
+        ratio1 = float(ratio1_str.rstrip('%'))
+        ratio2 = float(ratio2_str.rstrip('%'))
+        
+        # 按优先级顺序检查等级
+        if ratio1 > 90 and ratio2 > 120:
+            return '1'
+        elif ratio1 > 80 and ratio2 > 120:
+            return '2'
+        elif ratio1 > 90 and ratio2 > 110:
+            return '3'
+        elif ratio1 > 70 and ratio2 > 120:
+            return '4'
+        elif ratio1 > 80 and ratio2 > 110:
+            return '5'
+        elif ratio1 < 80 and ratio2 < 110:
+            return '6'
+        else:
+            return '-'  # 不满足任何条件
+    except (ValueError, AttributeError):
+        return '-'  # 数据格式错误
+
 @app.route('/api/crypto-data')
 def get_crypto_data():
     """获取加密货币数据API - 演示版"""
@@ -74,9 +110,19 @@ def get_crypto_data():
     file_time = datetime.now(beijing_tz)
     file_time_str = file_time.strftime('%Y-%m-%d %H:%M:%S')
     
+    # 为每个币种计算优先级等级
+    data_with_level = []
+    for coin in DEMO_DATA:
+        coin_copy = coin.copy()
+        coin_copy['priorityLevel'] = calculate_priority_level(
+            coin.get('ratio1', '0%'),
+            coin.get('ratio2', '0%')
+        )
+        data_with_level.append(coin_copy)
+    
     return jsonify({
         'success': True,
-        'data': DEMO_DATA,
+        'data': data_with_level,
         'stats': DEMO_STATS,
         'updateTime': file_time_str,  # 这是文件时间戳（前端会+1分钟）
         'filename': '2025-12-02_1806.txt (演示数据)',
