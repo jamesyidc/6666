@@ -10,12 +10,16 @@ from flask_cors import CORS
 from datetime import datetime
 import pytz
 from crypto_database import CryptoDatabase
+from monitor_data_reader import MonitorDataReader
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
 # 初始化数据库
 db = CryptoDatabase()
+
+# 初始化监控数据读取器
+monitor_reader = MonitorDataReader()
 
 # 模拟数据（基于您提供的截图 - 完整29个币种）
 DEMO_DATA = [
@@ -69,6 +73,56 @@ def index():
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
+
+@app.route('/signal')
+def signal_monitor():
+    """信号监控页面"""
+    response = send_from_directory('.', 'signal_monitor.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@app.route('/panic')
+def panic_monitor():
+    """恐慌清洗监控页面"""
+    response = send_from_directory('.', 'panic_monitor.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@app.route('/api/monitor/signal')
+def get_signal_data():
+    """获取信号数据API"""
+    try:
+        # 使用演示数据
+        data = monitor_reader.get_demo_signal_data()
+        return jsonify({
+            'success': True,
+            'data': data
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/monitor/panic')
+def get_panic_data():
+    """获取恐慌清洗数据API"""
+    try:
+        # 使用演示数据
+        data = monitor_reader.get_demo_panic_data()
+        return jsonify({
+            'success': True,
+            'data': data
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 def calculate_priority_level(ratio1_str, ratio2_str):
     """
