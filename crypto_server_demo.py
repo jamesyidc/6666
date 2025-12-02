@@ -76,8 +76,8 @@ def index():
 
 @app.route('/signal')
 def signal_monitor():
-    """信号监控页面 v2 - 包含历史曲线图"""
-    response = send_from_directory('.', 'signal_monitor_v2.html')
+    """信号监控页面 v3 - 全天数据表格+曲线图"""
+    response = send_from_directory('.', 'signal_monitor_v3.html')
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
