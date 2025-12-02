@@ -163,26 +163,34 @@ class MonitorDataReader:
         return self.get_demo_panic_data()
     
     def get_demo_signal_data(self) -> Dict:
-        """获取演示信号数据"""
+        """
+        获取演示信号数据
+        注意：字段对应关系
+        - short = 急跌（红色，空方力量）
+        - long = 急涨（绿色，多方力量）
+        """
         now = datetime.now(self.beijing_tz)
         return {
-            'short': '126',
+            'short': '21',         # 急跌（做空信号）
             'short_change': '0',
-            'long': '0',
+            'long': '27',          # 急涨（做多信号）
             'long_change': '0',
             'update_time': now.strftime('%Y-%m-%d %H:%M:%S')
         }
     
     def get_demo_panic_data(self) -> Dict:
-        """获取演示恐慌清洗数据"""
+        """
+        获取演示恐慌清洗数据
+        根据实际数据格式更新：2025-12-02 21:17:28
+        """
         now = datetime.now(self.beijing_tz)
         return {
-            'panic_indicator': '10.77-绿',
-            'trend_rating': '5',
-            'market_zone': '多头主升区间',
-            'liquidation_24h_count': '99305',
-            'liquidation_24h_amount': '2.26',
-            'total_position': '92.18',
+            'panic_indicator': '10.68-绿',          # 恐慌清洗指标
+            'trend_rating': '5',                     # 趋势评级
+            'market_zone': '多头洗盘空间',           # 市场区间
+            'liquidation_24h_count': '126259',       # 24h爆仓人数
+            'liquidation_24h_amount': '2.88',        # 24h爆仓金额（亿美元）
+            'total_position': '92.27',               # 全网持仓量（亿美元）
             'update_time': now.strftime('%Y-%m-%d %H:%M:%S')
         }
 

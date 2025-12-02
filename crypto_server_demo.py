@@ -101,6 +101,15 @@ def panic_monitor():
     response.headers['Expires'] = '0'
     return response
 
+@app.route('/panic-chart')
+def panic_chart():
+    """恐慌指数历史统计页面"""
+    response = send_from_directory('.', 'panic_chart.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 @app.route('/api/monitor/signal')
 def get_signal_data():
     """获取信号数据API（自动从 Google Drive 读取，失败时使用演示数据，并保存到数据库）"""
