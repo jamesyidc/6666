@@ -215,6 +215,12 @@
             加载中...
         </div>
 
+        <!-- 历史曲线图 -->
+        <div class="chart-container">
+            <div class="chart-title">📈 全天趋势曲线</div>
+            <canvas id="signalChart"></canvas>
+        </div>
+
         <!-- 历史数据表格 -->
         <div class="data-table-container">
             <table class="data-table">
@@ -235,12 +241,6 @@
                 </tbody>
             </table>
         </div>
-
-        <!-- 历史曲线图 -->
-        <div class="chart-container">
-            <div class="chart-title">📈 全天趋势曲线</div>
-            <canvas id="signalChart"></canvas>
-        </div>
     </div>
 
     <script>
@@ -248,9 +248,10 @@
 
         async function loadHistoryData() {
             try {
-                // 查询今天的所有数据
+                // 查询今天的所有数据（添加时间戳强制刷新）
                 const today = new Date().toISOString().split('T')[0];
-                const response = await fetch(`/api/monitor/signal/history?date=${today}`);
+                const timestamp = new Date().getTime();
+                const response = await fetch(`/api/monitor/signal/history?date=${today}&_t=${timestamp}`);
                 const result = await response.json();
                 
                 if (result.success && result.data && result.data.length > 0) {
@@ -259,7 +260,8 @@
                     displayStats(result.data);
                 } else {
                     // 如果没有今天的数据，查询最近24小时
-                    const response2 = await fetch('/api/monitor/signal/history?hours=24');
+                    const timestamp2 = new Date().getTime();
+                    const response2 = await fetch(`/api/monitor/signal/history?hours=24&_t=${timestamp2}`);
                     const result2 = await response2.json();
                     
                     if (result2.success && result2.data && result2.data.length > 0) {
@@ -458,8 +460,8 @@
         // 页面加载时获取数据
         loadHistoryData();
         
-        // 每30秒刷新数据
-        setInterval(loadHistoryData, 30000);
+        // 每3分钟刷新数据（180秒）
+        setInterval(loadHistoryData, 180000);
     </script>
 </body>
 </html>

@@ -11,6 +11,7 @@ from datetime import datetime
 import pytz
 from crypto_database import CryptoDatabase
 from monitor_data_reader import MonitorDataReader
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
@@ -20,6 +21,32 @@ db = CryptoDatabase()
 
 # 初始化监控数据读取器
 monitor_reader = MonitorDataReader()
+
+# 初始化后台调度器
+scheduler = BackgroundScheduler()
+
+def collect_monitoring_data():
+    """
+    定时采集监控数据（每3分钟执行一次）
+    此函数独立于网页刷新运行
+    """
+    try:
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始采集监控数据...")
+        
+        # 读取信号数据
+        signal_data = monitor_reader.get_signal_data()
+        if signal_data:
+            db.save_signal_data(signal_data)
+            print(f"✅ 信号数据已保存: 急跌={signal_data['short']}, 急涨={signal_data['long']}")
+        
+        # 读取恐慌清洗数据
+        panic_data = monitor_reader.get_panic_data()
+        if panic_data:
+            db.save_panic_data(panic_data)
+            print(f"✅ 恐慌数据已保存: 指标={panic_data['panic_indicator']}")
+            
+    except Exception as e:
+        print(f"❌ 采集数据失败: {e}")
 
 # 模拟数据（基于您提供的截图 - 完整29个币种）
 DEMO_DATA = [
@@ -461,10 +488,29 @@ if __name__ == '__main__':
     print("⚠️  要使用真实数据，请运行: python3 crypto_server.py")
     print("=" * 80)
     
+    # 启动后台调度器（每3分钟采集一次数据）
+    scheduler.add_job(
+        func=collect_monitoring_data,
+        trigger='interval',
+        minutes=3,
+        id='collect_data',
+        name='采集监控数据',
+        replace_existing=True
+    )
+    scheduler.start()
+    print("✅ 后台数据采集器已启动（每3分钟执行一次）")
+    
+    # 立即执行一次数据采集
+    collect_monitoring_data()
+    
     port = 5001
     print(f"\n服务器运行在: http://0.0.0.0:{port}")
     print(f"访问页面: http://0.0.0.0:{port}/")
     print("\n按 Ctrl+C 停止服务器")
     print("=" * 80)
     
-    app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)
+    try:
+        app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)
+    except (KeyboardInterrupt, SystemExit):
+        scheduler.shutdown()
+        print("\n✅ 调度器已停止")

@@ -44,8 +44,11 @@ class MonitorDataReader:
     def read_signal_data(self, content: str) -> Optional[Dict]:
         """
         解析信号.txt内容
-        格式: 126|0|0|0|2025-12-02 20:56:01
-        字段: 做空|变化|做多|变化|时间
+        格式: 21|0|146|0|2025-12-02 21:57:31
+        字段: 急跌|变化|急涨|变化|时间
+        注意：
+        - parts[0] = 急跌 (Sharp fall) -> 映射为 'short'
+        - parts[2] = 急涨 (Sharp rise) -> 映射为 'long'
         """
         try:
             lines = content.strip().split('\n')
@@ -58,11 +61,11 @@ class MonitorDataReader:
                 parts = line.split('|')
                 if len(parts) >= 5:
                     return {
-                        'short': parts[0].strip(),
-                        'short_change': parts[1].strip(),
-                        'long': parts[2].strip(),
-                        'long_change': parts[3].strip(),
-                        'update_time': parts[4].strip()
+                        'short': parts[0].strip(),        # 急跌
+                        'short_change': parts[1].strip(), # 急跌变化
+                        'long': parts[2].strip(),         # 急涨
+                        'long_change': parts[3].strip(),  # 急涨变化
+                        'update_time': parts[4].strip()   # 更新时间
                     }
             
             return None
@@ -169,13 +172,13 @@ class MonitorDataReader:
         - short = 急跌（红色，空方力量）
         - long = 急涨（绿色，多方力量）
         
-        根据实际TXT文件: 146|0|0|0|2025-12-02 21:44:27
+        根据实际TXT文件: 21|0|146|0|2025-12-02 21:57:31
         """
         now = datetime.now(self.beijing_tz)
         return {
-            'short': '146',        # 急跌
+            'short': '21',         # 急跌
             'short_change': '0',   # 急跌变化
-            'long': '0',           # 急涨
+            'long': '146',         # 急涨
             'long_change': '0',    # 急涨变化
             'update_time': now.strftime('%Y-%m-%d %H:%M:%S')
         }
