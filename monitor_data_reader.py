@@ -168,13 +168,15 @@ class MonitorDataReader:
         注意：字段对应关系
         - short = 急跌（红色，空方力量）
         - long = 急涨（绿色，多方力量）
+        
+        根据实际TXT文件: 146|0|0|0|2025-12-02 21:44:27
         """
         now = datetime.now(self.beijing_tz)
         return {
-            'short': '21',         # 急跌（做空信号）
-            'short_change': '0',
-            'long': '27',          # 急涨（做多信号）
-            'long_change': '0',
+            'short': '146',        # 急跌
+            'short_change': '0',   # 急跌变化
+            'long': '0',           # 急涨
+            'long_change': '0',    # 急涨变化
             'update_time': now.strftime('%Y-%m-%d %H:%M:%S')
         }
     
