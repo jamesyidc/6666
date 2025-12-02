@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加密货币数据监控面板 v6.0 - 差值曲线&智能高亮</title>
+    <title>加密货币数据监控面板 v7.0 - 累加曲线&计次统计</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -316,7 +316,8 @@
             timestamps: [],
             rushUp: [],
             rushDown: [],
-            diff: []
+            diff: [],
+            count: []  // 添加计次
         };
         
         // 文件更新时间（用于计算倒计时）
@@ -340,16 +341,18 @@
                 if (result.success && result.history && result.history.length > 0) {
                     console.log(`加载到 ${result.history.length} 个历史数据点`);
                     
-                    // 填充历史数据
+                    // 填充历史数据（直接使用TXT文件中的累计值）
                     result.history.forEach((item, index) => {
-                        const rushUp = parseInt(item.rushUp) || 0;
-                        const rushDown = parseInt(item.rushDown) || 0;
-                        const diff = rushUp - rushDown;
+                        const rushUp = parseInt(item.rushUp) || 0;      // TXT文件中的急涨累计值
+                        const rushDown = parseInt(item.rushDown) || 0;  // TXT文件中的急跌累计值
+                        const count = parseInt(item.count) || 0;        // TXT文件中的计次累计值
+                        const diff = rushUp - rushDown;                 // 前端计算差值
                         
                         historyData.timestamps.push(item.time);
                         historyData.rushUp.push(rushUp);
                         historyData.rushDown.push(rushDown);
                         historyData.diff.push(diff);
+                        historyData.count.push(count);  // 添加计次
                         
                         // 记录最后一个文件的时间
                         if (index === result.history.length - 1 && item.timestamp) {
@@ -358,12 +361,13 @@
                         }
                     });
                     
-                    // 更新图表（包含差值）
+                    // 更新图表（包含差值和计次）
                     if (rushChart) {
                         rushChart.data.labels = historyData.timestamps;
                         rushChart.data.datasets[0].data = historyData.rushUp;
                         rushChart.data.datasets[1].data = historyData.rushDown;
                         rushChart.data.datasets[2].data = historyData.diff;
+                        rushChart.data.datasets[3].data = historyData.count;  // 添加计次数据
                         
                         // 标记重点数据
                         updatePointStyles();
@@ -473,6 +477,18 @@
                             pointRadius: 4,
                             pointHoverRadius: 6,
                             yAxisID: 'y1'
+                        },
+                        {
+                            label: '计次',
+                            data: [],
+                            borderColor: '#ff00ff',
+                            backgroundColor: 'rgba(255, 0, 255, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            yAxisID: 'y1'
                         }
                     ]
                 },
@@ -523,7 +539,7 @@
                             },
                             title: {
                                 display: true,
-                                text: '差值'
+                                text: '差值 / 计次'
                             }
                         },
                         x: {
@@ -573,6 +589,7 @@
             // 计算差值
             const rushUp = parseInt(stats.rushUp) || 0;
             const rushDown = parseInt(stats.rushDown) || 0;
+            const count = parseInt(stats.count) || 0;  // 计次
             const diff = rushUp - rushDown;
             
             // 添加新数据
@@ -580,8 +597,9 @@
             historyData.rushUp.push(rushUp);
             historyData.rushDown.push(rushDown);
             historyData.diff.push(diff);
+            historyData.count.push(count);  // 添加计次
 
-            console.log(`添加新数据点: ${timeStr}, 急涨:${rushUp}, 急跌:${rushDown}, 差值:${diff}`);
+            console.log(`添加新数据点: ${timeStr}, 急涨:${rushUp}, 急跌:${rushDown}, 差值:${diff}, 计次:${count}`);
 
             // 保持最多50个数据点（显示更长的历史）
             if (historyData.timestamps.length > 50) {
@@ -589,6 +607,7 @@
                 historyData.rushUp.shift();
                 historyData.rushDown.shift();
                 historyData.diff.shift();
+                historyData.count.shift();  // 添加计次
             }
 
             // 更新图表
@@ -596,6 +615,7 @@
             rushChart.data.datasets[0].data = historyData.rushUp;
             rushChart.data.datasets[1].data = historyData.rushDown;
             rushChart.data.datasets[2].data = historyData.diff;
+            rushChart.data.datasets[3].data = historyData.count;  // 添加计次数据
             
             // 更新标记
             updatePointStyles();

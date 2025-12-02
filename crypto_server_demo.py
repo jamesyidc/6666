@@ -53,7 +53,7 @@ DEMO_STATS = {
     'ratio': '2.75',
     'greenCount': '27',
     'percentage': '93%',
-    'count': '7',
+    'count': '7',  # 计次
     'diff': '11'
 }
 
@@ -95,6 +95,7 @@ def refresh_data():
 def get_history_chart():
     """获取历史图表数据 - 演示版"""
     # 生成模拟的历史数据（当天从08:00到当前时间，每10分钟一个点）
+    # 注意：急涨、急跌、计次都是累加的，直接显示TXT文件中的数字
     from datetime import datetime, timedelta
     import pytz
     import random
@@ -108,43 +109,56 @@ def get_history_chart():
     history = []
     current = start_time
     
+    # 模拟TXT文件中的累加值（每个TXT文件记录的是累计值）
+    cumulative_rush_up = 0
+    cumulative_rush_down = 0
+    cumulative_count = 0
+    
     # 生成到当前时间的数据点，每10分钟一个
     while current <= now:
         time_str = current.strftime('%H:%M')
         
-        # 模拟数据：急涨和急跌随时间波动，有时会触发高亮条件
-        hour = current.hour
-        minute = current.minute
+        # 模拟TXT文件中的累加值（只增不减）
+        rush_up_increment = random.randint(0, 3)
+        cumulative_rush_up += rush_up_increment
         
-        # 急涨：早上低，下午高，晚上中等，偶尔触发≥10的高亮
-        if hour < 12:
-            rush_up = 8 + (hour - 8) * 2 + minute // 30
-        elif hour < 18:
-            rush_up = 15 + (hour - 12) - minute // 30
-        else:
-            rush_up = 12 + minute // 20
+        rush_down_increment = random.randint(0, 2)
+        cumulative_rush_down += rush_down_increment
         
-        # 随机给某些点增加急涨值以触发高亮（≥10）
-        if random.random() < 0.3:  # 30%概率
-            rush_up = max(rush_up, random.randint(10, 18))
+        # 计次也是累加的
+        if random.random() < 0.3:
+            cumulative_count += 1
         
-        # 急跌：相对平稳，偶尔波动，偶尔触发≥10的高亮
-        rush_down = 3 + (hour % 4) + (minute % 20) // 10
-        
-        # 随机给某些点增加急跌值以触发高亮（≥10）
-        if random.random() < 0.2:  # 20%概率
-            rush_down = max(rush_down, random.randint(10, 15))
-        
+        # 直接保存TXT文件中的数字（累计值）
         history.append({
             'time': time_str,
             'timestamp': current.strftime('%Y-%m-%d %H:%M:%S'),
-            'rushUp': str(min(rush_up, 25)),  # 限制最大值
-            'rushDown': str(min(rush_down, 15))  # 限制最大值
+            'rushUp': str(cumulative_rush_up),      # TXT文件中的急涨累计值
+            'rushDown': str(cumulative_rush_down),  # TXT文件中的急跌累计值
+            'count': str(cumulative_count)          # TXT文件中的计次累计值
         })
         
         current += timedelta(minutes=10)
     
+    # 验证数据的累加特性（调试用）
+    for i in range(1, len(history)):
+        prev_up = int(history[i-1]['rushUp'])
+        curr_up = int(history[i]['rushUp'])
+        prev_down = int(history[i-1]['rushDown'])
+        curr_down = int(history[i]['rushDown'])
+        prev_count = int(history[i-1]['count'])
+        curr_count = int(history[i]['count'])
+        
+        # 检查是否有后面的数字小于前面的（这不应该发生）
+        if curr_up < prev_up:
+            print(f"⚠️  警告: 急涨数据异常 {history[i-1]['time']}({prev_up}) → {history[i]['time']}({curr_up})")
+        if curr_down < prev_down:
+            print(f"⚠️  警告: 急跌数据异常 {history[i-1]['time']}({prev_down}) → {history[i]['time']}({curr_down})")
+        if curr_count < prev_count:
+            print(f"⚠️  警告: 计次数据异常 {history[i-1]['time']}({prev_count}) → {history[i]['time']}({curr_count})")
+    
     print(f"生成 {len(history)} 个模拟历史数据点")
+    print(f"最终累计 - 急涨: {cumulative_rush_up}, 急跌: {cumulative_rush_down}, 计次: {cumulative_count}")
     
     return jsonify({
         'success': True,
