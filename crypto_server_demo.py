@@ -265,9 +265,63 @@ def calculate_priority_level(ratio1_str, ratio2_str):
 
 @app.route('/api/crypto-data')
 def get_crypto_data():
-    """获取加密货币数据API - 演示版"""
+    """获取加密货币数据API - 优先从数据库读取最新快照"""
     beijing_tz = pytz.timezone('Asia/Shanghai')
-    # 模拟文件时间：当前时间减去1分钟（这样+1分钟后刚好是当前时间）
+    
+    # 尝试从数据库读取最新快照
+    latest_snapshot = None
+    try:
+        import sqlite3
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT snapshot_time FROM crypto_snapshots 
+            ORDER BY snapshot_time DESC LIMIT 1
+        ''')
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            latest_snapshot = db.get_snapshot_by_time(row[0])
+    except Exception as e:
+        print(f"⚠️  从数据库读取失败: {e}")
+        latest_snapshot = None
+    
+    # 如果数据库有数据，使用数据库数据
+    if latest_snapshot and 'data' in latest_snapshot:
+        snapshot_stats = latest_snapshot['stats']
+        print(f"✅ 从数据库返回最新快照: {snapshot_stats['snapshot_time']}")
+        
+        # 为每个币种计算优先级等级
+        data_with_level = []
+        for coin in latest_snapshot['data']:
+            coin_copy = coin.copy()
+            coin_copy['priorityLevel'] = calculate_priority_level(
+                coin.get('ratio1', '0%'),
+                coin.get('ratio2', '0%')
+            )
+            data_with_level.append(coin_copy)
+        
+        return jsonify({
+            'success': True,
+            'data': data_with_level,
+            'stats': {
+                'rushUp': snapshot_stats['rushUp'],
+                'rushDown': snapshot_stats['rushDown'],
+                'diff': snapshot_stats['diff'],
+                'count': snapshot_stats['count'],
+                'ratio': snapshot_stats['ratio'],
+                'status': snapshot_stats['status'],
+                'greenCount': snapshot_stats['greenCount'],
+                'percentage': snapshot_stats['percentage']
+            },
+            'updateTime': snapshot_stats['snapshot_time'],
+            'filename': snapshot_stats.get('filename', '数据库数据'),
+            'fileTimestamp': snapshot_stats['snapshot_time']
+        })
+    
+    # 如果数据库没有数据，回退到演示数据
+    print("ℹ️  数据库无数据，使用演示数据")
     file_time = datetime.now(beijing_tz)
     file_time_str = file_time.strftime('%Y-%m-%d %H:%M:%S')
     
@@ -297,9 +351,9 @@ def get_crypto_data():
         'success': True,
         'data': data_with_level,
         'stats': DEMO_STATS,
-        'updateTime': file_time_str,  # 这是文件时间戳（前端会+1分钟）
+        'updateTime': file_time_str,
         'filename': '2025-12-02_1806.txt (演示数据)',
-        'fileTimestamp': file_time_str  # 明确的文件时间戳字段
+        'fileTimestamp': file_time_str
     })
 
 @app.route('/api/refresh')
