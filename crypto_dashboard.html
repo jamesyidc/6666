@@ -681,7 +681,9 @@
         // 加载数据
         async function loadData() {
             try {
-                const response = await fetch(API_URL);
+                // 添加时间戳参数强制刷新，避免缓存
+                const timestamp = new Date().getTime();
+                const response = await fetch(`${API_URL}?_t=${timestamp}`);
                 const data = await response.json();
                 
                 if (data.success) {

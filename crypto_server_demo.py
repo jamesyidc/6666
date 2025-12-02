@@ -27,7 +27,7 @@ scheduler = BackgroundScheduler()
 
 def collect_monitoring_data():
     """
-    定时采集监控数据（每3分钟执行一次）
+    定时采集监控数据（每10分钟执行一次）
     此函数独立于网页刷新运行
     """
     try:
@@ -492,13 +492,13 @@ if __name__ == '__main__':
     scheduler.add_job(
         func=collect_monitoring_data,
         trigger='interval',
-        minutes=3,
+        minutes=10,
         id='collect_data',
         name='采集监控数据',
         replace_existing=True
     )
     scheduler.start()
-    print("✅ 后台数据采集器已启动（每3分钟执行一次）")
+    print("✅ 后台数据采集器已启动（每10分钟执行一次）")
     
     # 立即执行一次数据采集
     collect_monitoring_data()
