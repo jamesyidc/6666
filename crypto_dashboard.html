@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密货币数据监控面板 v6.0 - 差值曲线&智能高亮</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <!-- Chart.js 图表库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, "Microsoft YaHei", sans-serif;
+            background-color: #f5f5f5;
+            font-size: 12px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: white;
+        }
+
+        /* 顶部导航栏 - 已隐藏 */
+        .navbar {
+            display: none;
+        }
+
+        /* 图表区域 */
+        .chart-container {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            margin-bottom: 10px;
+        }
+
+        /* 顶部统计区域 */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 5px 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-weight: bold;
+        }
+
+        .stat-value {
+            color: #333;
+            font-weight: bold;
+        }
+
+        .star {
+            color: #ffd700;
+        }
+
+        /* 底部统计栏 */
+        .bottom-stats {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 11px;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 1px solid #ddd;
+            padding: 6px 4px;
+            text-align: center;
+        }
+
+        .data-table th {
+            background-color: #e9ecef;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* 颜色标识 */
+        .green-cell {
+            background-color: #00ff00 !important;
+            color: black;
+            font-weight: bold;
+        }
+
+        .red-cell {
+            background-color: #ff0000 !important;
+            color: white;
+            font-weight: bold;
+        }
+
+        .yellow-cell {
+            background-color: #ffff00 !important;
+            color: black;
+            font-weight: bold;
+        }
+
+        /* 更新时间显示 */
+        .update-time {
+            text-align: center;
+            padding: 10px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        /* 加载提示 */
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .error {
+            text-align: center;
+            padding: 50px;
+            font-size: 16px;
+            color: #dc3545;
+        }
+
+        /* 自动刷新倒计时 */
+        .refresh-countdown {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .data-table {
+                font-size: 10px;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 4px 2px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 自动刷新倒计时 -->
+    <div class="refresh-countdown" id="countdown">
+        下次更新: <span id="countdown-time">10:00</span>
+    </div>
+
+    <div class="container">
+        <!-- 导航栏 -->
+        <div class="navbar">
+            <a href="#" class="active">首页</a>
+            <a href="#">查询</a>
+            <a href="#">挂号</a>
+            <a href="#">比价</a>
+            <a href="#">追涨比价</a>
+            <a href="#">盘控</a>
+            <a href="#">重点盘控</a>
+            <a href="#">查询</a>
+            <a href="#">工具</a>
+        </div>
+
+        <!-- 顶部统计栏 -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">急涨：</span>
+                <span class="stat-value" id="stat-rush-up">15</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">急跌：</span>
+                <span class="stat-value" id="stat-rush-down">4</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">状态：</span>
+                <span class="stat-value" id="stat-status">震荡无序</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比值：</span>
+                <span class="stat-value" id="stat-ratio">2.75</span>
+                <span class="star">★★</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">绿色数量：</span>
+                <span class="stat-value" id="stat-green-count">27</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">百分比：</span>
+                <span class="stat-value" id="stat-percentage">93%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">计次：</span>
+                <span class="stat-value" id="stat-count">7</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">差值：</span>
+                <span class="stat-value" id="stat-diff">11</span>
+                <span class="star">★★</span>
+            </div>
+        </div>
+
+        <!-- 急涨急跌趋势图表 -->
+        <div class="chart-container">
+            <div class="chart-title">📊 急涨急跌趋势统计</div>
+            <div class="chart-wrapper">
+                <canvas id="rushChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div id="table-container">
+            <div class="loading">正在加载数据...</div>
+        </div>
+
+        <!-- 底部统计栏 -->
+        <div class="bottom-stats">
+            <div class="stat-item">
+                <span class="stat-label">风控预警：</span>
+                <span class="stat-value" id="bottom-stat-1">30 60分 40%综合: 0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">更新时间：</span>
+                <span class="stat-value" id="bottom-stat-2">2025年12月2日 18时06分44秒</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">全绿0%：</span>
+                <span class="stat-value" id="bottom-stat-3">30 7</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比价最低：</span>
+                <span class="stat-value" id="bottom-stat-4">0 0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">急跌数量：</span>
+                <span class="stat-value" id="bottom-stat-5">计次 0 4</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比价创新高：</span>
+                <span class="stat-value" id="bottom-stat-6">0 0</span>
+            </div>
+        </div>
+
+        <!-- 更新时间 -->
+        <div class="update-time" id="update-time">
+            最后更新: --
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        const API_URL = '/api/crypto-data';
+        const REFRESH_INTERVAL = 10 * 60 * 1000; // 10分钟
+        let countdownInterval;
+        let refreshTimeout;
+        let rushChart = null;
+
+        // 历史数据存储（最多保留50个数据点）
+        let historyData = {
+            timestamps: [],
+            rushUp: [],
+            rushDown: [],
+            diff: []
+        };
+        
+        // 文件更新时间（用于计算倒计时）
+        let lastFileTime = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+            loadHistoryData();
+            loadData();
+            startCountdown();
+        });
+
+        // 加载历史数据
+        async function loadHistoryData() {
+            try {
+                console.log('正在加载历史数据...');
+                const response = await fetch('/api/history-chart');
+                const result = await response.json();
+                
+                if (result.success && result.history && result.history.length > 0) {
+                    console.log(`加载到 ${result.history.length} 个历史数据点`);
+                    
+                    // 填充历史数据
+                    result.history.forEach((item, index) => {
+                        const rushUp = parseInt(item.rushUp) || 0;
+                        const rushDown = parseInt(item.rushDown) || 0;
+                        const diff = rushUp - rushDown;
+                        
+                        historyData.timestamps.push(item.time);
+                        historyData.rushUp.push(rushUp);
+                        historyData.rushDown.push(rushDown);
+                        historyData.diff.push(diff);
+                        
+                        // 记录最后一个文件的时间
+                        if (index === result.history.length - 1 && item.timestamp) {
+                            lastFileTime = new Date(item.timestamp);
+                            console.log('最后文件时间:', lastFileTime);
+                        }
+                    });
+                    
+                    // 更新图表（包含差值）
+                    if (rushChart) {
+                        rushChart.data.labels = historyData.timestamps;
+                        rushChart.data.datasets[0].data = historyData.rushUp;
+                        rushChart.data.datasets[1].data = historyData.rushDown;
+                        rushChart.data.datasets[2].data = historyData.diff;
+                        
+                        // 标记重点数据
+                        updatePointStyles();
+                        
+                        rushChart.update();
+                    }
+                    
+                    console.log('历史数据加载完成');
+                } else {
+                    console.log('没有历史数据');
+                }
+            } catch (error) {
+                console.error('加载历史数据失败:', error);
+            }
+        }
+        
+        // 更新数据点样式（标记重点）
+        function updatePointStyles() {
+            if (!rushChart) return;
+            
+            const rushUpColors = [];
+            const rushDownColors = [];
+            const diffColors = [];
+            const rushUpSizes = [];
+            const rushDownSizes = [];
+            const diffSizes = [];
+            
+            for (let i = 0; i < historyData.rushUp.length; i++) {
+                const rushUp = historyData.rushUp[i];
+                const rushDown = historyData.rushDown[i];
+                const diff = historyData.diff[i];
+                
+                // 急涨标记（≥10）
+                if (rushUp >= 10) {
+                    rushUpColors.push('#00ff00');  // 亮绿色高亮
+                    rushUpSizes.push(10);
+                } else {
+                    rushUpColors.push('rgba(0, 204, 0, 0.6)');  // 半透明绿色
+                    rushUpSizes.push(4);
+                }
+                
+                // 急跌标记（≥10）
+                if (rushDown >= 10) {
+                    rushDownColors.push('#ff0000');  // 亮红色高亮
+                    rushDownSizes.push(10);
+                } else {
+                    rushDownColors.push('rgba(204, 0, 0, 0.6)');  // 半透明红色
+                    rushDownSizes.push(4);
+                }
+                
+                // 差值标记（≥50 或 ≤-50）
+                if (diff >= 50 || diff <= -50) {
+                    diffColors.push('#ff6600');  // 橙色高亮
+                    diffSizes.push(10);
+                } else {
+                    diffColors.push('#0080ff');  // 蓝色常规
+                    diffSizes.push(4);
+                }
+            }
+            
+            rushChart.data.datasets[0].pointBackgroundColor = rushUpColors;
+            rushChart.data.datasets[0].pointRadius = rushUpSizes;
+            rushChart.data.datasets[1].pointBackgroundColor = rushDownColors;
+            rushChart.data.datasets[1].pointRadius = rushDownSizes;
+            rushChart.data.datasets[2].pointBackgroundColor = diffColors;
+            rushChart.data.datasets[2].pointRadius = diffSizes;
+        }
+
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('rushChart').getContext('2d');
+            rushChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '急涨',
+                            data: [],
+                            borderColor: '#00ff00',
+                            backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: '急跌',
+                            data: [],
+                            borderColor: '#ff0000',
+                            backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: '差值(急涨-急跌)',
+                            data: [],
+                            borderColor: '#0080ff',
+                            backgroundColor: 'rgba(0, 128, 255, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                title: function(context) {
+                                    return '时间: ' + context[0].label;
+                                },
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            ticks: {
+                                stepSize: 2
+                            },
+                            title: {
+                                display: true,
+                                text: '急涨/急跌数量'
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            title: {
+                                display: true,
+                                text: '差值'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '更新时间'
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        // 更新图表数据
+        function updateChart(stats, fileTime) {
+            if (!rushChart) return;
+
+            // 使用文件时间戳+1分钟作为更新时间
+            let timeStr;
+            if (fileTime) {
+                const fileDate = new Date(fileTime);
+                fileDate.setMinutes(fileDate.getMinutes() + 1);  // 文件时间+1分钟
+                timeStr = fileDate.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                lastFileTime = fileDate;
+                console.log(`文件时间: ${fileTime}, 更新时间(+1分钟): ${timeStr}`);
+            } else {
+                const now = new Date();
+                timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            }
+            
+            // 检查是否已经有这个时间点的数据（避免重复）
+            const lastTime = historyData.timestamps[historyData.timestamps.length - 1];
+            if (lastTime === timeStr) {
+                console.log('数据点已存在，跳过更新');
+                return;
+            }
+            
+            // 计算差值
+            const rushUp = parseInt(stats.rushUp) || 0;
+            const rushDown = parseInt(stats.rushDown) || 0;
+            const diff = rushUp - rushDown;
+            
+            // 添加新数据
+            historyData.timestamps.push(timeStr);
+            historyData.rushUp.push(rushUp);
+            historyData.rushDown.push(rushDown);
+            historyData.diff.push(diff);
+
+            console.log(`添加新数据点: ${timeStr}, 急涨:${rushUp}, 急跌:${rushDown}, 差值:${diff}`);
+
+            // 保持最多50个数据点（显示更长的历史）
+            if (historyData.timestamps.length > 50) {
+                historyData.timestamps.shift();
+                historyData.rushUp.shift();
+                historyData.rushDown.shift();
+                historyData.diff.shift();
+            }
+
+            // 更新图表
+            rushChart.data.labels = historyData.timestamps;
+            rushChart.data.datasets[0].data = historyData.rushUp;
+            rushChart.data.datasets[1].data = historyData.rushDown;
+            rushChart.data.datasets[2].data = historyData.diff;
+            
+            // 更新标记
+            updatePointStyles();
+            
+            rushChart.update();
+        }
+
+        // 加载数据
+        async function loadData() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderData(data.data);
+                    updateStats(data.stats);
+                    // 传入文件更新时间（用于计算TXT时间+1分钟）
+                    updateChart(data.stats, data.updateTime);
+                    updateUpdateTime(data.updateTime);
+                    
+                    // 重新计算倒计时（基于文件时间+1分钟）
+                    if (data.updateTime) {
+                        resetCountdown(data.updateTime);
+                    }
+                } else {
+                    showError(data.error || '数据加载失败');
+                }
+            } catch (error) {
+                console.error('加载数据错误:', error);
+                showError('无法连接到服务器');
+            }
+
+            // 设置下次自动刷新
+            clearTimeout(refreshTimeout);
+            refreshTimeout = setTimeout(loadData, REFRESH_INTERVAL);
+        }
+
+        // 渲染数据表格
+        function renderData(data) {
+            const container = document.getElementById('table-container');
+            
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>序号</th>
+                            <th>币名</th>
+                            <th>涨幅</th>
+                            <th>急涨</th>
+                            <th>急跌</th>
+                            <th>更新时间</th>
+                            <th>历史高价</th>
+                            <th>高价时间</th>
+                            <th>跌幅</th>
+                            <th>24小时</th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th>排行</th>
+                            <th>当前价格</th>
+                            <th>盘点占比</th>
+                            <th>最低占比</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach((row, index) => {
+                const changeClass = getChangeClass(parseFloat(row.change));
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${row.symbol}</strong></td>
+                        <td class="${changeClass}">${row.change}</td>
+                        <td>${row.rushUp}</td>
+                        <td>${row.rushDown}</td>
+                        <td>${row.updateTime}</td>
+                        <td>${row.highPrice}</td>
+                        <td>${row.highTime}</td>
+                        <td>${row.decline}</td>
+                        <td>${row.change24h}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>${row.rank}</td>
+                        <td>${row.currentPrice}</td>
+                        <td>${row.ratio1}</td>
+                        <td>${row.ratio2}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // 获取涨跌颜色类
+        function getChangeClass(change) {
+            if (change > 0.3) return 'green-cell';
+            if (change < -0.05) return 'red-cell';
+            if (change >= 0.2) return 'yellow-cell';
+            return '';
+        }
+
+        // 更新统计数据
+        function updateStats(stats) {
+            if (!stats) return;
+            
+            document.getElementById('stat-rush-up').textContent = stats.rushUp || '15';
+            document.getElementById('stat-rush-down').textContent = stats.rushDown || '4';
+            document.getElementById('stat-status').textContent = stats.status || '震荡无序';
+            document.getElementById('stat-ratio').textContent = stats.ratio || '2.75';
+            document.getElementById('stat-green-count').textContent = stats.greenCount || '27';
+            document.getElementById('stat-percentage').textContent = stats.percentage || '93%';
+            document.getElementById('stat-count').textContent = stats.count || '7';
+            document.getElementById('stat-diff').textContent = stats.diff || '11';
+        }
+
+        // 更新时间显示
+        function updateUpdateTime(time) {
+            const element = document.getElementById('update-time');
+            element.textContent = `最后更新: ${time || new Date().toLocaleString('zh-CN')}`;
+        }
+
+        // 显示错误
+        function showError(message) {
+            const container = document.getElementById('table-container');
+            container.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // 倒计时
+        function startCountdown() {
+            let seconds = 600; // 10分钟 = 600秒
+
+            function updateCountdown() {
+                const minutes = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                const display = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                document.getElementById('countdown-time').textContent = display;
+
+                if (seconds === 0) {
+                    seconds = 600;
+                } else {
+                    seconds--;
+                }
+            }
+
+            updateCountdown();
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
+        
+        // 重置倒计时（基于文件时间+1分钟）
+        function resetCountdown(fileTimeStr) {
+            if (!fileTimeStr) return;
+            
+            try {
+                // 文件时间+1分钟
+                const fileTime = new Date(fileTimeStr);
+                fileTime.setMinutes(fileTime.getMinutes() + 1);
+                
+                // 下次更新时间 = 文件时间+1分钟 + 10分钟
+                const nextUpdate = new Date(fileTime.getTime() + 10 * 60 * 1000);
+                const now = new Date();
+                
+                // 计算剩余秒数
+                let seconds = Math.max(0, Math.floor((nextUpdate - now) / 1000));
+                
+                console.log(`文件时间: ${fileTimeStr}`);
+                console.log(`更新时间(+1分钟): ${fileTime.toLocaleTimeString('zh-CN')}`);
+                console.log(`下次更新: ${nextUpdate.toLocaleTimeString('zh-CN')}`);
+                console.log(`剩余秒数: ${seconds}`);
+                
+                // 重新开始倒计时
+                clearInterval(countdownInterval);
+                
+                function updateCountdown() {
+                    const minutes = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    const display = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    document.getElementById('countdown-time').textContent = display;
+
+                    if (seconds === 0) {
+                        seconds = 600;  // 重置为10分钟
+                    } else {
+                        seconds--;
+                    }
+                }
+                
+                updateCountdown();
+                countdownInterval = setInterval(updateCountdown, 1000);
+            } catch (error) {
+                console.error('重置倒计时失败:', error);
+            }
+        }
+    </script>
+</body>
+</html>
