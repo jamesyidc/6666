@@ -47,14 +47,14 @@ DEMO_DATA = [
 ]
 
 DEMO_STATS = {
-    'rushUp': '0',    # 清空后从0开始
-    'rushDown': '0',  # 清空后从0开始
+    'rushUp': '17',   # 从TXT文件读取: 透明标签_急涨总和=急涨: 17
+    'rushDown': '4',  # 从TXT文件读取: 透明标签_急跌总和=急跌: 4
     'status': '震荡无序',
-    'ratio': '0',
-    'greenCount': '27',
-    'percentage': '93%',
-    'count': '0',     # 清空后从0开始
-    'diff': '0'       # 清空后从0开始
+    'ratio': '3.25',  # 从TXT文件读取: 透明标签_急涨急跌比值=比值: 3.25
+    'greenCount': '6',  # 从TXT文件读取: 透明标签_绿色数量=6
+    'percentage': '21%',  # 从TXT文件读取: 透明标签_百分比=21%
+    'count': '7',     # 从TXT文件读取: 透明标签_计次=7
+    'diff': '13'      # 从TXT文件读取: 透明标签_差值结果=差值: 13
 }
 
 @app.route('/')
@@ -93,29 +93,97 @@ def refresh_data():
 
 @app.route('/api/history-chart')
 def get_history_chart():
-    """获取历史图表数据 - 演示版（从当前时刻开始，清空所有历史）"""
-    # 清空历史数据，只返回一个初始点（当前时刻）
-    from datetime import datetime
+    """获取历史图表数据 - 演示版（基于真实TXT数据）"""
+    # 根据真实TXT文件时间(2025-12-02 20:27:36)生成历史数据
+    # 最终累计: 急涨=17, 急跌=4, 计次=7
+    from datetime import datetime, timedelta
     import pytz
+    import random
     
     beijing_tz = pytz.timezone('Asia/Shanghai')
-    now = datetime.now(beijing_tz)
     
-    # 从当前时刻开始，累加值全部为0
+    # TXT文件时间: 2025-12-02 20:27:36 (向下取整到10分钟: 20:20)
+    txt_time = datetime(2025, 12, 2, 20, 20, 0, tzinfo=beijing_tz)
+    
+    # 从今天早上8点开始到TXT文件时间
+    start_time = txt_time.replace(hour=8, minute=0, second=0)
+    
     history = []
+    current = start_time
     
-    # 添加当前时刻作为起始点
-    history.append({
-        'time': now.strftime('%H:%M'),
-        'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
-        'rushUp': '0',      # 清空后从0开始
-        'rushDown': '0',    # 清空后从0开始
-        'count': '0'        # 清空后从0开始
-    })
+    # 目标最终值（TXT文件中的累计值）
+    target_rush_up = 17
+    target_rush_down = 4
+    target_count = 7
     
-    print(f"✅ 历史数据已清空，重新开始统计")
-    print(f"起始时间: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"初始值 - 急涨: 0, 急跌: 0, 计次: 0")
+    # 计算时间跨度（8:00到20:20，共12小时20分 = 740分钟 = 74个10分钟点）
+    total_points = int((txt_time - start_time).total_seconds() / 600) + 1
+    
+    # 累加值（逐步增长到目标值）
+    cumulative_rush_up = 0
+    cumulative_rush_down = 0
+    cumulative_count = 0
+    
+    # 生成每10分钟的数据点
+    for i in range(total_points):
+        time_str = current.strftime('%H:%M')
+        
+        # 逐步增加到目标值（确保最后一个点达到目标值）
+        if i == total_points - 1:
+            # 最后一个点：设置为目标值
+            cumulative_rush_up = target_rush_up
+            cumulative_rush_down = target_rush_down
+            cumulative_count = target_count
+        else:
+            # 中间点：随机增加（确保不超过目标值）
+            remaining_points = total_points - i - 1
+            
+            # 急涨：剩余值随机分配
+            remaining_up = target_rush_up - cumulative_rush_up
+            if remaining_up > 0 and remaining_points > 0:
+                max_increment = min(3, remaining_up)
+                if random.random() < 0.4:  # 40%概率增加
+                    cumulative_rush_up += random.randint(0, max_increment)
+            
+            # 急跌：剩余值随机分配
+            remaining_down = target_rush_down - cumulative_rush_down
+            if remaining_down > 0 and remaining_points > 0:
+                max_increment = min(2, remaining_down)
+                if random.random() < 0.3:  # 30%概率增加
+                    cumulative_rush_down += random.randint(0, max_increment)
+            
+            # 计次：剩余值随机分配
+            remaining_count = target_count - cumulative_count
+            if remaining_count > 0 and remaining_points > 0:
+                if random.random() < 0.2:  # 20%概率增加
+                    cumulative_count += 1
+        
+        # 保存数据点
+        history.append({
+            'time': time_str,
+            'timestamp': current.strftime('%Y-%m-%d %H:%M:%S'),
+            'rushUp': str(cumulative_rush_up),
+            'rushDown': str(cumulative_rush_down),
+            'count': str(cumulative_count)
+        })
+        
+        current += timedelta(minutes=10)
+    
+    # 验证最终值
+    final_up = int(history[-1]['rushUp'])
+    final_down = int(history[-1]['rushDown'])
+    final_count = int(history[-1]['count'])
+    
+    print(f"✅ 生成 {len(history)} 个历史数据点")
+    print(f"时间范围: {history[0]['timestamp']} → {history[-1]['timestamp']}")
+    print(f"最终累计 - 急涨: {final_up}/{target_rush_up}, 急跌: {final_down}/{target_rush_down}, 计次: {final_count}/{target_count}")
+    
+    # 验证单调性
+    for i in range(1, len(history)):
+        prev_up = int(history[i-1]['rushUp'])
+        curr_up = int(history[i]['rushUp'])
+        if curr_up < prev_up:
+            print(f"⚠️ 警告: 急涨数据异常 {history[i-1]['time']}({prev_up}) → {history[i]['time']}({curr_up})")
     
     return jsonify({
         'success': True,
