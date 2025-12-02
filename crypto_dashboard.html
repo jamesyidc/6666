@@ -675,7 +675,7 @@
         function renderData(data) {
             const container = document.getElementById('table-container');
             
-            // 找出ratio1（盘点占比）最高的行
+            // 找出ratio1（最高占比）最高的行
             let maxRatio1 = -Infinity;
             let maxRatio1Symbol = '';
             data.forEach(row => {
@@ -705,7 +705,7 @@
                             <th></th>
                             <th>排行</th>
                             <th>当前价格</th>
-                            <th>盘点占比</th>
+                            <th>最高占比</th>
                             <th>最低占比</th>
                         </tr>
                     </thead>
@@ -714,7 +714,7 @@
 
             data.forEach((row, index) => {
                 const changeClass = getChangeClass(parseFloat(row.change));
-                // 如果是最高盘点占比的行，添加绿色高亮
+                // 如果是最高占比最高的行，添加绿色高亮
                 const isMaxRatio = row.symbol === maxRatio1Symbol;
                 const rowClass = isMaxRatio ? 'class="max-ratio-row"' : '';
                 
