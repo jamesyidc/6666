@@ -47,14 +47,14 @@ DEMO_DATA = [
 ]
 
 DEMO_STATS = {
-    'rushUp': '15',
-    'rushDown': '4',
+    'rushUp': '0',    # 清空后从0开始
+    'rushDown': '0',  # 清空后从0开始
     'status': '震荡无序',
-    'ratio': '2.75',
+    'ratio': '0',
     'greenCount': '27',
     'percentage': '93%',
-    'count': '7',  # 计次
-    'diff': '11'
+    'count': '0',     # 清空后从0开始
+    'diff': '0'       # 清空后从0开始
 }
 
 @app.route('/')
@@ -93,72 +93,29 @@ def refresh_data():
 
 @app.route('/api/history-chart')
 def get_history_chart():
-    """获取历史图表数据 - 演示版"""
-    # 生成模拟的历史数据（当天从08:00到当前时间，每10分钟一个点）
-    # 注意：急涨、急跌、计次都是累加的，直接显示TXT文件中的数字
-    from datetime import datetime, timedelta
+    """获取历史图表数据 - 演示版（从当前时刻开始，清空所有历史）"""
+    # 清空历史数据，只返回一个初始点（当前时刻）
+    from datetime import datetime
     import pytz
-    import random
     
     beijing_tz = pytz.timezone('Asia/Shanghai')
     now = datetime.now(beijing_tz)
     
-    # 从今天早上8点开始
-    start_time = now.replace(hour=8, minute=0, second=0, microsecond=0)
-    
+    # 从当前时刻开始，累加值全部为0
     history = []
-    current = start_time
     
-    # 模拟TXT文件中的累加值（每个TXT文件记录的是累计值）
-    cumulative_rush_up = 0
-    cumulative_rush_down = 0
-    cumulative_count = 0
+    # 添加当前时刻作为起始点
+    history.append({
+        'time': now.strftime('%H:%M'),
+        'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
+        'rushUp': '0',      # 清空后从0开始
+        'rushDown': '0',    # 清空后从0开始
+        'count': '0'        # 清空后从0开始
+    })
     
-    # 生成到当前时间的数据点，每10分钟一个
-    while current <= now:
-        time_str = current.strftime('%H:%M')
-        
-        # 模拟TXT文件中的累加值（只增不减）
-        rush_up_increment = random.randint(0, 3)
-        cumulative_rush_up += rush_up_increment
-        
-        rush_down_increment = random.randint(0, 2)
-        cumulative_rush_down += rush_down_increment
-        
-        # 计次也是累加的
-        if random.random() < 0.3:
-            cumulative_count += 1
-        
-        # 直接保存TXT文件中的数字（累计值）
-        history.append({
-            'time': time_str,
-            'timestamp': current.strftime('%Y-%m-%d %H:%M:%S'),
-            'rushUp': str(cumulative_rush_up),      # TXT文件中的急涨累计值
-            'rushDown': str(cumulative_rush_down),  # TXT文件中的急跌累计值
-            'count': str(cumulative_count)          # TXT文件中的计次累计值
-        })
-        
-        current += timedelta(minutes=10)
-    
-    # 验证数据的累加特性（调试用）
-    for i in range(1, len(history)):
-        prev_up = int(history[i-1]['rushUp'])
-        curr_up = int(history[i]['rushUp'])
-        prev_down = int(history[i-1]['rushDown'])
-        curr_down = int(history[i]['rushDown'])
-        prev_count = int(history[i-1]['count'])
-        curr_count = int(history[i]['count'])
-        
-        # 检查是否有后面的数字小于前面的（这不应该发生）
-        if curr_up < prev_up:
-            print(f"⚠️  警告: 急涨数据异常 {history[i-1]['time']}({prev_up}) → {history[i]['time']}({curr_up})")
-        if curr_down < prev_down:
-            print(f"⚠️  警告: 急跌数据异常 {history[i-1]['time']}({prev_down}) → {history[i]['time']}({curr_down})")
-        if curr_count < prev_count:
-            print(f"⚠️  警告: 计次数据异常 {history[i-1]['time']}({prev_count}) → {history[i]['time']}({curr_count})")
-    
-    print(f"生成 {len(history)} 个模拟历史数据点")
-    print(f"最终累计 - 急涨: {cumulative_rush_up}, 急跌: {cumulative_rush_down}, 计次: {cumulative_count}")
+    print(f"✅ 历史数据已清空，重新开始统计")
+    print(f"起始时间: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"初始值 - 急涨: 0, 急跌: 0, 计次: 0")
     
     return jsonify({
         'success': True,
