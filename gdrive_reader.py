@@ -125,6 +125,7 @@ class GDriveReader:
     def find_latest_txt_file(self, parent_id: str) -> Optional[tuple]:
         """
         在指定文件夹中查找最新的 .txt 文件
+        按照文件名中的时间戳排序（格式：2025-12-02_2238.txt）
         
         Args:
             parent_id: 父文件夹 ID
@@ -136,25 +137,67 @@ class GDriveReader:
             return None
         
         try:
-            # 查找所有 .txt 文件，按修改时间降序排列
+            # 查找所有 .txt 文件
             query = f"'{parent_id}' in parents and name contains '.txt' and mimeType!='application/vnd.google-apps.folder' and trashed=false"
             results = self.service.files().list(
                 q=query,
                 spaces='drive',
                 fields='files(id, name, modifiedTime)',
-                pageSize=100,  # 获取更多文件以便排序
-                orderBy='modifiedTime desc'
+                pageSize=1000,  # 获取所有文件
+                orderBy='name desc'  # 按文件名降序（时间戳文件名会自然排序）
             ).execute()
             
             items = results.get('files', [])
-            if items:
-                # 返回最新的文件
-                latest = items[0]
-                print(f"✅ 找到最新TXT文件: {latest['name']} (修改时间: {latest.get('modifiedTime', 'N/A')})")
+            if not items:
+                print("❌ 未找到任何 .txt 文件")
+                return None
+            
+            print(f"📂 找到 {len(items)} 个 TXT 文件")
+            
+            # 按文件名中的时间戳排序（格式：2025-12-02_2238.txt）
+            import re
+            timestamped_files = []
+            
+            for item in items:
+                # 尝试从文件名提取时间戳：YYYY-MM-DD_HHMM
+                match = re.match(r'(\d{4}-\d{2}-\d{2})_(\d{4})\.txt', item['name'])
+                if match:
+                    date_str = match.group(1)  # 2025-12-02
+                    time_str = match.group(2)  # 2238
+                    timestamp_str = f"{date_str} {time_str[:2]}:{time_str[2:]}"  # 2025-12-02 22:38
+                    timestamped_files.append((item, timestamp_str))
+            
+            if timestamped_files:
+                # 按时间戳降序排序，最新的在前
+                timestamped_files.sort(key=lambda x: x[1], reverse=True)
+                latest = timestamped_files[0][0]
+                latest_time = timestamped_files[0][1]
+                print(f"✅ 找到最新TXT文件: {latest['name']}")
+                print(f"   文件时间戳: {latest_time}")
+                print(f"   修改时间: {latest.get('modifiedTime', 'N/A')}")
                 return (latest['id'], latest['name'])
-            return None
+            else:
+                # 如果没有时间戳格式的文件，回退到按修改时间排序
+                print("⚠️  未找到时间戳格式的文件，使用修改时间最新的文件")
+                # 重新按修改时间查询
+                results = self.service.files().list(
+                    q=query,
+                    spaces='drive',
+                    fields='files(id, name, modifiedTime)',
+                    pageSize=1,
+                    orderBy='modifiedTime desc'
+                ).execute()
+                items = results.get('files', [])
+                if items:
+                    latest = items[0]
+                    print(f"✅ 找到文件: {latest['name']} (修改时间: {latest.get('modifiedTime', 'N/A')})")
+                    return (latest['id'], latest['name'])
+                return None
+                
         except Exception as e:
             print(f"❌ 查找最新TXT文件失败: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     def download_file_content(self, file_id: str) -> Optional[str]:
@@ -196,6 +239,7 @@ class GDriveReader:
     def read_signal_txt(self) -> Optional[Dict]:
         """
         读取今天的信号.txt文件
+        按照北京时间查找今天的日期文件夹，然后读取最新的TXT文件
         
         Returns:
             解析后的信号数据字典，如果失败则返回 None
@@ -205,16 +249,19 @@ class GDriveReader:
             return None
         
         try:
-            # 1. 查找今天的日期文件夹
+            # 1. 查找今天的日期文件夹（北京时间）
             today_folder = self.get_today_folder_name()
+            beijing_now = datetime.now(self.beijing_tz).strftime('%Y-%m-%d %H:%M:%S')
+            print(f"🔍 当前北京时间: {beijing_now}")
             print(f"🔍 查找日期文件夹: {today_folder}")
             
             folder_id = self.find_folder_by_name(self.folder_id, today_folder)
             if not folder_id:
                 print(f"❌ 未找到日期文件夹: {today_folder}")
+                print(f"   请确保 Google Drive 中存在文件夹: {today_folder}")
                 return None
             
-            print(f"✅ 找到日期文件夹: {folder_id}")
+            print(f"✅ 找到日期文件夹: {today_folder} (ID: {folder_id})")
             
             # 2. 查找最新的 .txt 文件（优先）或 信号.txt
             file_info = self.find_latest_txt_file(folder_id)
