@@ -44,11 +44,11 @@ class MonitorDataReader:
     def read_signal_data(self, content: str) -> Optional[Dict]:
         """
         解析信号.txt内容
-        格式: 21|0|146|0|2025-12-02 21:57:31
-        字段: 急跌|变化|急涨|变化|时间
+        格式: 146|0|0|0|2025-12-02 22:05:39
+        字段: 做空信号|变化|做多信号|变化|时间
         注意：
-        - parts[0] = 急跌 (Sharp fall) -> 映射为 'short'
-        - parts[2] = 急涨 (Sharp rise) -> 映射为 'long'
+        - parts[0] = 做空信号 (Short signal) -> 映射为 'short'
+        - parts[2] = 做多信号 (Long signal) -> 映射为 'long'
         """
         try:
             lines = content.strip().split('\n')
@@ -61,10 +61,10 @@ class MonitorDataReader:
                 parts = line.split('|')
                 if len(parts) >= 5:
                     return {
-                        'short': parts[0].strip(),        # 急跌
-                        'short_change': parts[1].strip(), # 急跌变化
-                        'long': parts[2].strip(),         # 急涨
-                        'long_change': parts[3].strip(),  # 急涨变化
+                        'short': parts[0].strip(),        # 做空信号
+                        'short_change': parts[1].strip(), # 做空变化
+                        'long': parts[2].strip(),         # 做多信号
+                        'long_change': parts[3].strip(),  # 做多变化
                         'update_time': parts[4].strip()   # 更新时间
                     }
             
@@ -169,17 +169,17 @@ class MonitorDataReader:
         """
         获取演示信号数据
         注意：字段对应关系
-        - short = 急跌（红色，空方力量）
-        - long = 急涨（绿色，多方力量）
+        - short = 做空信号（红色）
+        - long = 做多信号（绿色）
         
-        根据实际TXT文件: 21|0|146|0|2025-12-02 21:57:31
+        根据实际TXT文件: 146|0|0|0|2025-12-02 22:05:39
         """
         now = datetime.now(self.beijing_tz)
         return {
-            'short': '21',         # 急跌
-            'short_change': '0',   # 急跌变化
-            'long': '146',         # 急涨
-            'long_change': '0',    # 急涨变化
+            'short': '146',        # 做空信号
+            'short_change': '0',   # 做空变化
+            'long': '0',           # 做多信号
+            'long_change': '0',    # 做多变化
             'update_time': now.strftime('%Y-%m-%d %H:%M:%S')
         }
     
