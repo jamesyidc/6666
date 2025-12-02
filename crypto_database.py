@@ -40,6 +40,38 @@ class CryptoDatabase:
             )
         ''')
         
+        # 创建信号监控数据表：存储做空/做多信号的历史数据
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS signal_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_time TEXT NOT NULL,
+                snapshot_date TEXT NOT NULL,
+                short_value INTEGER,
+                short_change INTEGER,
+                long_value INTEGER,
+                long_change INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(snapshot_time)
+            )
+        ''')
+        
+        # 创建恐慌清洗数据表：存储恐慌清洗指标的历史数据
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS panic_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_time TEXT NOT NULL,
+                snapshot_date TEXT NOT NULL,
+                panic_indicator TEXT,
+                trend_rating TEXT,
+                market_zone TEXT,
+                liquidation_24h_count TEXT,
+                liquidation_24h_amount TEXT,
+                total_position TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(snapshot_time)
+            )
+        ''')
+        
         # 创建币种数据表：存储每个币种在每个时间点的详细数据
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS crypto_coin_data (
@@ -342,6 +374,187 @@ class CryptoDatabase:
                 'total_coins': total_coins,
                 'total_records': total_records
             }
+            
+        finally:
+            conn.close()
+    
+    def save_signal_data(self, signal_data: Dict) -> bool:
+        """
+        保存信号监控数据
+        
+        Args:
+            signal_data: 信号数据字典，包含 short, short_change, long, long_change, update_time
+            
+        Returns:
+            bool: 保存成功返回 True，失败返回 False
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        try:
+            snapshot_time = signal_data['update_time']
+            snapshot_date = snapshot_time.split()[0]
+            
+            cursor.execute('''
+                INSERT OR REPLACE INTO signal_history 
+                (snapshot_time, snapshot_date, short_value, short_change, long_value, long_change)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                snapshot_time,
+                snapshot_date,
+                int(signal_data['short']),
+                int(signal_data['short_change']),
+                int(signal_data['long']),
+                int(signal_data['long_change'])
+            ))
+            
+            conn.commit()
+            return True
+            
+        except Exception as e:
+            conn.rollback()
+            print(f"❌ 保存信号数据失败: {e}")
+            return False
+        finally:
+            conn.close()
+    
+    def save_panic_data(self, panic_data: Dict) -> bool:
+        """
+        保存恐慌清洗数据
+        
+        Args:
+            panic_data: 恐慌清洗数据字典
+            
+        Returns:
+            bool: 保存成功返回 True，失败返回 False
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        try:
+            snapshot_time = panic_data['update_time']
+            snapshot_date = snapshot_time.split()[0]
+            
+            cursor.execute('''
+                INSERT OR REPLACE INTO panic_history 
+                (snapshot_time, snapshot_date, panic_indicator, trend_rating, 
+                 market_zone, liquidation_24h_count, liquidation_24h_amount, total_position)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                snapshot_time,
+                snapshot_date,
+                panic_data['panic_indicator'],
+                panic_data['trend_rating'],
+                panic_data['market_zone'],
+                panic_data['liquidation_24h_count'],
+                panic_data['liquidation_24h_amount'],
+                panic_data['total_position']
+            ))
+            
+            conn.commit()
+            return True
+            
+        except Exception as e:
+            conn.rollback()
+            print(f"❌ 保存恐慌清洗数据失败: {e}")
+            return False
+        finally:
+            conn.close()
+    
+    def get_signal_history(self, date: Optional[str] = None, hours: int = 24) -> List[Dict]:
+        """
+        查询信号历史数据
+        
+        Args:
+            date: 指定日期 (YYYY-MM-DD)，不指定则查询最近的数据
+            hours: 查询最近多少小时的数据（默认24小时）
+            
+        Returns:
+            List[Dict]: 信号历史数据列表
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        try:
+            if date:
+                # 查询指定日期的数据
+                cursor.execute('''
+                    SELECT snapshot_time, short_value, short_change, long_value, long_change
+                    FROM signal_history
+                    WHERE snapshot_date = ?
+                    ORDER BY snapshot_time ASC
+                ''', (date,))
+            else:
+                # 查询最近N小时的数据
+                cursor.execute('''
+                    SELECT snapshot_time, short_value, short_change, long_value, long_change
+                    FROM signal_history
+                    WHERE datetime(snapshot_time) >= datetime('now', '-' || ? || ' hours', 'localtime')
+                    ORDER BY snapshot_time ASC
+                ''', (hours,))
+            
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    'time': row[0],
+                    'short': row[1],
+                    'short_change': row[2],
+                    'long': row[3],
+                    'long_change': row[4]
+                })
+            
+            return results
+            
+        finally:
+            conn.close()
+    
+    def get_panic_history(self, date: Optional[str] = None, hours: int = 24) -> List[Dict]:
+        """
+        查询恐慌清洗历史数据
+        
+        Args:
+            date: 指定日期 (YYYY-MM-DD)，不指定则查询最近的数据
+            hours: 查询最近多少小时的数据（默认24小时）
+            
+        Returns:
+            List[Dict]: 恐慌清洗历史数据列表
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        try:
+            if date:
+                # 查询指定日期的数据
+                cursor.execute('''
+                    SELECT snapshot_time, panic_indicator, trend_rating, market_zone,
+                           liquidation_24h_count, liquidation_24h_amount, total_position
+                    FROM panic_history
+                    WHERE snapshot_date = ?
+                    ORDER BY snapshot_time ASC
+                ''', (date,))
+            else:
+                # 查询最近N小时的数据
+                cursor.execute('''
+                    SELECT snapshot_time, panic_indicator, trend_rating, market_zone,
+                           liquidation_24h_count, liquidation_24h_amount, total_position
+                    FROM panic_history
+                    WHERE datetime(snapshot_time) >= datetime('now', '-' || ? || ' hours', 'localtime')
+                    ORDER BY snapshot_time ASC
+                ''', (hours,))
+            
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    'time': row[0],
+                    'panic_indicator': row[1],
+                    'trend_rating': row[2],
+                    'market_zone': row[3],
+                    'liquidation_24h_count': row[4],
+                    'liquidation_24h_amount': row[5],
+                    'total_position': row[6]
+                })
+            
+            return results
             
         finally:
             conn.close()

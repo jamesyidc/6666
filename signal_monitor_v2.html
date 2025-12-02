@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟币信号监控 v2.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .data-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .data-card.short::before {
+            background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .data-card.long::before {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .data-label {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 15px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .data-value {
+            font-size: 56px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .data-change {
+            font-size: 20px;
+            color: #999;
+        }
+
+        .data-change.positive {
+            color: #4CAF50;
+        }
+
+        .data-change.negative {
+            color: #f44336;
+        }
+
+        .chart-card {
+            grid-column: 1 / -1;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+
+        .update-time {
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .update-time strong {
+            color: #667eea;
+        }
+
+        .next-update {
+            text-align: center;
+            color: #4CAF50;
+            font-size: 13px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .error {
+            text-align: center;
+            padding: 30px;
+            color: #f44336;
+            background: #ffebee;
+            border-radius: 10px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-card {
+                grid-column: 1;
+            }
+            
+            .data-value {
+                font-size: 42px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 虚拟币信号监控 v2.0</h1>
+            <div class="subtitle">实时追踪做空做多信号 · 自动更新 · 历史曲线</div>
+        </div>
+
+        <div class="main-content">
+            <!-- 做空信号卡片 -->
+            <div class="card data-card short">
+                <div class="data-label">🔴 做空信号</div>
+                <div class="data-value" id="short-value">--</div>
+                <div class="data-change" id="short-change">变化: --</div>
+            </div>
+
+            <!-- 做多信号卡片 -->
+            <div class="card data-card long">
+                <div class="data-label">🟢 做多信号</div>
+                <div class="data-value" id="long-value">--</div>
+                <div class="data-change" id="long-change">变化: --</div>
+            </div>
+
+            <!-- 历史曲线图 -->
+            <div class="card chart-card">
+                <h2 style="color: #333; margin-bottom: 10px;">📈 历史走势图（最近24小时）</h2>
+                <div class="chart-container">
+                    <canvas id="signalChart"></canvas>
+                </div>
+                
+                <div class="update-time" id="update-time">
+                    📅 更新时间: <strong>加载中...</strong>
+                </div>
+                
+                <div class="next-update" id="next-update">
+                    ⏱️ 下次更新: 10分钟后
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let signalChart = null;
+        let updateTimer = null;
+        let countdownTimer = null;
+        let nextUpdateTime = 600; // 10分钟 = 600秒
+
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('signalChart').getContext('2d');
+            signalChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '做空信号',
+                            data: [],
+                            borderColor: '#f5576c',
+                            backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: '做多信号',
+                            data: [],
+                            borderColor: '#00f2fe',
+                            backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    family: 'Arial, "Microsoft YaHei", sans-serif'
+                                },
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: {
+                                size: 14
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            callbacks: {
+                                title: function(context) {
+                                    return '时间: ' + context[0].label;
+                                },
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 加载当前信号数据
+        async function loadCurrentData() {
+            try {
+                const response = await fetch('/api/monitor/signal');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const data = result.data;
+                    updateCurrentDisplay(data);
+                }
+            } catch (error) {
+                console.error('加载当前数据失败:', error);
+            }
+        }
+
+        // 加载历史数据
+        async function loadHistoryData() {
+            try {
+                const response = await fetch('/api/monitor/signal/history?hours=24');
+                const result = await response.json();
+                
+                if (result.success && result.data.length > 0) {
+                    updateChart(result.data);
+                }
+            } catch (error) {
+                console.error('加载历史数据失败:', error);
+            }
+        }
+
+        // 更新当前数据显示
+        function updateCurrentDisplay(data) {
+            const shortChange = parseInt(data.short_change);
+            const longChange = parseInt(data.long_change);
+            
+            // 更新做空数据
+            document.getElementById('short-value').textContent = data.short;
+            const shortChangeEl = document.getElementById('short-change');
+            shortChangeEl.textContent = `变化: ${shortChange > 0 ? '+' : ''}${shortChange}`;
+            shortChangeEl.className = 'data-change';
+            if (shortChange > 0) shortChangeEl.classList.add('positive');
+            if (shortChange < 0) shortChangeEl.classList.add('negative');
+            
+            // 更新做多数据
+            document.getElementById('long-value').textContent = data.long;
+            const longChangeEl = document.getElementById('long-change');
+            longChangeEl.textContent = `变化: ${longChange > 0 ? '+' : ''}${longChange}`;
+            longChangeEl.className = 'data-change';
+            if (longChange > 0) longChangeEl.classList.add('positive');
+            if (longChange < 0) longChangeEl.classList.add('negative');
+            
+            // 更新时间
+            document.getElementById('update-time').innerHTML = 
+                `📅 更新时间: <strong>${data.update_time}</strong>`;
+        }
+
+        // 更新图表
+        function updateChart(historyData) {
+            if (!signalChart) return;
+            
+            const labels = [];
+            const shortData = [];
+            const longData = [];
+            
+            historyData.forEach(item => {
+                // 格式化时间显示（只显示时:分）
+                const time = item.time.split(' ')[1].substring(0, 5);
+                labels.push(time);
+                shortData.push(item.short);
+                longData.push(item.long);
+            });
+            
+            signalChart.data.labels = labels;
+            signalChart.data.datasets[0].data = shortData;
+            signalChart.data.datasets[1].data = longData;
+            signalChart.update();
+        }
+
+        // 倒计时更新
+        function updateCountdown() {
+            nextUpdateTime--;
+            
+            if (nextUpdateTime <= 0) {
+                nextUpdateTime = 600; // 重置为10分钟
+                loadCurrentData();
+                loadHistoryData();
+            }
+            
+            const minutes = Math.floor(nextUpdateTime / 60);
+            const seconds = nextUpdateTime % 60;
+            document.getElementById('next-update').textContent = 
+                `⏱️ 下次更新: ${minutes}分${seconds}秒后`;
+        }
+
+        // 初始化
+        window.onload = function() {
+            initChart();
+            loadCurrentData();
+            loadHistoryData();
+            
+            // 每秒更新倒计时
+            countdownTimer = setInterval(updateCountdown, 1000);
+        };
+    </script>
+</body>
+</html>

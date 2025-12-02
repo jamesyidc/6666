@@ -5,7 +5,7 @@
 用于测试和演示界面
 """
 
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 from datetime import datetime
 import pytz
@@ -76,7 +76,16 @@ def index():
 
 @app.route('/signal')
 def signal_monitor():
-    """信号监控页面"""
+    """信号监控页面 v2 - 包含历史曲线图"""
+    response = send_from_directory('.', 'signal_monitor_v2.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@app.route('/signal/v1')
+def signal_monitor_v1():
+    """信号监控页面 v1 - 旧版本（无曲线图）"""
     response = send_from_directory('.', 'signal_monitor.html')
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
@@ -94,10 +103,17 @@ def panic_monitor():
 
 @app.route('/api/monitor/signal')
 def get_signal_data():
-    """获取信号数据API（自动从 Google Drive 读取，失败时使用演示数据）"""
+    """获取信号数据API（自动从 Google Drive 读取，失败时使用演示数据，并保存到数据库）"""
     try:
         # 自动读取数据（优先 Google Drive）
         data = monitor_reader.get_signal_data()
+        
+        # 保存到数据库（用于历史曲线）
+        try:
+            db.save_signal_data(data)
+        except Exception as save_error:
+            print(f"⚠️  保存信号数据到数据库失败: {save_error}")
+        
         return jsonify({
             'success': True,
             'data': data
@@ -110,13 +126,64 @@ def get_signal_data():
 
 @app.route('/api/monitor/panic')
 def get_panic_data():
-    """获取恐慌清洗数据API（自动从 Google Drive 读取，失败时使用演示数据）"""
+    """获取恐慌清洗数据API（自动从 Google Drive 读取，失败时使用演示数据，并保存到数据库）"""
     try:
         # 自动读取数据（优先 Google Drive）
         data = monitor_reader.get_panic_data()
+        
+        # 保存到数据库（用于历史曲线）
+        try:
+            db.save_panic_data(data)
+        except Exception as save_error:
+            print(f"⚠️  保存恐慌清洗数据到数据库失败: {save_error}")
+        
         return jsonify({
             'success': True,
             'data': data
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/monitor/signal/history')
+def get_signal_history():
+    """获取信号历史数据API（用于绘制曲线）"""
+    try:
+        # 获取查询参数
+        date = request.args.get('date')  # 可选，格式：YYYY-MM-DD
+        hours = request.args.get('hours', 24, type=int)  # 默认查询24小时
+        
+        # 查询历史数据
+        history = db.get_signal_history(date=date, hours=hours)
+        
+        return jsonify({
+            'success': True,
+            'data': history,
+            'count': len(history)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/monitor/panic/history')
+def get_panic_history_api():
+    """获取恐慌清洗历史数据API"""
+    try:
+        # 获取查询参数
+        date = request.args.get('date')  # 可选，格式：YYYY-MM-DD
+        hours = request.args.get('hours', 24, type=int)  # 默认查询24小时
+        
+        # 查询历史数据
+        history = db.get_panic_history(date=date, hours=hours)
+        
+        return jsonify({
+            'success': True,
+            'data': history,
+            'count': len(history)
         })
     except Exception as e:
         return jsonify({
