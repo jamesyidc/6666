@@ -79,6 +79,7 @@ class CryptoDatabase:
                 snapshot_id INTEGER NOT NULL,
                 snapshot_time TEXT NOT NULL,
                 symbol TEXT NOT NULL,
+                index_order INTEGER DEFAULT 0,
                 change REAL,
                 rush_up INTEGER,
                 rush_down INTEGER,
@@ -167,18 +168,19 @@ class CryptoDatabase:
             # 获取快照ID
             snapshot_id = cursor.lastrowid
             
-            # 保存每个币种的数据
-            for coin in data:
+            # 保存每个币种的数据，记录原始顺序
+            for idx, coin in enumerate(data):
                 cursor.execute('''
                     INSERT OR REPLACE INTO crypto_coin_data
-                    (snapshot_id, snapshot_time, symbol, change, rush_up, rush_down,
+                    (snapshot_id, snapshot_time, symbol, index_order, change, rush_up, rush_down,
                      update_time, high_price, high_time, decline, change_24h,
                      rank, current_price, ratio1, ratio2, priority_level)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     snapshot_id,
                     snapshot_time,
                     coin.get('symbol', ''),
+                    idx,  # 记录原始顺序
                     float(coin.get('change', 0)),
                     int(coin.get('rushUp', 0)),
                     int(coin.get('rushDown', 0)),
@@ -236,11 +238,11 @@ class CryptoDatabase:
                 'filename': row[11]
             }
             
-            # 查询币种数据
+            # 查询币种数据（按ID排序保持原始顺序）
             cursor.execute('''
                 SELECT * FROM crypto_coin_data 
                 WHERE snapshot_time = ?
-                ORDER BY symbol
+                ORDER BY index_order, id
             ''', (snapshot_time,))
             
             coins = []
