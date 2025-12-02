@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-虚拟币系统监控 - Google Drive数据读取模块
+虚拟币系统监控 - Google Drive数据读取模块（增强版）
+支持自动从 Google Drive 读取最新数据，失败时回退到演示数据
 """
 
 import re
@@ -10,12 +11,29 @@ from typing import Dict, Optional
 import urllib.request
 import urllib.parse
 
+# 尝试导入 Google Drive 读取器
+try:
+    from gdrive_reader import GDriveReader
+    GDRIVE_AVAILABLE = True
+except ImportError:
+    GDRIVE_AVAILABLE = False
+    print("⚠️  Google Drive 读取器未安装，将使用演示数据")
+
 class MonitorDataReader:
     def __init__(self):
         """初始化数据读取器"""
         self.beijing_tz = pytz.timezone('Asia/Shanghai')
         # Google Drive共享文件夹ID
         self.folder_id = '1-IfqZxMV9VCSg3ct6XVMyFtAbuCV3huQ'
+        
+        # 初始化 Google Drive 读取器（如果可用）
+        self.gdrive_reader = None
+        if GDRIVE_AVAILABLE:
+            try:
+                self.gdrive_reader = GDriveReader(self.folder_id)
+                print("✅ Google Drive 读取器已初始化")
+            except Exception as e:
+                print(f"⚠️  初始化 Google Drive 读取器失败: {e}")
     
     def get_today_folder_url(self) -> str:
         """获取今天日期的文件夹名称（北京时间）"""
@@ -101,6 +119,48 @@ class MonitorDataReader:
         except Exception as e:
             print(f"❌ 解析恐慌清洗数据失败: {e}")
             return None
+    
+    def get_signal_data(self) -> Dict:
+        """
+        获取信号数据（优先从 Google Drive 读取，失败时使用演示数据）
+        
+        Returns:
+            信号数据字典
+        """
+        # 1. 尝试从 Google Drive 读取
+        if self.gdrive_reader:
+            try:
+                data = self.gdrive_reader.read_signal_txt()
+                if data:
+                    print("✅ 从 Google Drive 读取信号数据成功")
+                    return data
+            except Exception as e:
+                print(f"⚠️  从 Google Drive 读取信号数据失败: {e}")
+        
+        # 2. 回退到演示数据
+        print("ℹ️  使用演示信号数据")
+        return self.get_demo_signal_data()
+    
+    def get_panic_data(self) -> Dict:
+        """
+        获取恐慌清洗数据（优先从 Google Drive 读取，失败时使用演示数据）
+        
+        Returns:
+            恐慌清洗数据字典
+        """
+        # 1. 尝试从 Google Drive 读取
+        if self.gdrive_reader:
+            try:
+                data = self.gdrive_reader.read_panic_txt()
+                if data:
+                    print("✅ 从 Google Drive 读取恐慌清洗数据成功")
+                    return data
+            except Exception as e:
+                print(f"⚠️  从 Google Drive 读取恐慌清洗数据失败: {e}")
+        
+        # 2. 回退到演示数据
+        print("ℹ️  使用演示恐慌清洗数据")
+        return self.get_demo_panic_data()
     
     def get_demo_signal_data(self) -> Dict:
         """获取演示信号数据"""

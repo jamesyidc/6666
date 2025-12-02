@@ -94,10 +94,10 @@ def panic_monitor():
 
 @app.route('/api/monitor/signal')
 def get_signal_data():
-    """获取信号数据API"""
+    """获取信号数据API（自动从 Google Drive 读取，失败时使用演示数据）"""
     try:
-        # 使用演示数据
-        data = monitor_reader.get_demo_signal_data()
+        # 自动读取数据（优先 Google Drive）
+        data = monitor_reader.get_signal_data()
         return jsonify({
             'success': True,
             'data': data
@@ -110,10 +110,10 @@ def get_signal_data():
 
 @app.route('/api/monitor/panic')
 def get_panic_data():
-    """获取恐慌清洗数据API"""
+    """获取恐慌清洗数据API（自动从 Google Drive 读取，失败时使用演示数据）"""
     try:
-        # 使用演示数据
-        data = monitor_reader.get_demo_panic_data()
+        # 自动读取数据（优先 Google Drive）
+        data = monitor_reader.get_panic_data()
         return jsonify({
             'success': True,
             'data': data
