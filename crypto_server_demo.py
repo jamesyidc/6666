@@ -121,8 +121,8 @@ def signal_monitor_v1():
 
 @app.route('/panic')
 def panic_monitor():
-    """恐慌清洗监控页面"""
-    response = send_from_directory('.', 'panic_monitor.html')
+    """恐慌指数监控页面 v2 - 曲线图+数据表格"""
+    response = send_from_directory('.', 'panic_monitor_v2.html')
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
