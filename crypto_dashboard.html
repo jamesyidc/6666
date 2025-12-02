@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加密货币数据监控面板 v7.0 - 累加曲线&计次统计</title>
+    <title>加密货币数据监控面板 v7.1 - 首次高亮优化</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -385,6 +385,7 @@
         }
         
         // 更新数据点样式（标记重点）
+        // 只在【第一次】满足条件时高亮，之后即使继续满足也不再高亮
         function updatePointStyles() {
             if (!rushChart) return;
             
@@ -395,33 +396,41 @@
             const rushDownSizes = [];
             const diffSizes = [];
             
+            // 标记是否已经高亮过
+            let rushUpHighlighted = false;
+            let rushDownHighlighted = false;
+            let diffHighlighted = false;
+            
             for (let i = 0; i < historyData.rushUp.length; i++) {
                 const rushUp = historyData.rushUp[i];
                 const rushDown = historyData.rushDown[i];
                 const diff = historyData.diff[i];
                 
-                // 急涨标记（≥10）
-                if (rushUp >= 10) {
+                // 急涨标记（只在第一次≥10时高亮）
+                if (rushUp >= 10 && !rushUpHighlighted) {
                     rushUpColors.push('#00ff00');  // 亮绿色高亮
                     rushUpSizes.push(10);
+                    rushUpHighlighted = true;  // 标记已高亮，后续不再高亮
                 } else {
                     rushUpColors.push('rgba(0, 204, 0, 0.6)');  // 半透明绿色
                     rushUpSizes.push(4);
                 }
                 
-                // 急跌标记（≥10）
-                if (rushDown >= 10) {
+                // 急跌标记（只在第一次≥10时高亮）
+                if (rushDown >= 10 && !rushDownHighlighted) {
                     rushDownColors.push('#ff0000');  // 亮红色高亮
                     rushDownSizes.push(10);
+                    rushDownHighlighted = true;  // 标记已高亮，后续不再高亮
                 } else {
                     rushDownColors.push('rgba(204, 0, 0, 0.6)');  // 半透明红色
                     rushDownSizes.push(4);
                 }
                 
-                // 差值标记（≥50 或 ≤-50）
-                if (diff >= 50 || diff <= -50) {
+                // 差值标记（只在第一次≥50或≤-50时高亮）
+                if ((diff >= 50 || diff <= -50) && !diffHighlighted) {
                     diffColors.push('#ff6600');  // 橙色高亮
                     diffSizes.push(10);
+                    diffHighlighted = true;  // 标记已高亮，后续不再高亮
                 } else {
                     diffColors.push('#0080ff');  // 蓝色常规
                     diffSizes.push(4);
