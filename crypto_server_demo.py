@@ -9,9 +9,13 @@ from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 from datetime import datetime
 import pytz
+from crypto_database import CryptoDatabase
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
+
+# 初始化数据库
+db = CryptoDatabase()
 
 # 模拟数据（基于您提供的截图 - 完整29个币种）
 DEMO_DATA = [
@@ -120,6 +124,18 @@ def get_crypto_data():
         )
         data_with_level.append(coin_copy)
     
+    # 保存到数据库
+    try:
+        snapshot_id = db.save_snapshot(
+            data=data_with_level,
+            stats=DEMO_STATS,
+            snapshot_time=file_time_str,
+            filename='2025-12-02_1806.txt (演示数据)'
+        )
+        print(f"📊 快照ID {snapshot_id} 已保存到数据库")
+    except Exception as e:
+        print(f"⚠️  数据库保存失败: {e}")
+    
     return jsonify({
         'success': True,
         'data': data_with_level,
@@ -136,6 +152,76 @@ def refresh_data():
         'success': True,
         'message': '演示模式: 使用静态数据'
     })
+
+@app.route('/api/database/stats')
+def get_database_stats():
+    """获取数据库统计信息"""
+    try:
+        stats = db.get_statistics()
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/database/snapshots/<date>')
+def get_snapshots_by_date(date):
+    """查询某天的所有快照"""
+    try:
+        snapshots = db.get_snapshots_by_date(date)
+        return jsonify({
+            'success': True,
+            'date': date,
+            'count': len(snapshots),
+            'snapshots': snapshots
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/database/snapshot/<path:snapshot_time>')
+def get_snapshot_by_time(snapshot_time):
+    """根据时间查询快照详情"""
+    try:
+        snapshot = db.get_snapshot_by_time(snapshot_time)
+        if snapshot:
+            return jsonify({
+                'success': True,
+                'snapshot': snapshot
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': '快照不存在'
+            }), 404
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/database/coin/<symbol>')
+def get_coin_history(symbol):
+    """查询币种历史数据"""
+    try:
+        history = db.get_coin_history(symbol)
+        return jsonify({
+            'success': True,
+            'symbol': symbol,
+            'count': len(history),
+            'history': history
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/history-chart')
 def get_history_chart():
