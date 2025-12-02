@@ -135,6 +135,15 @@
             color: black;
             font-weight: bold;
         }
+        
+        /* 最高占比行高亮 */
+        .max-ratio-row {
+            background-color: #ccffcc !important;
+        }
+        
+        .max-ratio-row:hover {
+            background-color: #b3ffb3 !important;
+        }
 
         .red-cell {
             background-color: #ff0000 !important;
@@ -666,6 +675,17 @@
         function renderData(data) {
             const container = document.getElementById('table-container');
             
+            // 找出ratio1（盘点占比）最高的行
+            let maxRatio1 = -Infinity;
+            let maxRatio1Symbol = '';
+            data.forEach(row => {
+                const ratio1Value = parseFloat(row.ratio1);
+                if (!isNaN(ratio1Value) && ratio1Value > maxRatio1) {
+                    maxRatio1 = ratio1Value;
+                    maxRatio1Symbol = row.symbol;
+                }
+            });
+            
             let html = `
                 <table class="data-table">
                     <thead>
@@ -694,8 +714,12 @@
 
             data.forEach((row, index) => {
                 const changeClass = getChangeClass(parseFloat(row.change));
+                // 如果是最高盘点占比的行，添加绿色高亮
+                const isMaxRatio = row.symbol === maxRatio1Symbol;
+                const rowClass = isMaxRatio ? 'class="max-ratio-row"' : '';
+                
                 html += `
-                    <tr>
+                    <tr ${rowClass}>
                         <td>${index + 1}</td>
                         <td><strong>${row.symbol}</strong></td>
                         <td class="${changeClass}">${row.change}</td>
