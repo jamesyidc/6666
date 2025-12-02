@@ -23,7 +23,7 @@ except ImportError:
 class GDriveReader:
     """Google Drive 数据读取器"""
     
-    def __init__(self, folder_id: str = '1-IfqZxMV9VCSg3ct6XVMyFtAbuCV3huQ'):
+    def __init__(self, folder_id: str = '1j8YV6KysUCmgcmASFOxztWWIE1Vq-kYV'):
         """
         初始化 Google Drive 读取器
         
@@ -122,6 +122,41 @@ class GDriveReader:
             print(f"❌ 查找文件失败: {e}")
             return None
     
+    def find_latest_txt_file(self, parent_id: str) -> Optional[tuple]:
+        """
+        在指定文件夹中查找最新的 .txt 文件
+        
+        Args:
+            parent_id: 父文件夹 ID
+            
+        Returns:
+            (文件ID, 文件名) 元组，如果未找到则返回 None
+        """
+        if not self.service:
+            return None
+        
+        try:
+            # 查找所有 .txt 文件，按修改时间降序排列
+            query = f"'{parent_id}' in parents and name contains '.txt' and mimeType!='application/vnd.google-apps.folder' and trashed=false"
+            results = self.service.files().list(
+                q=query,
+                spaces='drive',
+                fields='files(id, name, modifiedTime)',
+                pageSize=100,  # 获取更多文件以便排序
+                orderBy='modifiedTime desc'
+            ).execute()
+            
+            items = results.get('files', [])
+            if items:
+                # 返回最新的文件
+                latest = items[0]
+                print(f"✅ 找到最新TXT文件: {latest['name']} (修改时间: {latest.get('modifiedTime', 'N/A')})")
+                return (latest['id'], latest['name'])
+            return None
+        except Exception as e:
+            print(f"❌ 查找最新TXT文件失败: {e}")
+            return None
+    
     def download_file_content(self, file_id: str) -> Optional[str]:
         """
         下载文件内容
@@ -181,13 +216,19 @@ class GDriveReader:
             
             print(f"✅ 找到日期文件夹: {folder_id}")
             
-            # 2. 查找信号.txt文件
-            file_id = self.find_file_by_name(folder_id, '信号.txt')
-            if not file_id:
-                print("❌ 未找到 信号.txt 文件")
-                return None
-            
-            print(f"✅ 找到 信号.txt 文件: {file_id}")
+            # 2. 查找最新的 .txt 文件（优先）或 信号.txt
+            file_info = self.find_latest_txt_file(folder_id)
+            if not file_info:
+                # 回退：尝试查找固定文件名 信号.txt
+                file_id = self.find_file_by_name(folder_id, '信号.txt')
+                if not file_id:
+                    print("❌ 未找到任何TXT文件")
+                    return None
+                file_name = '信号.txt'
+                print(f"✅ 找到 信号.txt 文件: {file_id}")
+            else:
+                file_id, file_name = file_info
+                print(f"✅ 使用最新TXT文件: {file_name}")
             
             # 3. 下载并解析文件内容
             content = self.download_file_content(file_id)

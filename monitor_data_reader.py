@@ -24,7 +24,7 @@ class MonitorDataReader:
         """初始化数据读取器"""
         self.beijing_tz = pytz.timezone('Asia/Shanghai')
         # Google Drive共享文件夹ID
-        self.folder_id = '1-IfqZxMV9VCSg3ct6XVMyFtAbuCV3huQ'
+        self.folder_id = '1j8YV6KysUCmgcmASFOxztWWIE1Vq-kYV'
         
         # 初始化 Google Drive 读取器（如果可用）
         self.gdrive_reader = None
