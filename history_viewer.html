@@ -469,6 +469,20 @@
                             tension: 0.4,
                             fill: false,
                             borderDash: [5, 5]
+                        },
+                        {
+                            label: '计次',
+                            data: [],
+                            borderColor: '#00ccff',
+                            backgroundColor: 'rgba(0, 204, 255, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: '#00ccff',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            tension: 0.4,
+                            fill: true
                         }
                     ]
                 },
@@ -730,10 +744,14 @@
                 return up - down;
             });
             
+            // 提取计次数据
+            trendChart.data.datasets[3].data = sortedData.map(d => parseInt(d.green_count) || 0);
+            
             console.log('时间点:', trendChart.data.labels);
             console.log('急涨数据:', trendChart.data.datasets[0].data);
             console.log('急跌数据:', trendChart.data.datasets[1].data);
             console.log('差值数据:', trendChart.data.datasets[2].data);
+            console.log('计次数据:', trendChart.data.datasets[3].data);
             
             trendChart.update('active');
         }
