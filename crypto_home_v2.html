@@ -662,7 +662,7 @@
                 const shortSignal = signalResult.success ? parseInt(signalResult.data.short_count) || 0 : 0;
                 
                 calculateAndUpdateAlerts(rushUp, rushDown, diff, position, longSignal, shortSignal, 
-                    onlyRushUpCount, upGreaterDownCount, priorityCount, onlyRushDownCount);
+                    onlyRushUpCoins.length, upGreaterDownCoins.length, priorityCoins.length, onlyRushDownCoins.length);
             });
         }
 
