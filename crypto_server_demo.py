@@ -533,6 +533,109 @@ def get_history_chart():
         'history': history
     })
 
+@app.route('/api/home-data')
+def get_home_data():
+    """获取首页数据（从 crypto_latest_data.txt 读取）"""
+    from crypto_data_parser import CryptoDataParser
+    import os
+    
+    data_file = 'crypto_latest_data.txt'
+    
+    try:
+        if not os.path.exists(data_file):
+            return jsonify({
+                'success': False,
+                'error': '数据文件不存在',
+                'message': '请先更新数据文件'
+            }), 404
+        
+        # 读取文件
+        with open(data_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # 解析数据
+        result = CryptoDataParser.parse_txt_content(content)
+        
+        if not result:
+            return jsonify({
+                'success': False,
+                'error': '解析失败'
+            }), 500
+        
+        # 获取文件修改时间
+        file_mtime = os.path.getmtime(data_file)
+        import datetime as dt
+        file_time = dt.datetime.fromtimestamp(file_mtime)
+        
+        # 返回数据
+        return jsonify({
+            'success': True,
+            'data': result['data'],
+            'stats': result['stats'],
+            'updateTime': file_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'dataCount': len(result['data'])
+        })
+        
+    except Exception as e:
+        print(f"❌ 读取首页数据失败: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/home')
+def home_monitor():
+    """首页数据监控页面"""
+    return send_file('home_monitor.html')
+
+@app.route('/api/update-home-data', methods=['POST'])
+def update_home_data():
+    """手动更新首页数据"""
+    try:
+        data = request.get_json()
+        content = data.get('content', '').strip()
+        
+        if not content:
+            return jsonify({
+                'success': False,
+                'error': '内容不能为空'
+            }), 400
+        
+        # 保存到文件
+        with open('crypto_latest_data.txt', 'w', encoding='utf-8') as f:
+            f.write(content)
+        
+        # 验证数据
+        from crypto_data_parser import CryptoDataParser
+        result = CryptoDataParser.parse_txt_content(content)
+        
+        if not result:
+            return jsonify({
+                'success': False,
+                'error': '数据格式错误，解析失败'
+            }), 400
+        
+        print(f"✅ 数据已更新: {len(result['data'])} 个币种")
+        
+        return jsonify({
+            'success': True,
+            'message': '数据更新成功',
+            'dataCount': len(result['data']),
+            'stats': result['stats']
+        })
+        
+    except Exception as e:
+        print(f"❌ 更新数据失败: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 if __name__ == '__main__':
     print("=" * 80)
     print("加密货币数据监控服务器 - 演示版本")
