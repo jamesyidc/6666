@@ -599,6 +599,54 @@ def signal_stats_db_stats():
             'error': str(e)
         }), 500
 
+@app.route('/api/signal-stats/latest')
+def get_latest_signal_stats():
+    """获取最新的信号统计数据"""
+    try:
+        import sqlite3
+        
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        # 查询最新的一条记录
+        cursor.execute('''
+            SELECT long_count, short_count, record_time
+            FROM signal_stats_history
+            ORDER BY record_time DESC
+            LIMIT 1
+        ''')
+        
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            return jsonify({
+                'success': True,
+                'data': {
+                    'long_count': row[0],
+                    'short_count': row[1],
+                    'record_time': row[2]
+                }
+            })
+        else:
+            # 如果没有数据，返回默认值
+            return jsonify({
+                'success': True,
+                'data': {
+                    'long_count': 0,
+                    'short_count': 0,
+                    'record_time': None
+                }
+            })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     print("="*60)
     print("首页数据监控服务器 V2 (带缓存)")

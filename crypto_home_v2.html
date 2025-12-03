@@ -90,7 +90,7 @@
 
         .alert-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(7, 1fr);
             gap: 15px;
             margin-bottom: 20px;
         }
@@ -186,7 +186,13 @@
             text-shadow: 0 0 20px rgba(74, 158, 255, 0.5);
         }
 
-        @media (max-width: 1200px) {
+        @media (max-width: 1400px) {
+            .alert-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 1024px) {
             .alert-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
@@ -395,6 +401,22 @@
                     <div class="alert-box-stars" id="alertPositionStars">-</div>
                     <div class="alert-box-desc" id="alertPositionDesc">等待数据</div>
                 </div>
+
+                <!-- 6. 做多信号 -->
+                <div class="alert-box" id="alertLongSignal">
+                    <div class="alert-box-title">做多信号</div>
+                    <div class="alert-box-value" id="alertLongSignalValue">0</div>
+                    <div class="alert-box-stars" id="alertLongSignalStars">-</div>
+                    <div class="alert-box-desc" id="alertLongSignalDesc">等待数据</div>
+                </div>
+
+                <!-- 7. 做空信号 -->
+                <div class="alert-box" id="alertShortSignal">
+                    <div class="alert-box-title">做空信号</div>
+                    <div class="alert-box-value" id="alertShortSignalValue">0</div>
+                    <div class="alert-box-stars" id="alertShortSignalStars">-</div>
+                    <div class="alert-box-desc" id="alertShortSignalDesc">等待数据</div>
+                </div>
             </div>
 
             <!-- 统计汇总 -->
@@ -480,20 +502,20 @@
             const rushDown = parseInt(stats.rushDown) || 0;
             const diff = rushUp - rushDown;
 
-            // 从恐慌清洗API获取持仓量数据
-            fetch('/api/panic-wash')
-                .then(res => res.json())
-                .then(result => {
-                    const position = result.success ? parseFloat(result.data.total_position) : 0;
-                    calculateAndUpdateAlerts(rushUp, rushDown, diff, position);
-                })
-                .catch(() => {
-                    // 如果获取失败，使用0作为持仓量
-                    calculateAndUpdateAlerts(rushUp, rushDown, diff, 0);
-                });
+            // 并行获取恐慌清洗数据和信号统计数据
+            Promise.all([
+                fetch('/api/panic-wash').then(res => res.json()).catch(() => ({success: false})),
+                fetch('/api/signal-stats/latest').then(res => res.json()).catch(() => ({success: false}))
+            ]).then(([panicResult, signalResult]) => {
+                const position = panicResult.success ? parseFloat(panicResult.data.total_position) : 0;
+                const longSignal = signalResult.success ? parseInt(signalResult.data.long_count) || 0 : 0;
+                const shortSignal = signalResult.success ? parseInt(signalResult.data.short_count) || 0 : 0;
+                
+                calculateAndUpdateAlerts(rushUp, rushDown, diff, position, longSignal, shortSignal);
+            });
         }
 
-        function calculateAndUpdateAlerts(rushUp, rushDown, diff, position) {
+        function calculateAndUpdateAlerts(rushUp, rushDown, diff, position, longSignal, shortSignal) {
             let totalFilled = 0;  // 实心星星总数
             let totalEmpty = 0;   // 空心星星总数
 
@@ -642,11 +664,68 @@
             document.getElementById('alertPosition').className = 
                 'alert-box' + (positionStars >= 2 ? ' danger' : positionStars >= 1 ? ' warning' : '');
 
+            // 6. 做多信号（实心星）
+            let longSignalStars = 0;
+            let longSignalDesc = '';
+            if (longSignal >= 100) {
+                longSignalStars = 3;
+                longSignalDesc = '极强做多！';
+            } else if (longSignal >= 50) {
+                longSignalStars = 2;
+                longSignalDesc = '强做多';
+            } else if (longSignal >= 20) {
+                longSignalStars = 1;
+                longSignalDesc = '偏做多';
+            } else {
+                longSignalDesc = '正常';
+            }
+            totalFilled += longSignalStars;
+
+            document.getElementById('alertLongSignalValue').textContent = longSignal;
+            if (longSignalStars > 0) {
+                document.getElementById('alertLongSignalStars').innerHTML = 
+                    '<span class="star-filled">' + '★'.repeat(longSignalStars) + '</span>';
+            } else {
+                document.getElementById('alertLongSignalStars').textContent = '-';
+            }
+            document.getElementById('alertLongSignalDesc').textContent = longSignalDesc;
+            document.getElementById('alertLongSignal').className = 
+                'alert-box' + (longSignalStars >= 2 ? ' danger' : longSignalStars >= 1 ? ' warning' : '');
+
+            // 7. 做空信号（空心星）
+            let shortSignalStars = 0;
+            let shortSignalDesc = '';
+            if (shortSignal >= 120) {
+                shortSignalStars = 3;
+                shortSignalDesc = '极强做空！';
+            } else if (shortSignal >= 50) {
+                shortSignalStars = 2;
+                shortSignalDesc = '强做空';
+            } else if (shortSignal >= 30) {
+                shortSignalStars = 1;
+                shortSignalDesc = '偏做空';
+            } else {
+                shortSignalDesc = '正常';
+            }
+            totalEmpty += shortSignalStars;
+
+            document.getElementById('alertShortSignalValue').textContent = shortSignal;
+            if (shortSignalStars > 0) {
+                document.getElementById('alertShortSignalStars').innerHTML = 
+                    '<span class="star-empty">' + '☆'.repeat(shortSignalStars) + '</span>';
+            } else {
+                document.getElementById('alertShortSignalStars').textContent = '-';
+            }
+            document.getElementById('alertShortSignalDesc').textContent = shortSignalDesc;
+            document.getElementById('alertShortSignal').className = 
+                'alert-box' + (shortSignalStars >= 2 ? ' danger' : shortSignalStars >= 1 ? ' warning' : '');
+
             // 更新总计
             document.getElementById('totalFilledStars').textContent = `${totalFilled} ★`;
             document.getElementById('totalEmptyStars').textContent = `${totalEmpty} ☆`;
 
             console.log(`星级统计 - 实心: ${totalFilled}★, 空心: ${totalEmpty}☆`);
+            console.log(`做多信号: ${longSignal}, 做空信号: ${shortSignal}`);
         }
 
         function initChart() {
