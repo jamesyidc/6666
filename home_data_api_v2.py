@@ -390,6 +390,11 @@ def panic_wash():
     """恐慌清洗指标监控页面"""
     return send_file('panic_wash_monitor.html')
 
+@app.route('/panic-wash-v3')
+def panic_wash_v3():
+    """恐慌清洗指标监控页面 V3 - 双Y轴曲线图+完整数据列表"""
+    return send_file('panic_wash_monitor_v3.html')
+
 @app.route('/panic-wash-history')
 def panic_wash_history():
     """恐慌清洗历史曲线页面"""
