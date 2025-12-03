@@ -5,8 +5,11 @@
 """
 import requests
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import time
+
+# 北京时间时区
+BEIJING_TZ = timezone(timedelta(hours=8))
 
 # 外部信号API地址
 EXTERNAL_API = "https://8080-ieo4kftymfy546kbm6o33-2e77fc33.sandbox.novita.ai/api/filtered-signals/stats"
@@ -43,8 +46,9 @@ def save_to_database(data):
         summary = data.get('summary', {})
         breakdown = data.get('breakdown', {})
         
-        # 生成记录时间（当前时间，精确到分钟）
-        record_time = datetime.now().strftime('%Y-%m-%d %H:%M:00')
+        # 生成记录时间（北京时间，精确到分钟）
+        beijing_now = datetime.now(BEIJING_TZ)
+        record_time = beijing_now.strftime('%Y-%m-%d %H:%M:00')
         
         # 提取做多做空统计
         total_count = summary.get('total', 0)
