@@ -195,12 +195,37 @@
             .card-title {
                 font-size: 24px;
             }
+
+            .quick-nav-btn {
+                font-size: 16px !important;
+                padding: 12px 30px !important;
+            }
+        }
+
+        /* 快捷导航按钮悬停效果 */
+        .quick-nav-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 12px 30px rgba(74, 158, 255, 0.6);
+        }
+
+        .quick-nav-btn:active {
+            transform: translateY(-1px);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🪙 加密货币监控系统</h1>
+        
+        <!-- 快捷导航栏 -->
+        <div class="quick-nav" style="text-align: center; margin: 20px 0 30px 0;">
+            <a href="/live" class="quick-nav-btn" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #4a9eff 0%, #667eea 100%); color: white; text-decoration: none; border-radius: 50px; font-size: 18px; font-weight: bold; box-shadow: 0 8px 20px rgba(74, 158, 255, 0.4); transition: all 0.3s; margin: 0 10px;">
+                ⭐ 进入实时监控 (星级评价)
+            </a>
+            <a href="/panic-wash-v3" class="quick-nav-btn" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #00ff88 0%, #00cc88 100%); color: #1a1a2e; text-decoration: none; border-radius: 50px; font-size: 18px; font-weight: bold; box-shadow: 0 8px 20px rgba(0, 255, 136, 0.4); transition: all 0.3s; margin: 0 10px;">
+                📊 恐慌清洗监控V3
+            </a>
+        </div>
         
         <div class="stats-bar">
             <div class="stat-item">
