@@ -167,6 +167,61 @@
             color: #aaa;
         }
 
+        /* 高亮标注样式 */
+        .timeline-item.highlight-extreme {
+            background: #4d1f1f !important;
+            border-left-color: #ff0000 !important;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+        }
+
+        .timeline-item.highlight-strong {
+            background: #3d2f1f !important;
+            border-left-color: #ff9900 !important;
+            box-shadow: 0 0 10px rgba(255, 153, 0, 0.4);
+        }
+
+        .timeline-item.highlight-special {
+            background: #1f2d3d !important;
+            border-left-color: #ffcc00 !important;
+            box-shadow: 0 0 8px rgba(255, 204, 0, 0.3);
+        }
+
+        .timeline-item.highlight-extreme:hover {
+            background: #5d2f2f !important;
+        }
+
+        .timeline-item.highlight-strong:hover {
+            background: #4d3f2f !important;
+        }
+
+        .timeline-item.highlight-special:hover {
+            background: #2f3d4d !important;
+        }
+
+        .highlight-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .badge-extreme {
+            background: #ff0000;
+            color: #fff;
+        }
+
+        .badge-strong {
+            background: #ff9900;
+            color: #fff;
+        }
+
+        .badge-special {
+            background: #ffcc00;
+            color: #000;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -614,17 +669,50 @@
                 }
                 
                 // 显示时间轴
-                const html = currentData.map((item, index) => `
-                    <div class="timeline-item" onclick="selectRecord(${index})">
-                        <div class="timeline-time">${item.record_time}</div>
-                        <div class="timeline-stats">
-                            <span>急涨: <span class="positive">${item.rush_up}</span></span>
-                            <span>急跌: <span class="negative">${item.rush_down}</span></span>
-                            <span>状态: ${item.status}</span>
-                            <span>绿色: ${item.green_count}</span>
+                // 用于跟踪是否已标注过急涨/急跌>10（只标注一次）
+                let hasMarkedSpecial = false;
+                
+                const html = currentData.map((item, index) => {
+                    const rushUp = parseInt(item.rush_up) || 0;
+                    const rushDown = parseInt(item.rush_down) || 0;
+                    const diff = rushUp - rushDown;
+                    
+                    // 判断高亮等级
+                    let highlightClass = '';
+                    let badges = [];
+                    
+                    // 1. 差值 > 50 或 < -50 （最高优先级）
+                    if (Math.abs(diff) > 50) {
+                        highlightClass = 'highlight-extreme';
+                        badges.push(`<span class="highlight-badge badge-extreme">极端差值: ${diff > 0 ? '+' : ''}${diff}</span>`);
+                    }
+                    // 2. 差值 > 20 或 < -20
+                    else if (Math.abs(diff) > 20) {
+                        highlightClass = 'highlight-strong';
+                        badges.push(`<span class="highlight-badge badge-strong">大差值: ${diff > 0 ? '+' : ''}${diff}</span>`);
+                    }
+                    // 3. 急涨或急跌 > 10（只标注一次）
+                    else if (!hasMarkedSpecial && (rushUp > 10 || rushDown > 10)) {
+                        highlightClass = 'highlight-special';
+                        if (rushUp > 10) badges.push(`<span class="highlight-badge badge-special">急涨超10</span>`);
+                        if (rushDown > 10) badges.push(`<span class="highlight-badge badge-special">急跌超10</span>`);
+                        hasMarkedSpecial = true;
+                    }
+                    
+                    const badgeHtml = badges.join('');
+                    
+                    return `
+                        <div class="timeline-item ${highlightClass}" onclick="selectRecord(${index})">
+                            <div class="timeline-time">${item.record_time}${badgeHtml}</div>
+                            <div class="timeline-stats">
+                                <span>急涨: <span class="positive">${item.rush_up}</span></span>
+                                <span>急跌: <span class="negative">${item.rush_down}</span></span>
+                                <span>状态: ${item.status}</span>
+                                <span>绿色: ${item.green_count}</span>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
                 
                 document.getElementById('timelineList').innerHTML = html;
                 
