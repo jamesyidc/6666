@@ -256,9 +256,12 @@ def sync_panic_wash_data():
         
         # 从恐慌清洗API获取最新数据（优先使用V4读取器，支持本地文件）
         try:
-            from panic_wash_reader_v4 import get_panic_wash_data_sync
+            from panic_wash_reader_v5 import get_panic_wash_data_sync
         except:
-            from panic_wash_simple import get_panic_wash_data_sync
+            try:
+                from panic_wash_reader_v4 import get_panic_wash_data_sync
+            except:
+                from panic_wash_simple import get_panic_wash_data_sync
         data = get_panic_wash_data_sync()
         
         if not data:
@@ -429,9 +432,12 @@ def get_panic_wash_api():
     """恐慌清洗API - 直接返回数据"""
     try:
         try:
-            from panic_wash_reader_v4 import get_panic_wash_data_sync
+            from panic_wash_reader_v5 import get_panic_wash_data_sync
         except:
-            from panic_wash_simple import get_panic_wash_data_sync
+            try:
+                from panic_wash_reader_v4 import get_panic_wash_data_sync
+            except:
+                from panic_wash_simple import get_panic_wash_data_sync
         data = get_panic_wash_data_sync()
         
         if data:
