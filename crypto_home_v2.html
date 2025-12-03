@@ -152,6 +152,61 @@
             color: #888;
         }
 
+        .coin-list {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 11px;
+            text-align: left;
+            padding: 5px;
+            margin-top: 5px;
+        }
+
+        .coin-item {
+            padding: 3px 5px;
+            margin: 2px 0;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .coin-name {
+            font-weight: bold;
+            color: #4a9eff;
+            flex: 1;
+        }
+
+        .coin-rush {
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 2px;
+            margin-left: 5px;
+        }
+
+        .coin-rush.up {
+            background: rgba(255, 68, 68, 0.3);
+            color: #ff4444;
+        }
+
+        .coin-rush.down {
+            background: rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+
+        .coin-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .coin-list::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .coin-list::-webkit-scrollbar-thumb {
+            background: rgba(74, 158, 255, 0.5);
+            border-radius: 2px;
+        }
+
         .alert-summary {
             display: flex;
             justify-content: center;
@@ -259,6 +314,10 @@
         .symbol {
             font-weight: bold;
             color: #fff;
+            font-size: 15px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 6px 10px;
+            border-radius: 5px;
         }
 
         .positive {
@@ -274,19 +333,23 @@
         }
 
         .rush-up {
-            background: #ff4444;
+            background: linear-gradient(135deg, #ff4444 0%, #ff6666 100%);
             color: #fff;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
         }
 
         .rush-down {
-            background: #00ff88;
+            background: linear-gradient(135deg, #00ff88 0%, #00ffaa 100%);
             color: #000;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
         }
 
         .loading {
@@ -428,32 +491,32 @@
                 <div class="alert-box" id="alertOnlyRushUp">
                     <div class="alert-box-title">只有急涨</div>
                     <div class="alert-box-value" id="alertOnlyRushUpValue">0</div>
-                    <div class="alert-box-stars" id="alertOnlyRushUpStars">-</div>
                     <div class="alert-box-desc" id="alertOnlyRushUpDesc">等待数据</div>
+                    <div class="coin-list" id="alertOnlyRushUpList"></div>
                 </div>
 
                 <!-- 9. 急涨>急跌 -->
                 <div class="alert-box" id="alertUpGreaterDown">
                     <div class="alert-box-title">急涨>急跌</div>
                     <div class="alert-box-value" id="alertUpGreaterDownValue">0</div>
-                    <div class="alert-box-stars" id="alertUpGreaterDownStars">-</div>
                     <div class="alert-box-desc" id="alertUpGreaterDownDesc">等待数据</div>
+                    <div class="coin-list" id="alertUpGreaterDownList"></div>
                 </div>
 
                 <!-- 10. 优先级≥4 -->
                 <div class="alert-box" id="alertPriority">
                     <div class="alert-box-title">优先级≥4</div>
                     <div class="alert-box-value" id="alertPriorityValue">0</div>
-                    <div class="alert-box-stars" id="alertPriorityStars">-</div>
                     <div class="alert-box-desc" id="alertPriorityDesc">等待数据</div>
+                    <div class="coin-list" id="alertPriorityList"></div>
                 </div>
 
                 <!-- 11. 只有急跌 -->
                 <div class="alert-box" id="alertOnlyRushDown">
                     <div class="alert-box-title">只有急跌</div>
                     <div class="alert-box-value" id="alertOnlyRushDownValue">0</div>
-                    <div class="alert-box-stars" id="alertOnlyRushDownStars">-</div>
                     <div class="alert-box-desc" id="alertOnlyRushDownDesc">等待数据</div>
+                    <div class="coin-list" id="alertOnlyRushDownList"></div>
                 </div>
             </div>
 
@@ -483,10 +546,10 @@
                 <tr>
                     <th>优先级</th>
                     <th>序号</th>
-                    <th>币名</th>
+                    <th style="background:#2a5298; font-size:14px; font-weight:700;">💰 币名</th>
                     <th>涨速</th>
-                    <th>急涨</th>
-                    <th>急跌</th>
+                    <th style="background:#ff4444; font-size:14px; font-weight:700;">📈 急涨</th>
+                    <th style="background:#00ff88; color:#000; font-size:14px; font-weight:700;">📉 急跌</th>
                     <th>更新时间</th>
                     <th>历史高价</th>
                     <th>高价时间</th>
@@ -540,11 +603,11 @@
             const rushDown = parseInt(stats.rushDown) || 0;
             const diff = rushUp - rushDown;
 
-            // 统计币种数据
-            let onlyRushUpCount = 0;    // 只有急涨没有急跌
-            let upGreaterDownCount = 0; // 急涨>急跌
-            let priorityCount = 0;      // 优先级≥4
-            let onlyRushDownCount = 0;  // 只有急跌
+            // 统计币种数据并收集币种信息
+            let onlyRushUpCoins = [];    // 只有急涨没有急跌
+            let upGreaterDownCoins = []; // 急涨>急跌
+            let priorityCoins = [];      // 优先级≥4
+            let onlyRushDownCoins = [];  // 只有急跌
 
             coins.forEach(coin => {
                 const coinRushUp = parseInt(coin.rushUp) || 0;
@@ -553,22 +616,39 @@
 
                 // 8. 只有急涨，没有急跌
                 if (coinRushUp > 0 && coinRushDown === 0) {
-                    onlyRushUpCount++;
+                    onlyRushUpCoins.push({
+                        symbol: coin.symbol,
+                        rushUp: coinRushUp,
+                        rushDown: coinRushDown
+                    });
                 }
 
                 // 9. 急涨>急跌
                 if (coinRushUp > coinRushDown) {
-                    upGreaterDownCount++;
+                    upGreaterDownCoins.push({
+                        symbol: coin.symbol,
+                        rushUp: coinRushUp,
+                        rushDown: coinRushDown
+                    });
                 }
 
                 // 10. 优先级≥4 (level 1,2,3,4)
                 if (priority.level >= 1 && priority.level <= 4) {
-                    priorityCount++;
+                    priorityCoins.push({
+                        symbol: coin.symbol,
+                        rushUp: coinRushUp,
+                        rushDown: coinRushDown,
+                        priority: priority.text
+                    });
                 }
 
                 // 11. 只有急跌
                 if (coinRushDown > 0 && coinRushUp === 0) {
-                    onlyRushDownCount++;
+                    onlyRushDownCoins.push({
+                        symbol: coin.symbol,
+                        rushUp: coinRushUp,
+                        rushDown: coinRushDown
+                    });
                 }
             });
 
