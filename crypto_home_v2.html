@@ -194,6 +194,26 @@
             color: #00ff88;
         }
 
+        .coin-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            margin: 3px;
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.2) 0%, rgba(102, 126, 234, 0.2) 100%);
+            border: 1px solid rgba(74, 158, 255, 0.4);
+            border-radius: 5px;
+            color: #4a9eff;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .coin-tag:hover {
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.3) 0%, rgba(102, 126, 234, 0.3) 100%);
+            border-color: #4a9eff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(74, 158, 255, 0.3);
+        }
+
         .coin-list::-webkit-scrollbar {
             width: 4px;
         }
@@ -662,12 +682,17 @@
                 const shortSignal = signalResult.success ? parseInt(signalResult.data.short_count) || 0 : 0;
                 
                 calculateAndUpdateAlerts(rushUp, rushDown, diff, position, longSignal, shortSignal, 
-                    onlyRushUpCoins.length, upGreaterDownCoins.length, priorityCoins.length, onlyRushDownCoins.length);
+                    onlyRushUpCoins, upGreaterDownCoins, priorityCoins, onlyRushDownCoins);
             });
         }
 
         function calculateAndUpdateAlerts(rushUp, rushDown, diff, position, longSignal, shortSignal, 
-            onlyRushUpCount, upGreaterDownCount, priorityCount, onlyRushDownCount) {
+            onlyRushUpCoins, upGreaterDownCoins, priorityCoins, onlyRushDownCoins) {
+            // 获取数量
+            const onlyRushUpCount = onlyRushUpCoins.length;
+            const upGreaterDownCount = upGreaterDownCoins.length;
+            const priorityCount = priorityCoins.length;
+            const onlyRushDownCount = onlyRushDownCoins.length;
             let totalFilled = 0;  // 实心星星总数
             let totalEmpty = 0;   // 空心星星总数
 
@@ -873,30 +898,51 @@
                 'alert-box' + (shortSignalStars >= 2 ? ' danger' : shortSignalStars >= 1 ? ' warning' : '');
 
             // 8. 只有急涨（无星级，仅显示数量）
+            // 8. 只有急涨（显示数量和币名）
             document.getElementById('alertOnlyRushUpValue').textContent = onlyRushUpCount;
             document.getElementById('alertOnlyRushUpStars').textContent = onlyRushUpCount > 0 ? '📊' : '-';
             document.getElementById('alertOnlyRushUpDesc').textContent = 
                 onlyRushUpCount > 0 ? `${onlyRushUpCount}个币` : '无数据';
+            // 显示币名列表
+            const onlyRushUpList = onlyRushUpCoins.map(c => 
+                `<span class="coin-tag">${c.symbol}</span>`
+            ).join('');
+            document.getElementById('alertOnlyRushUpList').innerHTML = onlyRushUpList;
 
-            // 9. 急涨>急跌（无星级，仅显示数量）
+            // 9. 急涨>急跌（显示数量和币名）
             document.getElementById('alertUpGreaterDownValue').textContent = upGreaterDownCount;
             document.getElementById('alertUpGreaterDownStars').textContent = upGreaterDownCount > 0 ? '📊' : '-';
             document.getElementById('alertUpGreaterDownDesc').textContent = 
                 upGreaterDownCount > 0 ? `${upGreaterDownCount}个币` : '无数据';
+            // 显示币名列表
+            const upGreaterDownList = upGreaterDownCoins.map(c => 
+                `<span class="coin-tag">${c.symbol}</span>`
+            ).join('');
+            document.getElementById('alertUpGreaterDownList').innerHTML = upGreaterDownList;
 
-            // 10. 优先级≥4（无星级，仅显示数量）
+            // 10. 优先级≥4（显示数量和币名）
             document.getElementById('alertPriorityValue').textContent = priorityCount;
             document.getElementById('alertPriorityStars').textContent = priorityCount > 0 ? '📊' : '-';
             document.getElementById('alertPriorityDesc').textContent = 
                 priorityCount > 0 ? `${priorityCount}个币` : '无数据';
             document.getElementById('alertPriority').className = 
                 'alert-box' + (priorityCount >= 3 ? ' danger' : priorityCount >= 1 ? ' warning' : '');
+            // 显示币名列表
+            const priorityList = priorityCoins.map(c => 
+                `<span class="coin-tag">${c.symbol}</span>`
+            ).join('');
+            document.getElementById('alertPriorityList').innerHTML = priorityList;
 
-            // 11. 只有急跌（无星级，仅显示数量）
+            // 11. 只有急跌（显示数量和币名）
             document.getElementById('alertOnlyRushDownValue').textContent = onlyRushDownCount;
             document.getElementById('alertOnlyRushDownStars').textContent = onlyRushDownCount > 0 ? '📊' : '-';
             document.getElementById('alertOnlyRushDownDesc').textContent = 
                 onlyRushDownCount > 0 ? `${onlyRushDownCount}个币` : '无数据';
+            // 显示币名列表
+            const onlyRushDownList = onlyRushDownCoins.map(c => 
+                `<span class="coin-tag">${c.symbol}</span>`
+            ).join('');
+            document.getElementById('alertOnlyRushDownList').innerHTML = onlyRushDownList;
 
             // 更新总计
             document.getElementById('totalFilledStars').textContent = `${totalFilled} ★`;
