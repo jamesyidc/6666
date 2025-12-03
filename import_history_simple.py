@@ -39,7 +39,9 @@ def parse_home_data(content):
         'percentage': '',
         'difference': '',
         'priceLowest': '',
-        'priceNewHigh': ''
+        'priceNewHigh': '',
+        'countTimes': 0,
+        'rushDownCount': 0
     }
     coins = []
     
@@ -77,6 +79,18 @@ def parse_home_data(content):
                 elif '仓位得分' in key:
                     # 比价创新高 0 0
                     stats['priceNewHigh'] = value.replace('比价创新高', '').strip()
+                elif '计次' in key and key == '计次':
+                    # 透明标签_计次=2
+                    match = re.search(r'\d+', value)
+                    stats['countTimes'] = int(match.group()) if match else 0
+                elif '急跌数量' in key:
+                    # 急跌数量 计次 5 6
+                    parts = value.split()
+                    if len(parts) >= 3:
+                        try:
+                            stats['rushDownCount'] = int(parts[2])  # 5 = 急跌币种数量
+                        except:
+                            pass
         
         # 币种数据
         if '[超级列表框_首页开始]' in line:
@@ -125,12 +139,28 @@ def save_to_database(filename, record_time, stats, coins):
         if existing:
             return False, "已存在"
         
+        # 计算本轮急涨急跌（与前一条记录对比）
+        this_round_rush_up = 0
+        this_round_rush_down = 0
+        
+        cursor.execute('''
+            SELECT rush_up, rush_down 
+            FROM stats_history 
+            ORDER BY record_time DESC 
+            LIMIT 1
+        ''')
+        prev_record = cursor.fetchone()
+        if prev_record:
+            this_round_rush_up = stats['rushUp'] - prev_record[0]
+            this_round_rush_down = stats['rushDown'] - prev_record[1]
+        
         # 插入统计数据
         cursor.execute('''
             INSERT INTO stats_history 
             (filename, record_time, rush_up, rush_down, status, ratio, green_count, percentage,
-             difference, price_lowest, price_new_high)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             difference, price_lowest, price_new_high, count_times, rush_down_count,
+             this_round_rush_up, this_round_rush_down)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             filename,
             record_time,
@@ -142,7 +172,11 @@ def save_to_database(filename, record_time, stats, coins):
             stats['percentage'],
             stats['difference'],
             stats['priceLowest'],
-            stats['priceNewHigh']
+            stats['priceNewHigh'],
+            stats['countTimes'],
+            stats['rushDownCount'],
+            this_round_rush_up,
+            this_round_rush_down
         ))
         
         stats_id = cursor.lastrowid

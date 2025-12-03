@@ -422,6 +422,18 @@
                 <span class="stat-label">比价创新高：</span>
                 <span class="stat-value" id="priceNewHigh">-</span>
             </div>
+            <div class="stat-item">
+                <span class="stat-label">计次：</span>
+                <span class="stat-value" id="countTimes">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">本轮急涨：</span>
+                <span class="stat-value up" id="thisRoundRushUp">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">本轮急跌：</span>
+                <span class="stat-value down" id="thisRoundRushDown">-</span>
+            </div>
         </div>
 
         <!-- 曲线图 -->
@@ -727,9 +739,12 @@
                             <div class="timeline-stats">
                                 <span>急涨: <span class="positive">${item.rush_up}</span></span>
                                 <span>急跌: <span class="negative">${item.rush_down}</span></span>
+                                <span>本轮急涨: <span class="positive">${item.this_round_rush_up !== null ? item.this_round_rush_up : '-'}</span></span>
+                                <span>本轮急跌: <span class="negative">${item.this_round_rush_down !== null ? item.this_round_rush_down : '-'}</span></span>
                                 <span>状态: ${item.status}</span>
                                 <span>比值: ${item.ratio || '无'}</span>
                                 <span>差值: ${item.difference || '无'}</span>
+                                <span>计次: ${item.count_times !== null ? item.count_times : '-'}</span>
                                 <span>绿色: ${item.green_count}</span>
                                 <span>百分比: ${item.percentage || '无'}</span>
                                 <span>比价最低: ${item.price_lowest || '无'}</span>
@@ -781,6 +796,9 @@
             document.getElementById('percentage').textContent = record.percentage || '无';
             document.getElementById('priceLowest').textContent = record.price_lowest || '无';
             document.getElementById('priceNewHigh').textContent = record.price_new_high || '无';
+            document.getElementById('countTimes').textContent = record.count_times !== null ? record.count_times : '-';
+            document.getElementById('thisRoundRushUp').textContent = record.this_round_rush_up !== null ? record.this_round_rush_up : '-';
+            document.getElementById('thisRoundRushDown').textContent = record.this_round_rush_down !== null ? record.this_round_rush_down : '-';
             
             // 显示币种数据
             displayCoins(record.coins);
