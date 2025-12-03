@@ -164,6 +164,23 @@
             font-size: 12px;
             margin-left: 10px;
         }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .priority-1 { background: #ff0000; color: #fff; }
+        .priority-2 { background: #ff6600; color: #fff; }
+        .priority-3 { background: #ff9900; color: #fff; }
+        .priority-4 { background: #ffcc00; color: #000; }
+        .priority-5 { background: #99cc00; color: #000; }
+        .priority-6 { background: #666666; color: #fff; }
     </style>
 </head>
 <body>
@@ -212,6 +229,7 @@
         <table id="dataTable" style="display:none;">
             <thead>
                 <tr>
+                    <th>优先级</th>
                     <th>序号</th>
                     <th>币名</th>
                     <th>涨速</th>
@@ -239,6 +257,29 @@
         let trendChart = null;
         let historyData = [];
         const MAX_HISTORY_POINTS = 50; // 最多显示50个数据点
+
+        // 优先级计算函数
+        function parseRatio(ratioStr) {
+            if (!ratioStr || ratioStr === '-') return 0;
+            try {
+                return parseFloat(ratioStr.replace('%', ''));
+            } catch {
+                return 0;
+            }
+        }
+
+        function calculatePriority(ratio1Str, ratio2Str) {
+            const ratio1 = parseRatio(ratio1Str); // 最高点比
+            const ratio2 = parseRatio(ratio2Str); // 最低点比
+            
+            // 按优先级顺序判断
+            if (ratio1 > 90 && ratio2 > 120) return { level: 1, text: '等级1', stars: '⭐⭐⭐⭐⭐' };
+            if (ratio1 > 80 && ratio2 > 120) return { level: 2, text: '等级2', stars: '⭐⭐⭐⭐' };
+            if (ratio1 > 90 && ratio2 > 110) return { level: 3, text: '等级3', stars: '⭐⭐⭐' };
+            if (ratio1 > 70 && ratio2 > 120) return { level: 4, text: '等级4', stars: '⭐⭐' };
+            if (ratio1 > 80 && ratio2 > 110) return { level: 5, text: '等级5', stars: '⭐' };
+            return { level: 6, text: '等级6', stars: '—' };
+        }
 
         function initChart() {
             const ctx = document.getElementById('trendChart').getContext('2d');
@@ -430,7 +471,11 @@
                     const change24hClass = parseFloat(coin.change24h) > 0 ? 'positive' : 
                                           parseFloat(coin.change24h) < 0 ? 'negative' : 'neutral';
 
+                    // 计算优先级
+                    const priority = calculatePriority(coin.ratio1, coin.ratio2);
+
                     row.innerHTML = `
+                        <td><span class="priority-badge priority-${priority.level}">${priority.text}</span></td>
                         <td>${coin.index}</td>
                         <td class="symbol">${coin.symbol}</td>
                         <td class="${changeClass}">${coin.change}</td>
