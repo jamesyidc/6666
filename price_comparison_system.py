@@ -305,7 +305,7 @@ class PriceComparisonSystem:
             SELECT symbol, highest_price, highest_count, lowest_price, lowest_count,
                    last_price, highest_ratio, lowest_ratio, last_update_time
             FROM price_baseline
-            ORDER BY symbol
+            ORDER BY display_order
         ''')
         
         results = []
