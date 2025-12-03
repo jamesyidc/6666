@@ -103,6 +103,43 @@ def parse_home_data(content):
         'updateTime': update_time
     }
 
+def save_to_home_cache(parsed_data, filename, time_diff, update_time):
+    """保存首页数据到缓存表"""
+    import json
+    
+    try:
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        # 提取统计数据
+        stats = parsed_data.get('stats', {})
+        coins = parsed_data.get('coins', [])
+        
+        cursor.execute("""
+            INSERT INTO home_data_cache 
+            (filename, time_diff, rush_up, rush_down, status, ratio, 
+             green_count, percentage, coin_data, update_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            filename,
+            time_diff,
+            stats.get('rushUp', 0),
+            stats.get('rushDown', 0),
+            stats.get('status', ''),
+            stats.get('ratio', 0),
+            stats.get('green_count', 0),
+            stats.get('percentage', 0),
+            json.dumps(coins, ensure_ascii=False),
+            update_time
+        ))
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"   ⚠️  保存到home_cache失败: {str(e)}")
+        return False
+
 def update_cache():
     """后台更新缓存"""
     global CACHE
@@ -136,7 +173,15 @@ def update_cache():
             print(f"   文件名: {result['filename']}")
             print(f"   时间差: {result['time_diff']:.1f} 分钟")
             
-            # 自动保存到数据库
+            # 保存到home_data_cache表（快速缓存）
+            try:
+                update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                if save_to_home_cache(parsed_data, result['filename'], result['time_diff'], update_time):
+                    print(f"   💾 已保存到快速缓存表")
+            except Exception as cache_error:
+                print(f"   ⚠️  快速缓存保存失败: {str(cache_error)}")
+            
+            # 自动保存到历史数据库
             try:
                 from import_history_simple import parse_filename_datetime, parse_home_data as parse_for_db, save_to_database
                 
@@ -148,11 +193,11 @@ def update_cache():
                     stats, coins = parse_for_db(content)
                     success, msg = save_to_database(filename, record_time, stats, coins)
                     if success:
-                        print(f"   💾 已自动保存到数据库")
+                        print(f"   💾 已自动保存到历史数据库")
                     else:
-                        print(f"   💾 数据库: {msg}")
+                        print(f"   💾 历史数据库: {msg}")
             except Exception as db_error:
-                print(f"   ⚠️  保存到数据库失败: {str(db_error)}")
+                print(f"   ⚠️  保存到历史数据库失败: {str(db_error)}")
             
             print(f"{'='*60}\n")
         else:
@@ -311,42 +356,45 @@ def sync_panic_wash_data():
         return False
 
 def background_updater():
-    """后台定时更新线程 - 每3分钟更新一次（简化版）"""
+    """后台定时更新线程 - 严格每3分钟更新一次"""
     print("🚀 后台更新线程启动")
     print(f"⏰ 更新周期: {UPDATE_CYCLE}秒 ({UPDATE_CYCLE/60:.1f}分钟)")
-    print(f"⏰ 数据采集窗口: 每个周期的第{GDRIVE_WAIT_TIME}秒附近")
+    print(f"⏰ 数据采集策略: 首次对齐3分钟周期，后续固定间隔180秒")
     print("="*70)
     
+    # 首次启动：计算到下一个3分钟周期（对齐到0,3,6,9...分钟）
+    now = datetime.now()
+    current_minute = now.minute
+    current_second = now.second
+    
+    # 计算下一个3分钟周期的分钟数
+    next_cycle_minute = ((current_minute // 3) + 1) * 3
+    
+    # 处理跨小时的情况
+    if next_cycle_minute >= 60:
+        next_hour = (now.hour + 1) % 24
+        next_minute = next_cycle_minute - 60
+        target_time = now.replace(hour=next_hour, minute=next_minute, second=GDRIVE_WAIT_TIME, microsecond=0)
+        if target_time < now:  # 跨天的情况
+            target_time = target_time + timedelta(days=1)
+    else:
+        target_time = now.replace(minute=next_cycle_minute, second=GDRIVE_WAIT_TIME, microsecond=0)
+    
+    # 首次等待到目标时间
+    wait_seconds = (target_time - now).total_seconds()
+    if wait_seconds > 0:
+        beijing_time = (datetime.utcnow() + timedelta(hours=8)).strftime('%H:%M:%S')
+        print(f"⏰ [{beijing_time}北京] 首次启动，等待 {wait_seconds:.0f}秒 到下一个3分钟周期", flush=True)
+        print(f"   目标时间: {(target_time + timedelta(hours=8)).strftime('%H:%M:%S')} 北京时间", flush=True)
+        time.sleep(wait_seconds)
+    
+    # 主循环：固定180秒间隔
     while True:
         try:
-            # 1. 计算下一个3分钟周期的开始时间（第10秒）
-            now = datetime.now()
-            current_minute = now.minute
-            current_second = now.second
-            
-            # 计算下一个3分钟周期的分钟数（0, 3, 6, 9, ...）
-            next_cycle_minute = ((current_minute // 3) + 1) * 3
-            
-            # 处理跨小时的情况
-            if next_cycle_minute >= 60:
-                next_hour = (now.hour + 1) % 24
-                next_minute = next_cycle_minute - 60
-                target_time = now.replace(hour=next_hour, minute=next_minute, second=GDRIVE_WAIT_TIME, microsecond=0)
-                if target_time < now:  # 跨天的情况
-                    target_time = target_time + timedelta(days=1)
-            else:
-                target_time = now.replace(minute=next_cycle_minute, second=GDRIVE_WAIT_TIME, microsecond=0)
-            
-            # 2. 等待到目标时间
-            wait_seconds = (target_time - now).total_seconds()
-            if wait_seconds > 0:
-                print(f"⏰ [{now.strftime('%H:%M:%S')}] 等待 {wait_seconds:.0f}秒 到下一个采集窗口")
-                print(f"   目标时间: {target_time.strftime('%H:%M:%S')}")
-                time.sleep(wait_seconds)
-            
-            # 3. 执行数据采集
+            # 执行数据采集
             collect_time = datetime.now()
-            print(f"\n📡 [{collect_time.strftime('%H:%M:%S')}] ===== 开始数据更新 =====")
+            beijing_time = (datetime.utcnow() + timedelta(hours=8)).strftime('%H:%M:%S')
+            print(f"\n📡 [{beijing_time}北京] ===== 开始数据更新 =====", flush=True)
             
             try:
                 print("  ↳ 更新首页缓存...")
@@ -371,14 +419,19 @@ def background_updater():
             
             finish_time = datetime.now()
             duration = (finish_time - collect_time).total_seconds()
-            next_update_time = finish_time + timedelta(seconds=UPDATE_CYCLE)
             
-            print(f"\n✅ [{finish_time.strftime('%H:%M:%S')}] 数据更新完成 (耗时: {duration:.1f}秒)")
-            print(f"⏰ 下次更新时间: {next_update_time.strftime('%H:%M:%S')}")
-            print("="*70 + "\n")
+            # 计算实际应该等待的时间（从周期开始计算）
+            sleep_time = max(0, UPDATE_CYCLE - duration)
+            next_update_time = collect_time + timedelta(seconds=UPDATE_CYCLE)
+            next_beijing = (next_update_time + timedelta(hours=8)).strftime('%H:%M:%S')
             
-            # 4. 等待180秒到下一个周期
-            time.sleep(UPDATE_CYCLE)
+            print(f"\n✅ [{beijing_time}北京] 数据更新完成 (耗时: {duration:.1f}秒)", flush=True)
+            print(f"⏰ 下次更新时间: {next_beijing} 北京时间", flush=True)
+            print(f"💤 等待 {sleep_time:.1f}秒 到下一个周期", flush=True)
+            print("="*70 + "\n", flush=True)
+            
+            # 等待到下一个周期（从周期开始计算，扣除已用时间）
+            time.sleep(sleep_time)
             
         except Exception as e:
             print(f"\n❌ 后台更新线程错误: {str(e)}")
