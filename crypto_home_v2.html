@@ -517,6 +517,7 @@
                 <div class="alert-box" id="alertOnlyRushUp">
                     <div class="alert-box-title">只有急涨</div>
                     <div class="alert-box-value" id="alertOnlyRushUpValue">0</div>
+                    <div class="alert-box-stars" id="alertOnlyRushUpStars">-</div>
                     <div class="alert-box-desc" id="alertOnlyRushUpDesc">等待数据</div>
                     <div class="coin-list" id="alertOnlyRushUpList"></div>
                 </div>
@@ -525,6 +526,7 @@
                 <div class="alert-box" id="alertUpGreaterDown">
                     <div class="alert-box-title">急涨>急跌</div>
                     <div class="alert-box-value" id="alertUpGreaterDownValue">0</div>
+                    <div class="alert-box-stars" id="alertUpGreaterDownStars">-</div>
                     <div class="alert-box-desc" id="alertUpGreaterDownDesc">等待数据</div>
                     <div class="coin-list" id="alertUpGreaterDownList"></div>
                 </div>
@@ -533,6 +535,7 @@
                 <div class="alert-box" id="alertPriority">
                     <div class="alert-box-title">优先级≥4</div>
                     <div class="alert-box-value" id="alertPriorityValue">0</div>
+                    <div class="alert-box-stars" id="alertPriorityStars">-</div>
                     <div class="alert-box-desc" id="alertPriorityDesc">等待数据</div>
                     <div class="coin-list" id="alertPriorityList"></div>
                 </div>
@@ -541,6 +544,7 @@
                 <div class="alert-box" id="alertOnlyRushDown">
                     <div class="alert-box-title">只有急跌</div>
                     <div class="alert-box-value" id="alertOnlyRushDownValue">0</div>
+                    <div class="alert-box-stars" id="alertOnlyRushDownStars">-</div>
                     <div class="alert-box-desc" id="alertOnlyRushDownDesc">等待数据</div>
                     <div class="coin-list" id="alertOnlyRushDownList"></div>
                 </div>
@@ -903,13 +907,20 @@
             document.getElementById('alertShortSignal').className = 
                 'alert-box' + (shortSignalStars >= 2 ? ' danger' : shortSignalStars >= 1 ? ' warning' : '');
 
-            // 8. 只有急涨（无星级，仅显示数量）
             // 8. 只有急涨（显示数量和币名）
             document.getElementById('alertOnlyRushUpValue').textContent = onlyRushUpCount;
             document.getElementById('alertOnlyRushUpStars').textContent = onlyRushUpCount > 0 ? '📊' : '-';
-            document.getElementById('alertOnlyRushUpDesc').textContent = 
-                onlyRushUpCount > 0 ? `${onlyRushUpCount}个币` : '无数据';
-            // 显示币名列表
+            
+            // 在描述中显示币名
+            if (onlyRushUpCount > 0) {
+                const coinNames = onlyRushUpCoins.map(c => c.symbol).join(', ');
+                document.getElementById('alertOnlyRushUpDesc').innerHTML = 
+                    `${onlyRushUpCount}个币<br><span style="color: #4a9eff; font-weight: 700;">${coinNames}</span>`;
+            } else {
+                document.getElementById('alertOnlyRushUpDesc').textContent = '无数据';
+            }
+            
+            // 同时在列表容器中显示标签形式
             const onlyRushUpList = onlyRushUpCoins.map(c => 
                 `<span class="coin-tag">${c.symbol}</span>`
             ).join('');
@@ -919,9 +930,17 @@
             // 9. 急涨>急跌（显示数量和币名）
             document.getElementById('alertUpGreaterDownValue').textContent = upGreaterDownCount;
             document.getElementById('alertUpGreaterDownStars').textContent = upGreaterDownCount > 0 ? '📊' : '-';
-            document.getElementById('alertUpGreaterDownDesc').textContent = 
-                upGreaterDownCount > 0 ? `${upGreaterDownCount}个币` : '无数据';
-            // 显示币名列表
+            
+            // 在描述中显示币名
+            if (upGreaterDownCount > 0) {
+                const coinNames = upGreaterDownCoins.map(c => c.symbol).join(', ');
+                document.getElementById('alertUpGreaterDownDesc').innerHTML = 
+                    `${upGreaterDownCount}个币<br><span style="color: #4a9eff; font-weight: 700;">${coinNames}</span>`;
+            } else {
+                document.getElementById('alertUpGreaterDownDesc').textContent = '无数据';
+            }
+            
+            // 同时在列表容器中显示标签形式
             const upGreaterDownList = upGreaterDownCoins.map(c => 
                 `<span class="coin-tag">${c.symbol}</span>`
             ).join('');
@@ -930,11 +949,20 @@
             // 10. 优先级≥4（显示数量和币名）
             document.getElementById('alertPriorityValue').textContent = priorityCount;
             document.getElementById('alertPriorityStars').textContent = priorityCount > 0 ? '📊' : '-';
-            document.getElementById('alertPriorityDesc').textContent = 
-                priorityCount > 0 ? `${priorityCount}个币` : '无数据';
+            
+            // 在描述中显示币名
+            if (priorityCount > 0) {
+                const coinNames = priorityCoins.map(c => c.symbol).join(', ');
+                document.getElementById('alertPriorityDesc').innerHTML = 
+                    `${priorityCount}个币<br><span style="color: #4a9eff; font-weight: 700;">${coinNames}</span>`;
+            } else {
+                document.getElementById('alertPriorityDesc').textContent = '无数据';
+            }
+            
             document.getElementById('alertPriority').className = 
                 'alert-box' + (priorityCount >= 3 ? ' danger' : priorityCount >= 1 ? ' warning' : '');
-            // 显示币名列表
+            
+            // 同时在列表容器中显示标签形式
             const priorityList = priorityCoins.map(c => 
                 `<span class="coin-tag">${c.symbol}</span>`
             ).join('');
@@ -943,9 +971,17 @@
             // 11. 只有急跌（显示数量和币名）
             document.getElementById('alertOnlyRushDownValue').textContent = onlyRushDownCount;
             document.getElementById('alertOnlyRushDownStars').textContent = onlyRushDownCount > 0 ? '📊' : '-';
-            document.getElementById('alertOnlyRushDownDesc').textContent = 
-                onlyRushDownCount > 0 ? `${onlyRushDownCount}个币` : '无数据';
-            // 显示币名列表
+            
+            // 在描述中显示币名
+            if (onlyRushDownCount > 0) {
+                const coinNames = onlyRushDownCoins.map(c => c.symbol).join(', ');
+                document.getElementById('alertOnlyRushDownDesc').innerHTML = 
+                    `${onlyRushDownCount}个币<br><span style="color: #4a9eff; font-weight: 700;">${coinNames}</span>`;
+            } else {
+                document.getElementById('alertOnlyRushDownDesc').textContent = '无数据';
+            }
+            
+            // 同时在列表容器中显示标签形式
             const onlyRushDownList = onlyRushDownCoins.map(c => 
                 `<span class="coin-tag">${c.symbol}</span>`
             ).join('');
