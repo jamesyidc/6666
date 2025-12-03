@@ -199,6 +199,12 @@ def update_cache():
             except Exception as db_error:
                 print(f"   ⚠️  保存到历史数据库失败: {str(db_error)}")
             
+            # 触发比价检查
+            try:
+                trigger_price_comparison(parsed_data['coins'])
+            except Exception as price_error:
+                print(f"   ⚠️  比价检查失败: {str(price_error)}")
+            
             print(f"{'='*60}\n")
         else:
             print("❌ 获取数据失败")
@@ -1075,6 +1081,97 @@ def get_panic_wash_history():
             'success': False,
             'error': str(e)
         }), 500
+
+# ============================================================
+# 比价系统集成
+# ============================================================
+
+from price_comparison_system import PriceComparisonSystem
+
+# 初始化比价系统
+price_comparison = PriceComparisonSystem()
+
+@app.route('/price-comparison')
+def price_comparison_page():
+    """比价系统页面"""
+    return send_file('price_comparison.html')
+
+@app.route('/api/price-comparison/report')
+def get_price_comparison_report():
+    """获取完整比价报告"""
+    try:
+        report = price_comparison.get_full_report()
+        return jsonify(report)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/price-comparison/baseline')
+def get_baseline():
+    """获取价格基准数据"""
+    try:
+        baseline = price_comparison.get_baseline_data()
+        return jsonify({
+            'success': True,
+            'data': baseline
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/price-comparison/today')
+def get_today_records():
+    """获取今日创新高低记录"""
+    try:
+        records = price_comparison.get_daily_new_records()
+        return jsonify({
+            'success': True,
+            'data': records
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+def trigger_price_comparison(coins_data):
+    """
+    触发比价检查
+    在数据更新后调用此函数
+    """
+    try:
+        # 批量比价
+        results = price_comparison.batch_compare(coins_data)
+        
+        # 统计创新高低
+        new_highs = [r for r in results if r['action'] == 'new_high']
+        new_lows = [r for r in results if r['action'] == 'new_low']
+        
+        if new_highs or new_lows:
+            print(f"\n📊 比价结果:")
+            print(f"   🔥 创新高: {len(new_highs)} 个币种")
+            print(f"   📉 创新低: {len(new_lows)} 个币种")
+            
+            # 显示创新高
+            for r in new_highs[:3]:  # 只显示前3个
+                print(f"      {r['symbol']}: {r['old_value']:.8f} → {r['new_value']:.8f}")
+            
+            # 显示创新低
+            for r in new_lows[:3]:  # 只显示前3个
+                print(f"      {r['symbol']}: {r['old_value']:.8f} → {r['new_value']:.8f}")
+        
+        return results
+    except Exception as e:
+        print(f"❌ 比价失败: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
 
 if __name__ == '__main__':
     print("="*60)
