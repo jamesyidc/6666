@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密货币数据历史回看</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a9eff;
+            margin-bottom: 20px;
+        }
+
+        .control-panel {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            color: #888;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        input[type="date"],
+        input[type="time"],
+        select,
+        button {
+            padding: 8px 12px;
+            border: 1px solid #2a2a3e;
+            border-radius: 4px;
+            background: #0f1419;
+            color: #eee;
+            font-size: 14px;
+        }
+
+        button {
+            background: #4a9eff;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #3a8eef;
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .stats-bar {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .stat-value.up {
+            color: #00ff88;
+        }
+
+        .stat-value.down {
+            color: #ff4444;
+        }
+
+        .timeline {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .timeline-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .timeline-item {
+            background: #0f1419;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+            border-left: 4px solid #4a9eff;
+        }
+
+        .timeline-item:hover {
+            background: #1e2838;
+        }
+
+        .timeline-item.active {
+            background: #2a3848;
+            border-left-color: #00ff88;
+        }
+
+        .timeline-time {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4a9eff;
+            margin-bottom: 5px;
+        }
+
+        .timeline-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #16213e;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: #0f1419;
+        }
+
+        th {
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+            color: #4a9eff;
+            border-bottom: 2px solid #2a2a3e;
+        }
+
+        td {
+            padding: 10px 8px;
+            text-align: center;
+            font-size: 13px;
+            border-bottom: 1px solid #2a2a3e;
+        }
+
+        tr:hover {
+            background: #1e2838;
+        }
+
+        .symbol {
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .positive {
+            color: #00ff88;
+        }
+
+        .negative {
+            color: #ff4444;
+        }
+
+        .neutral {
+            color: #888;
+        }
+
+        .rush-up {
+            background: #ff4444;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .rush-down {
+            background: #00ff88;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #4a9eff;
+        }
+
+        .error {
+            background: #ff4444;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .info-box {
+            background: #2a3848;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .chart-container {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            height: 400px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f1419;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4a9eff;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a8eef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 加密货币数据历史回看</h1>
+        
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <div class="control-row">
+                <div class="control-group">
+                    <label>选择日期：</label>
+                    <input type="date" id="dateInput" />
+                </div>
+                <div class="control-group">
+                    <label>时间范围：</label>
+                    <input type="time" id="startTime" value="00:00" />
+                    <span style="color: #888;">至</span>
+                    <input type="time" id="endTime" value="23:59" />
+                </div>
+                <button id="queryBtn" onclick="loadTimelineData()">🔍 查询</button>
+                <button onclick="loadTodayData()">📅 今天</button>
+            </div>
+            
+            <div class="info-box" id="dbInfo">
+                加载中...
+            </div>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="stats-bar" id="statsBar" style="display:none;">
+            <div class="stat-item">
+                <span class="stat-label">记录时间：</span>
+                <span class="stat-value" id="recordTime">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">急涨：</span>
+                <span class="stat-value up" id="rushUp">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">急跌：</span>
+                <span class="stat-value down" id="rushDown">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">状态：</span>
+                <span class="stat-value" id="status">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">绿色数量：</span>
+                <span class="stat-value" id="greenCount">-</span>
+            </div>
+        </div>
+
+        <!-- 曲线图 -->
+        <div class="chart-container" id="chartContainer" style="display:none;">
+            <canvas id="trendChart"></canvas>
+        </div>
+
+        <!-- 时间轴 -->
+        <div class="timeline">
+            <h3 style="color: #4a9eff; margin-bottom: 15px;">⏱️ 时间轴</h3>
+            <div id="timelineList" class="timeline-list">
+                <div class="loading">请选择日期并点击查询</div>
+            </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div id="loadingMsg" class="loading" style="display:none;">正在加载数据...</div>
+        <div id="errorMsg" class="error" style="display:none;"></div>
+
+        <table id="dataTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>序号</th>
+                    <th>币名</th>
+                    <th>涨速</th>
+                    <th>急涨</th>
+                    <th>急跌</th>
+                    <th>更新时间</th>
+                    <th>历史高价</th>
+                    <th>高价时间</th>
+                    <th>跌幅</th>
+                    <th>24h涨幅</th>
+                    <th>排行</th>
+                    <th>当前价格</th>
+                    <th>最高点比</th>
+                    <th>最低点比</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let currentData = [];
+        let selectedIndex = -1;
+        let trendChart = null;
+
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '急涨',
+                            data: [],
+                            borderColor: '#ff4444',
+                            backgroundColor: 'rgba(255, 68, 68, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: '急跌',
+                            data: [],
+                            borderColor: '#00ff88',
+                            backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#eee' }
+                        },
+                        title: {
+                            display: true,
+                            text: '急涨/急跌趋势图',
+                            color: '#4a9eff',
+                            font: { size: 16 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#888' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#888' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 加载数据库统计信息
+        async function loadDbStats() {
+            try {
+                const response = await fetch('/api/history/stats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const stats = result.stats;
+                    document.getElementById('dbInfo').innerHTML = `
+                        📊 数据库统计：共 ${stats.total_records} 条记录，
+                        覆盖 ${stats.days} 天，
+                        时间范围：${stats.earliest || '-'} ~ ${stats.latest || '-'}
+                    `;
+                }
+            } catch (error) {
+                console.error('加载统计失败:', error);
+            }
+        }
+
+        // 加载时间轴数据
+        async function loadTimelineData() {
+            const date = document.getElementById('dateInput').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            if (!date) {
+                alert('请选择日期');
+                return;
+            }
+            
+            const start = `${date} ${startTime}:00`;
+            const end = `${date} ${endTime}:59`;
+            
+            try {
+                document.getElementById('timelineList').innerHTML = '<div class="loading">正在查询...</div>';
+                
+                const response = await fetch(`/api/history/query?start_time=${encodeURIComponent(start)}&end_time=${encodeURIComponent(end)}&limit=200`);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || '查询失败');
+                }
+                
+                currentData = result.data;
+                
+                if (currentData.length === 0) {
+                    document.getElementById('timelineList').innerHTML = '<div class="loading">没有找到数据</div>';
+                    return;
+                }
+                
+                // 显示时间轴
+                const html = currentData.map((item, index) => `
+                    <div class="timeline-item" onclick="selectRecord(${index})">
+                        <div class="timeline-time">${item.record_time}</div>
+                        <div class="timeline-stats">
+                            <span>急涨: <span class="positive">${item.rush_up}</span></span>
+                            <span>急跌: <span class="negative">${item.rush_down}</span></span>
+                            <span>状态: ${item.status}</span>
+                            <span>绿色: ${item.green_count}</span>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('timelineList').innerHTML = html;
+                
+                // 自动选择第一条
+                if (currentData.length > 0) {
+                    selectRecord(0);
+                }
+                
+                // 更新图表
+                updateChart();
+                
+            } catch (error) {
+                console.error('查询失败:', error);
+                document.getElementById('timelineList').innerHTML = `<div class="error">❌ ${error.message}</div>`;
+            }
+        }
+
+        // 选择记录
+        function selectRecord(index) {
+            selectedIndex = index;
+            const record = currentData[index];
+            
+            // 更新时间轴高亮
+            document.querySelectorAll('.timeline-item').forEach((el, i) => {
+                if (i === index) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+            
+            // 显示统计信息
+            document.getElementById('statsBar').style.display = 'flex';
+            document.getElementById('recordTime').textContent = record.record_time;
+            document.getElementById('rushUp').textContent = record.rush_up;
+            document.getElementById('rushDown').textContent = record.rush_down;
+            document.getElementById('status').textContent = record.status;
+            document.getElementById('greenCount').textContent = record.green_count;
+            
+            // 显示币种数据
+            displayCoins(record.coins);
+        }
+
+        // 显示币种数据
+        function displayCoins(coins) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            coins.forEach(coin => {
+                const row = document.createElement('tr');
+                
+                const changeClass = parseFloat(coin.change) > 0 ? 'positive' : 
+                                   parseFloat(coin.change) < 0 ? 'negative' : 'neutral';
+                
+                const change24hClass = parseFloat(coin.change_24h) > 0 ? 'positive' : 
+                                      parseFloat(coin.change_24h) < 0 ? 'negative' : 'neutral';
+
+                row.innerHTML = `
+                    <td>${coin.index_num}</td>
+                    <td class="symbol">${coin.symbol}</td>
+                    <td class="${changeClass}">${coin.change}</td>
+                    <td>${coin.rush_up > 0 ? `<span class="rush-up">${coin.rush_up}</span>` : coin.rush_up}</td>
+                    <td>${coin.rush_down > 0 ? `<span class="rush-down">${coin.rush_down}</span>` : coin.rush_down}</td>
+                    <td>${coin.update_time}</td>
+                    <td>${coin.high_price}</td>
+                    <td>${coin.high_time}</td>
+                    <td class="negative">${coin.decline}</td>
+                    <td class="${change24hClass}">${coin.change_24h}</td>
+                    <td>${coin.rank}</td>
+                    <td>${coin.current_price}</td>
+                    <td>${coin.ratio1}</td>
+                    <td>${coin.ratio2}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            document.getElementById('dataTable').style.display = 'table';
+        }
+
+        // 更新图表
+        function updateChart() {
+            if (!trendChart || currentData.length === 0) return;
+            
+            document.getElementById('chartContainer').style.display = 'block';
+            
+            // 按时间排序
+            const sortedData = [...currentData].sort((a, b) => 
+                new Date(a.record_time) - new Date(b.record_time)
+            );
+            
+            trendChart.data.labels = sortedData.map(d => {
+                const time = d.record_time.split(' ')[1];
+                return time.substring(0, 5); // HH:MM
+            });
+            
+            trendChart.data.datasets[0].data = sortedData.map(d => d.rush_up);
+            trendChart.data.datasets[1].data = sortedData.map(d => d.rush_down);
+            
+            trendChart.update();
+        }
+
+        // 加载今天的数据
+        function loadTodayData() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = today;
+            loadTimelineData();
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            loadDbStats();
+            
+            // 设置默认日期为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = today;
+        });
+    </script>
+</body>
+</html>
