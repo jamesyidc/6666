@@ -918,23 +918,35 @@
                 const diff = rushUp - rushDown;
                 
                 // 默认样式
-                let rushRadius = 7;
-                let rushBorderWidth = 3;
+                let rushUpRadius = 7;
+                let rushUpBorderWidth = 3;
                 let rushUpColor = '#ff4444';
+                
+                let rushDownRadius = 7;
+                let rushDownBorderWidth = 3;
                 let rushDownColor = '#00ff88';
                 
                 let diffRadius = 6;
                 let diffBorderWidth = 2;
                 let diffColor = '#ffaa00';
                 
-                // 条件1: 急涨或急跌 >= 10（只标注第一次）
-                if (!hasMarkedRush10 && (rushUp >= 10 || rushDown >= 10)) {
-                    rushRadius = 14;
-                    rushBorderWidth = 6;
-                    rushUpColor = '#ffff00';  // 黄色高亮
-                    rushDownColor = '#ffff00';
-                    hasMarkedRush10 = true;
-                    console.log(`🌟 高亮：急涨/急跌>=10 at ${d.record_time}, 急涨=${rushUp}, 急跌=${rushDown}`);
+                // 条件1: 急涨 >= 10 或 急跌 >= 10（只标注第一次）
+                if (!hasMarkedRush10) {
+                    if (rushUp >= 10) {
+                        // 只高亮急涨曲线
+                        rushUpRadius = 14;
+                        rushUpBorderWidth = 6;
+                        rushUpColor = '#ffff00';  // 黄色高亮
+                        hasMarkedRush10 = true;
+                        console.log(`🌟 高亮：急涨>=10 at ${d.record_time}, 急涨=${rushUp}`);
+                    } else if (rushDown >= 10) {
+                        // 只高亮急跌曲线
+                        rushDownRadius = 14;
+                        rushDownBorderWidth = 6;
+                        rushDownColor = '#ffff00';  // 黄色高亮
+                        hasMarkedRush10 = true;
+                        console.log(`🌟 高亮：急跌>=10 at ${d.record_time}, 急跌=${rushDown}`);
+                    }
                 }
                 
                 // 条件2: 差值 >= 50 或 <= -50（只标注第一次，最高优先级）
@@ -956,12 +968,12 @@
                 }
                 
                 // 记录每个点的样式
-                rushUpPointRadius.push(rushRadius);
-                rushUpPointBorderWidth.push(rushBorderWidth);
+                rushUpPointRadius.push(rushUpRadius);
+                rushUpPointBorderWidth.push(rushUpBorderWidth);
                 rushUpPointBackgroundColor.push(rushUpColor);
                 
-                rushDownPointRadius.push(rushRadius);
-                rushDownPointBorderWidth.push(rushBorderWidth);
+                rushDownPointRadius.push(rushDownRadius);
+                rushDownPointBorderWidth.push(rushDownBorderWidth);
                 rushDownPointBackgroundColor.push(rushDownColor);
                 
                 diffPointRadius.push(diffRadius);
