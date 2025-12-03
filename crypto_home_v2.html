@@ -529,7 +529,19 @@
 
         <!-- 星级提醒面板 -->
         <div class="alert-panel">
-            <div class="alert-title">⭐ 星级提醒系统</div>
+            <div class="alert-title" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                <span>⭐ 星级提醒系统</span>
+                <div style="display: flex; gap: 20px; font-size: 18px; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="color: #ffd700; font-weight: bold;" id="totalFilledStarsTop">0</span>
+                        <span style="color: #ffd700; font-size: 24px;">★</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="color: #4a9eff; font-weight: bold;" id="totalEmptyStarsTop">0</span>
+                        <span style="color: #4a9eff; font-size: 24px;">☆</span>
+                    </div>
+                </div>
+            </div>
             
             <div class="alert-grid">
                 <!-- 1. 急涨提醒 -->
@@ -1062,9 +1074,11 @@
             ).join('');
             document.getElementById('alertOnlyRushDownList').innerHTML = onlyRushDownList;
 
-            // 更新总计
+            // 更新总计（同时更新标题栏和底部汇总）
             document.getElementById('totalFilledStars').textContent = `${totalFilled} ★`;
             document.getElementById('totalEmptyStars').textContent = `${totalEmpty} ☆`;
+            document.getElementById('totalFilledStarsTop').textContent = totalFilled;
+            document.getElementById('totalEmptyStarsTop').textContent = totalEmpty;
 
             console.log(`星级统计 - 实心: ${totalFilled}★, 空心: ${totalEmpty}☆`);
             console.log(`币种统计 - 只涨: ${onlyRushUpCount}, 涨>跌: ${upGreaterDownCount}, 优先级: ${priorityCount}, 只跌: ${onlyRushDownCount}`);
