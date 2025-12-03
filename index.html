@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密货币监控系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a9eff;
+            margin-bottom: 50px;
+            font-size: 48px;
+            text-shadow: 0 0 20px rgba(74, 158, 255, 0.5);
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            background: rgba(22, 33, 62, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.1) 0%, rgba(0, 255, 136, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: #4a9eff;
+            box-shadow: 0 20px 40px rgba(74, 158, 255, 0.3);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-description {
+            font-size: 16px;
+            color: #aaa;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-features {
+            text-align: left;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-item {
+            padding: 8px 0;
+            color: #888;
+            font-size: 14px;
+        }
+
+        .feature-item::before {
+            content: '✓ ';
+            color: #00ff88;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .card-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #4a9eff 0%, #3a8eef 100%);
+            color: #fff;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-button:hover {
+            background: linear-gradient(135deg, #3a8eef 0%, #2a7edf 100%);
+            box-shadow: 0 5px 15px rgba(74, 158, 255, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .stats-bar {
+            background: rgba(22, 33, 62, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4a9eff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+                margin-bottom: 30px;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 30px;
+            }
+
+            .card-icon {
+                font-size: 60px;
+            }
+
+            .card-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🪙 加密货币监控系统</h1>
+        
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="totalRecords">-</div>
+                <div class="stat-label">历史记录</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="daysCount">-</div>
+                <div class="stat-label">覆盖天数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="lastUpdate">-</div>
+                <div class="stat-label">最新更新</div>
+            </div>
+        </div>
+
+        <div class="cards">
+            <div class="card" onclick="location.href='/live'">
+                <div class="card-icon">📊</div>
+                <div class="card-title">实时监控</div>
+                <div class="card-description">
+                    查看29种加密货币的实时数据，自动每10分钟刷新
+                </div>
+                <div class="card-features">
+                    <div class="feature-item">实时急涨急跌统计</div>
+                    <div class="feature-item">趋势曲线图展示</div>
+                    <div class="feature-item">29种币详细数据</div>
+                    <div class="feature-item">自动刷新机制</div>
+                </div>
+                <a href="/live" class="card-button">进入实时监控</a>
+            </div>
+
+            <div class="card" onclick="location.href='/history'">
+                <div class="card-icon">⏱️</div>
+                <div class="card-title">历史回看</div>
+                <div class="card-description">
+                    按日期和时间查询历史数据，分析趋势变化
+                </div>
+                <div class="card-features">
+                    <div class="feature-item">日期时间筛选</div>
+                    <div class="feature-item">时间轴展示记录</div>
+                    <div class="feature-item">趋势对比分析</div>
+                    <div class="feature-item">完整历史数据</div>
+                </div>
+                <a href="/history" class="card-button">进入历史回看</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>数据来源：Google Drive | 自动更新：每5分钟 | 自动存档：实时保存</p>
+        </div>
+    </div>
+
+    <script>
+        // 加载统计信息
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/history/stats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const stats = result.stats;
+                    document.getElementById('totalRecords').textContent = stats.total_records;
+                    document.getElementById('daysCount').textContent = stats.days;
+                    
+                    if (stats.latest) {
+                        const date = new Date(stats.latest);
+                        const timeStr = date.toLocaleString('zh-CN', {
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        document.getElementById('lastUpdate').textContent = timeStr;
+                    }
+                }
+            } catch (error) {
+                console.error('加载统计失败:', error);
+            }
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', loadStats);
+    </script>
+</body>
+</html>
