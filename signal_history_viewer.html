@@ -460,20 +460,47 @@
                     return;
                 }
                 
-                // 显示时间轴
-                const html = currentData.map((item, index) => `
-                    <div class="timeline-item" onclick="selectRecord(${index})">
-                        <div class="timeline-time">${item.record_time}</div>
-                        <div class="timeline-stats">
-                            <span>总计: <span style="color: #4a9eff">${item.total}</span></span>
-                            <span>做多: <span style="color: #00ff88">${item.long}</span></span>
-                            <span>做空: <span style="color: #ff4444">${item.short}</span></span>
-                            <span>抄底: ${item.chaodi}</span>
-                            <span>底部: ${item.dibu}</span>
-                            <span>顶部: ${item.dingbu}</span>
+                // 计算变化并显示时间轴
+                const html = currentData.map((item, index) => {
+                    // 计算与前一条记录的变化
+                    let longChange = 0;
+                    let shortChange = 0;
+                    
+                    if (index < currentData.length - 1) {
+                        const prevItem = currentData[index + 1]; // 数据是倒序的，所以前一条是index+1
+                        longChange = item.long - prevItem.long;
+                        shortChange = item.short - prevItem.short;
+                    }
+                    
+                    // 格式化变化值显示（带符号）
+                    const formatChange = (val) => {
+                        if (val === 0) return '0';
+                        return val > 0 ? `+${val}` : `${val}`;
+                    };
+                    
+                    // 变化值颜色：增加用绿色，减少用红色
+                    const getChangeColor = (val) => {
+                        if (val > 0) return '#00ff88';
+                        if (val < 0) return '#ff4444';
+                        return '#888';
+                    };
+                    
+                    return `
+                        <div class="timeline-item" onclick="selectRecord(${index})">
+                            <div class="timeline-time">${item.record_time}</div>
+                            <div class="timeline-stats">
+                                <span>总计: <span style="color: #4a9eff">${item.total}</span></span>
+                                <span>做多: <span style="color: #00ff88">${item.long}</span></span>
+                                <span style="color: ${getChangeColor(longChange)}">变化: ${formatChange(longChange)}</span>
+                                <span>做空: <span style="color: #ff4444">${item.short}</span></span>
+                                <span style="color: ${getChangeColor(shortChange)}">变化: ${formatChange(shortChange)}</span>
+                                <span>抄底: ${item.chaodi}</span>
+                                <span>底部: ${item.dibu}</span>
+                                <span>顶部: ${item.dingbu}</span>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
                 
                 document.getElementById('timelineList').innerHTML = html;
                 
