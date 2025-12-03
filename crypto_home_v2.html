@@ -157,8 +157,10 @@
             overflow-y: auto;
             font-size: 11px;
             text-align: left;
-            padding: 5px;
-            margin-top: 5px;
+            padding: 8px;
+            margin-top: 8px;
+            display: block;
+            width: 100%;
         }
 
         .coin-item {
@@ -196,15 +198,16 @@
 
         .coin-tag {
             display: inline-block;
-            padding: 3px 8px;
-            margin: 3px;
-            background: linear-gradient(135deg, rgba(74, 158, 255, 0.2) 0%, rgba(102, 126, 234, 0.2) 100%);
-            border: 1px solid rgba(74, 158, 255, 0.4);
+            padding: 4px 10px;
+            margin: 3px 2px;
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.3) 0%, rgba(102, 126, 234, 0.3) 100%);
+            border: 1px solid rgba(74, 158, 255, 0.6);
             border-radius: 5px;
             color: #4a9eff;
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 12px;
+            font-weight: 700;
             transition: all 0.3s;
+            white-space: nowrap;
         }
 
         .coin-tag:hover {
@@ -908,6 +911,7 @@
                 `<span class="coin-tag">${c.symbol}</span>`
             ).join('');
             document.getElementById('alertOnlyRushUpList').innerHTML = onlyRushUpList;
+            console.log('只有急涨币种:', onlyRushUpCoins.length, onlyRushUpList);
 
             // 9. 急涨>急跌（显示数量和币名）
             document.getElementById('alertUpGreaterDownValue').textContent = upGreaterDownCount;
