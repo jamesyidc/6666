@@ -881,7 +881,7 @@
             });
             
             // 提取计次数据
-            trendChart.data.datasets[3].data = sortedData.map(d => parseInt(d.green_count) || 0);
+            trendChart.data.datasets[3].data = sortedData.map(d => parseInt(d.count_times) || 0);
             
             console.log('时间点:', trendChart.data.labels);
             console.log('急涨数据:', trendChart.data.datasets[0].data);
