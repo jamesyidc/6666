@@ -242,6 +242,61 @@ def sync_signal_stats():
         traceback.print_exc()
         return False
 
+def sync_panic_wash_data():
+    """同步恐慌清洗指标数据"""
+    try:
+        import sqlite3
+        
+        # 从恐慌清洗API获取最新数据
+        from panic_wash_simple import get_panic_wash_data_sync
+        data = get_panic_wash_data_sync()
+        
+        if not data:
+            print("⚠️  恐慌清洗数据获取失败")
+            return False
+        
+        # 解析数据
+        panic_indicator_str = data['panic_indicator']  # 例如: "10.77-绿"
+        parts = panic_indicator_str.split('-')
+        panic_indicator = float(parts[0])
+        panic_color = parts[1] if len(parts) > 1 else None
+        
+        trend_rating = int(data['trend_rating'])
+        market_zone = data['market_zone']
+        liquidation_24h_people = int(data['liquidation_24h_people'])
+        liquidation_24h_amount = float(data['liquidation_24h_amount'])
+        total_position = float(data['total_position'])
+        record_time = data['update_time']
+        
+        # 保存到数据库
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT OR IGNORE INTO panic_wash_history 
+            (record_time, panic_indicator, panic_color, trend_rating, market_zone,
+             liquidation_24h_people, liquidation_24h_amount, total_position)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (record_time, panic_indicator, panic_color, trend_rating, market_zone,
+              liquidation_24h_people, liquidation_24h_amount, total_position))
+        
+        conn.commit()
+        conn.close()
+        
+        if cursor.rowcount > 0:
+            print(f"✅ 恐慌清洗数据同步成功: {record_time}")
+            print(f"   指标: {panic_indicator} ({panic_color}), 持仓量: {total_position}亿")
+        else:
+            print(f"⚠️  恐慌清洗数据已存在: {record_time}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ 恐慌清洗数据同步失败: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
 def background_updater():
     """后台定时更新线程"""
     import time as time_module
@@ -262,6 +317,9 @@ def background_updater():
             
             # 同步信号统计数据
             sync_signal_stats()
+            
+            # 同步恐慌清洗数据
+            sync_panic_wash_data()
             
             # 每3分钟更新一次（匹配Google Drive更新周期）
             print(f"⏰ 下次更新时间: {(datetime.now() + timedelta(seconds=180)).strftime('%H:%M:%S')}")
@@ -289,6 +347,11 @@ def history():
 def panic_wash():
     """恐慌清洗指标监控页面"""
     return send_file('panic_wash_monitor.html')
+
+@app.route('/panic-wash-history')
+def panic_wash_history():
+    """恐慌清洗历史曲线页面"""
+    return send_file('panic_wash_history.html')
 
 @app.route('/api/panic-wash')
 def get_panic_wash_api():
@@ -740,6 +803,81 @@ def get_latest_signal_stats():
                     'record_time': None
                 }
             })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/panic-wash/history')
+def get_panic_wash_history():
+    """查询恐慌清洗历史数据"""
+    try:
+        import sqlite3
+        from flask import request
+        
+        # 获取查询参数
+        start_time = request.args.get('start')
+        end_time = request.args.get('end')
+        
+        if not start_time or not end_time:
+            return jsonify({
+                'success': False,
+                'error': '请提供开始和结束时间'
+            }), 400
+        
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        # 查询历史数据
+        cursor.execute('''
+            SELECT 
+                record_time,
+                panic_indicator,
+                panic_color,
+                trend_rating,
+                market_zone,
+                liquidation_24h_people,
+                liquidation_24h_amount,
+                total_position
+            FROM panic_wash_history
+            WHERE record_time BETWEEN ? AND ?
+            ORDER BY record_time ASC
+        ''', (start_time, end_time))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        # 格式化数据
+        data = []
+        for row in rows:
+            # 格式化时间显示（只保留时分）
+            time_str = row[0]  # 2025-12-03 15:09:05
+            if len(time_str) >= 16:
+                time_display = time_str[5:16]  # 12-03 15:09
+            else:
+                time_display = time_str
+            
+            data.append({
+                'time': time_display,
+                'full_time': row[0],
+                'panic_indicator': row[1],
+                'panic_color': row[2],
+                'trend_rating': row[3],
+                'market_zone': row[4],
+                'liquidation_24h_people': row[5],
+                'liquidation_24h_amount': row[6],
+                'total_position': row[7]
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': data,
+            'count': len(data)
+        })
         
     except Exception as e:
         import traceback
