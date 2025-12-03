@@ -5,10 +5,9 @@
 """
 
 from flask import Flask, jsonify
-import asyncio
 import threading
 import time
-from panic_wash_reader import get_panic_wash_data
+from panic_wash_simple import get_panic_wash_data_sync
 
 app = Flask(__name__)
 
@@ -36,8 +35,8 @@ def update_cache():
     print(f"{'='*60}")
     
     try:
-        # 获取数据
-        result = asyncio.run(get_panic_wash_data())
+        # 获取数据（同步版本）
+        result = get_panic_wash_data_sync()
         
         if result:
             CACHE['data'] = result

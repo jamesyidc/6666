@@ -190,11 +190,21 @@ def panic_wash():
 
 @app.route('/api/panic-wash')
 def get_panic_wash_api():
-    """恐慌清洗API代理"""
-    import requests
+    """恐慌清洗API - 直接返回数据"""
     try:
-        response = requests.get('http://localhost:5004/api/panic-wash', timeout=10)
-        return response.json(), response.status_code
+        from panic_wash_simple import get_panic_wash_data_sync
+        data = get_panic_wash_data_sync()
+        
+        if data:
+            return jsonify({
+                'success': True,
+                'data': data
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': '暂无数据'
+            }), 404
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
