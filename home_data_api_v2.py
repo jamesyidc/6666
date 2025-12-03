@@ -308,69 +308,80 @@ def sync_panic_wash_data():
         return False
 
 def background_updater():
-    """后台定时更新线程 - 按照3分钟周期，在每个周期的第10-15秒之间更新"""
-    import time as time_module
-    
-    # 首次启动时，等待到下一个合适的时间点
+    """后台定时更新线程 - 每3分钟更新一次（简化版）"""
     print("🚀 后台更新线程启动")
     print(f"⏰ 更新周期: {UPDATE_CYCLE}秒 ({UPDATE_CYCLE/60:.1f}分钟)")
-    print(f"⏰ 数据采集窗口: 每个周期的第{GDRIVE_WAIT_TIME}-{GDRIVE_WAIT_MAX}秒")
+    print(f"⏰ 数据采集窗口: 每个周期的第{GDRIVE_WAIT_TIME}秒附近")
+    print("="*70)
     
     while True:
         try:
-            current_time = datetime.now()
-            current_minute = current_time.minute
-            current_second = current_time.second
+            # 1. 计算下一个3分钟周期的开始时间（第10秒）
+            now = datetime.now()
+            current_minute = now.minute
+            current_second = now.second
             
-            # 计算距离下一个3分钟周期的时间
-            # 3分钟周期: 0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57
-            minutes_since_cycle = current_minute % 3
+            # 计算下一个3分钟周期的分钟数（0, 3, 6, 9, ...）
+            next_cycle_minute = ((current_minute // 3) + 1) * 3
             
-            if minutes_since_cycle == 0:
-                # 当前正好是3分钟周期的开始
-                if current_second < GDRIVE_WAIT_TIME:
-                    # 等待到第10秒
-                    wait_seconds = GDRIVE_WAIT_TIME - current_second
-                    print(f"⏰ 等待{wait_seconds}秒到达数据采集窗口 (第{GDRIVE_WAIT_TIME}秒)...")
-                    time_module.sleep(wait_seconds)
-                elif current_second > GDRIVE_WAIT_MAX:
-                    # 已经过了采集窗口，等待到下一个周期
-                    wait_seconds = 180 - current_second + GDRIVE_WAIT_TIME
-                    print(f"⏰ 已过采集窗口，等待{wait_seconds}秒到下一个周期...")
-                    time_module.sleep(wait_seconds)
-                else:
-                    # 正好在采集窗口内，立即采集
-                    print(f"✅ 当前在数据采集窗口内 (第{current_second}秒)，开始采集...")
+            # 处理跨小时的情况
+            if next_cycle_minute >= 60:
+                next_hour = (now.hour + 1) % 24
+                next_minute = next_cycle_minute - 60
+                target_time = now.replace(hour=next_hour, minute=next_minute, second=GDRIVE_WAIT_TIME, microsecond=0)
+                if target_time < now:  # 跨天的情况
+                    target_time = target_time + timedelta(days=1)
             else:
-                # 不在3分钟周期的开始，计算等待时间
-                wait_minutes = 3 - minutes_since_cycle
-                wait_seconds = wait_minutes * 60 - current_second + GDRIVE_WAIT_TIME
-                print(f"⏰ 等待{wait_seconds}秒 ({wait_seconds/60:.1f}分钟) 到下一个数据采集窗口...")
-                time_module.sleep(wait_seconds)
-                current_time = datetime.now()
-                current_second = current_time.second
-                print(f"✅ 到达数据采集窗口 (第{current_second}秒)，开始采集...")
+                target_time = now.replace(minute=next_cycle_minute, second=GDRIVE_WAIT_TIME, microsecond=0)
             
-            # 执行数据更新
-            print(f"📡 [{datetime.now().strftime('%H:%M:%S')}] 开始数据更新...")
-            update_cache()
-            sync_signal_stats()
-            sync_panic_wash_data()
+            # 2. 等待到目标时间
+            wait_seconds = (target_time - now).total_seconds()
+            if wait_seconds > 0:
+                print(f"⏰ [{now.strftime('%H:%M:%S')}] 等待 {wait_seconds:.0f}秒 到下一个采集窗口")
+                print(f"   目标时间: {target_time.strftime('%H:%M:%S')}")
+                time.sleep(wait_seconds)
             
-            # 计算下次更新时间
-            next_update = datetime.now() + timedelta(seconds=UPDATE_CYCLE)
-            print(f"✅ 数据更新完成")
-            print(f"⏰ 下次更新时间: {next_update.strftime('%H:%M:%S')}")
-            print(f"{'='*70}\n")
+            # 3. 执行数据采集
+            collect_time = datetime.now()
+            print(f"\n📡 [{collect_time.strftime('%H:%M:%S')}] ===== 开始数据更新 =====")
             
-            # 等待到下一个周期
-            time.sleep(UPDATE_CYCLE - (datetime.now().second % 60) + GDRIVE_WAIT_TIME)
+            try:
+                print("  ↳ 更新首页缓存...")
+                update_cache()
+                print("  ✓ 首页缓存更新完成")
+            except Exception as e:
+                print(f"  ✗ 首页缓存更新失败: {e}")
+            
+            try:
+                print("  ↳ 同步信号统计...")
+                sync_signal_stats()
+                print("  ✓ 信号统计同步完成")
+            except Exception as e:
+                print(f"  ✗ 信号统计同步失败: {e}")
+            
+            try:
+                print("  ↳ 同步恐慌清洗数据...")
+                sync_panic_wash_data()
+                print("  ✓ 恐慌清洗数据同步完成")
+            except Exception as e:
+                print(f"  ✗ 恐慌清洗数据同步失败: {e}")
+            
+            finish_time = datetime.now()
+            duration = (finish_time - collect_time).total_seconds()
+            next_update_time = finish_time + timedelta(seconds=UPDATE_CYCLE)
+            
+            print(f"\n✅ [{finish_time.strftime('%H:%M:%S')}] 数据更新完成 (耗时: {duration:.1f}秒)")
+            print(f"⏰ 下次更新时间: {next_update_time.strftime('%H:%M:%S')}")
+            print("="*70 + "\n")
+            
+            # 4. 等待180秒到下一个周期
+            time.sleep(UPDATE_CYCLE)
             
         except Exception as e:
-            print(f"❌ 后台更新线程错误: {str(e)}")
+            print(f"\n❌ 后台更新线程错误: {str(e)}")
             import traceback
             traceback.print_exc()
-            print(f"⏰ 60秒后重试...")
+            print(f"⏰ 60秒后重试...\n")
             time.sleep(60)
 
 @app.route('/')
