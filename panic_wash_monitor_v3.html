@@ -378,8 +378,8 @@
                             borderWidth: 2,
                             tension: 0.4,
                             yAxisID: 'y',
-                            pointRadius: 4,
-                            pointHoverRadius: 6
+                            pointRadius: 3,
+                            pointHoverRadius: 5
                         },
                         {
                             label: '全网持仓量(亿)',
@@ -389,14 +389,17 @@
                             borderWidth: 2,
                             tension: 0.4,
                             yAxisID: 'y1',
-                            pointRadius: 4,
-                            pointHoverRadius: 6
+                            pointRadius: 3,
+                            pointHoverRadius: 5
                         }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: {
+                        duration: 500  // 减少动画时间
+                    },
                     interaction: {
                         mode: 'index',
                         intersect: false
@@ -432,7 +435,8 @@
                             ticks: {
                                 color: '#888',
                                 maxRotation: 45,
-                                minRotation: 45
+                                minRotation: 45,
+                                maxTicksLimit: 15  // 限制标签数量
                             },
                             grid: {
                                 color: 'rgba(255, 255, 255, 0.1)'
@@ -484,7 +488,7 @@
         }
 
         // 加载数据
-        async function loadData() {
+        async function loadData(loadHistory = true) {
             try {
                 const response = await fetch('/api/panic-wash');
                 const result = await response.json();
@@ -511,8 +515,10 @@
                 document.getElementById('liquidationAmount').textContent = data.liquidation_24h_amount + ' 亿';
                 document.getElementById('updateTime').textContent = '更新时间: ' + data.update_time;
 
-                // 加载历史数据
-                await loadHistoryData();
+                // 只在首次加载时加载历史数据
+                if (loadHistory) {
+                    await loadHistoryData();
+                }
 
                 // 启动倒计时
                 startCountdown(180); // 3分钟
@@ -527,7 +533,8 @@
         // 加载历史数据
         async function loadHistoryData() {
             try {
-                const response = await fetch('/api/panic-wash/history');
+                // 只加载最近100条数据以提高加载速度
+                const response = await fetch('/api/panic-wash/history?limit=100');
                 const result = await response.json();
 
                 if (!result.success) {
@@ -552,8 +559,8 @@
         function updateChart() {
             if (!panicChart || allData.length === 0) return;
 
-            // 取最近50个数据点
-            const chartData = allData.slice(0, 50).reverse();
+            // 取最近30个数据点以提高渲染速度
+            const chartData = allData.slice(0, 30).reverse();
 
             const labels = chartData.map(d => {
                 const time = d.time || d.record_time;
@@ -572,7 +579,7 @@
             panicChart.data.labels = labels;
             panicChart.data.datasets[0].data = panicValues;
             panicChart.data.datasets[1].data = positionValues;
-            panicChart.update();
+            panicChart.update('none'); // 使用'none'模式禁用动画，加快更新速度
         }
 
         // 更新表格
@@ -664,7 +671,7 @@
                 
                 if (remaining <= 0) {
                     clearInterval(refreshTimer);
-                    loadData();
+                    loadData(false); // 自动刷新时不重新加载历史数据
                 }
             }, 1000);
         }
