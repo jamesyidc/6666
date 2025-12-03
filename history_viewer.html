@@ -390,7 +390,13 @@
                             label: '急涨',
                             data: [],
                             borderColor: '#ff4444',
-                            backgroundColor: 'rgba(255, 68, 68, 0.1)',
+                            backgroundColor: 'rgba(255, 68, 68, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: '#ff4444',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
                             tension: 0.4,
                             fill: true
                         },
@@ -398,9 +404,30 @@
                             label: '急跌',
                             data: [],
                             borderColor: '#00ff88',
-                            backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                            backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: '#00ff88',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
                             tension: 0.4,
                             fill: true
+                        },
+                        {
+                            label: '差值 (急涨-急跌)',
+                            data: [],
+                            borderColor: '#ffaa00',
+                            backgroundColor: 'rgba(255, 170, 0, 0.1)',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#ffaa00',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            tension: 0.4,
+                            fill: false,
+                            borderDash: [5, 5]
                         }
                     ]
                 },
@@ -413,23 +440,68 @@
                     },
                     plugins: {
                         legend: {
-                            labels: { color: '#eee' }
+                            labels: { 
+                                color: '#eee',
+                                font: { size: 14 },
+                                padding: 15
+                            }
                         },
                         title: {
                             display: true,
-                            text: '急涨/急跌趋势图',
+                            text: '急涨/急跌历史趋势图',
                             color: '#4a9eff',
-                            font: { size: 16 }
+                            font: { size: 18, weight: 'bold' }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#4a9eff',
+                            bodyColor: '#eee',
+                            borderColor: '#4a9eff',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.parsed.y;
+                                    return label;
+                                }
+                            }
                         }
                     },
                     scales: {
                         x: {
-                            ticks: { color: '#888' },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            ticks: { 
+                                color: '#888',
+                                font: { size: 12 },
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: { 
+                                color: 'rgba(255, 255, 255, 0.1)',
+                                drawBorder: false
+                            }
                         },
                         y: {
-                            ticks: { color: '#888' },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            beginAtZero: true,
+                            ticks: { 
+                                color: '#888',
+                                font: { size: 12 },
+                                stepSize: 1
+                            },
+                            grid: { 
+                                color: 'rgba(255, 255, 255, 0.1)',
+                                drawBorder: false
+                            },
+                            title: {
+                                display: true,
+                                text: '数量',
+                                color: '#aaa',
+                                font: { size: 13 }
+                            }
                         }
                     }
                 }
@@ -501,13 +573,13 @@
                 
                 document.getElementById('timelineList').innerHTML = html;
                 
-                // 自动选择第一条
+                // 先更新图表（显示所有数据点）
+                updateChart();
+                
+                // 然后自动选择第一条记录（显示详细信息）
                 if (currentData.length > 0) {
                     selectRecord(0);
                 }
-                
-                // 更新图表
-                updateChart();
                 
             } catch (error) {
                 console.error('查询失败:', error);
@@ -580,24 +652,45 @@
 
         // 更新图表
         function updateChart() {
-            if (!trendChart || currentData.length === 0) return;
+            if (!trendChart || currentData.length === 0) {
+                document.getElementById('chartContainer').style.display = 'none';
+                return;
+            }
             
             document.getElementById('chartContainer').style.display = 'block';
             
-            // 按时间排序
+            // 按时间排序（从早到晚）
             const sortedData = [...currentData].sort((a, b) => 
                 new Date(a.record_time) - new Date(b.record_time)
             );
             
+            console.log('更新图表，数据点数量:', sortedData.length);
+            
+            // 提取时间标签
             trendChart.data.labels = sortedData.map(d => {
                 const time = d.record_time.split(' ')[1];
                 return time.substring(0, 5); // HH:MM
             });
             
-            trendChart.data.datasets[0].data = sortedData.map(d => d.rush_up);
-            trendChart.data.datasets[1].data = sortedData.map(d => d.rush_down);
+            // 提取急涨数据
+            trendChart.data.datasets[0].data = sortedData.map(d => parseInt(d.rush_up) || 0);
             
-            trendChart.update();
+            // 提取急跌数据
+            trendChart.data.datasets[1].data = sortedData.map(d => parseInt(d.rush_down) || 0);
+            
+            // 计算差值数据
+            trendChart.data.datasets[2].data = sortedData.map(d => {
+                const up = parseInt(d.rush_up) || 0;
+                const down = parseInt(d.rush_down) || 0;
+                return up - down;
+            });
+            
+            console.log('时间点:', trendChart.data.labels);
+            console.log('急涨数据:', trendChart.data.datasets[0].data);
+            console.log('急跌数据:', trendChart.data.datasets[1].data);
+            console.log('差值数据:', trendChart.data.datasets[2].data);
+            
+            trendChart.update('active');
         }
 
         // 加载今天的数据
