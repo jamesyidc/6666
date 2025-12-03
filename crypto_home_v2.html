@@ -292,7 +292,15 @@
                             label: '急涨',
                             data: [],
                             borderColor: '#ff4444',
-                            backgroundColor: 'rgba(255, 68, 68, 0.1)',
+                            backgroundColor: 'rgba(255, 68, 68, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 7,
+                            pointHoverRadius: 12,
+                            pointBackgroundColor: '#ff4444',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 3,
+                            pointHoverBorderWidth: 5,
+                            pointHoverBackgroundColor: '#ff6666',
                             tension: 0.4,
                             fill: true
                         },
@@ -300,23 +308,48 @@
                             label: '急跌',
                             data: [],
                             borderColor: '#00ff88',
-                            backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                            backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 7,
+                            pointHoverRadius: 12,
+                            pointBackgroundColor: '#00ff88',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 3,
+                            pointHoverBorderWidth: 5,
+                            pointHoverBackgroundColor: '#33ffaa',
                             tension: 0.4,
                             fill: true
                         },
                         {
                             label: '差值 (急涨-急跌)',
                             data: [],
-                            borderColor: '#4a9eff',
-                            backgroundColor: 'rgba(74, 158, 255, 0.1)',
+                            borderColor: '#ffaa00',
+                            backgroundColor: 'rgba(255, 170, 0, 0.1)',
+                            borderWidth: 2,
+                            pointRadius: 6,
+                            pointHoverRadius: 10,
+                            pointBackgroundColor: '#ffaa00',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointHoverBorderWidth: 4,
+                            pointHoverBackgroundColor: '#ffcc33',
                             tension: 0.4,
-                            fill: true
+                            fill: false,
+                            borderDash: [5, 5]
                         },
                         {
                             label: '计次',
                             data: [],
-                            borderColor: '#ffaa00',
-                            backgroundColor: 'rgba(255, 170, 0, 0.1)',
+                            borderColor: '#00ccff',
+                            backgroundColor: 'rgba(0, 204, 255, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 7,
+                            pointHoverRadius: 12,
+                            pointBackgroundColor: '#00ccff',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 3,
+                            pointHoverBorderWidth: 5,
+                            pointHoverBackgroundColor: '#33ddff',
                             tension: 0.4,
                             fill: true,
                             yAxisID: 'y1'
@@ -393,6 +426,34 @@
             });
         }
 
+        async function loadHistoryData() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const response = await fetch(`/api/history/query?start_time=${today}%2000:00:00&end_time=${today}%2023:59:59&limit=200`);
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    historyData = result.data.map(d => ({
+                        time: d.record_time.split(' ')[1].substring(0, 5),
+                        rushUp: parseInt(d.rush_up) || 0,
+                        rushDown: parseInt(d.rush_down) || 0,
+                        diff: (parseInt(d.rush_up) || 0) - (parseInt(d.rush_down) || 0),
+                        count: parseInt(d.count_times) || 0
+                    }));
+                    
+                    // 只保留最近50个点
+                    if (historyData.length > MAX_HISTORY_POINTS) {
+                        historyData = historyData.slice(-MAX_HISTORY_POINTS);
+                    }
+                    
+                    updateChartWithHighlight();
+                    console.log(`📊 已加载 ${historyData.length} 条历史数据`);
+                }
+            } catch (error) {
+                console.error('加载历史数据失败:', error);
+            }
+        }
+
         function updateChart(data) {
             const stats = data.stats;
             const updateTime = data.updateTime;
@@ -425,12 +486,102 @@
                 historyData.shift();
             }
 
-            // 更新图表
+            updateChartWithHighlight();
+        }
+
+        function updateChartWithHighlight() {
+            // 更新图表数据
             trendChart.data.labels = historyData.map(d => d.time);
             trendChart.data.datasets[0].data = historyData.map(d => d.rushUp);
             trendChart.data.datasets[1].data = historyData.map(d => d.rushDown);
             trendChart.data.datasets[2].data = historyData.map(d => d.diff);
             trendChart.data.datasets[3].data = historyData.map(d => d.count);
+            
+            // 🌟 应用条件高亮
+            let hasMarkedRush10 = false;
+            let hasMarkedDiff20 = false;
+            let hasMarkedDiff50 = false;
+            
+            const rushUpPointRadius = [];
+            const rushUpPointBorderWidth = [];
+            const rushUpPointBackgroundColor = [];
+            const rushDownPointRadius = [];
+            const rushDownPointBorderWidth = [];
+            const rushDownPointBackgroundColor = [];
+            const diffPointRadius = [];
+            const diffPointBorderWidth = [];
+            const diffPointBackgroundColor = [];
+            
+            historyData.forEach((d, index) => {
+                // 默认样式
+                let rushUpRadius = 7;
+                let rushUpBorderWidth = 3;
+                let rushUpColor = '#ff4444';
+                
+                let rushDownRadius = 7;
+                let rushDownBorderWidth = 3;
+                let rushDownColor = '#00ff88';
+                
+                let diffRadius = 6;
+                let diffBorderWidth = 2;
+                let diffColor = '#ffaa00';
+                
+                // 条件1: 急涨>=10 或 急跌>=10
+                if (!hasMarkedRush10) {
+                    if (d.rushUp >= 10) {
+                        rushUpRadius = 14;
+                        rushUpBorderWidth = 6;
+                        rushUpColor = '#ffff00';
+                        hasMarkedRush10 = true;
+                    } else if (d.rushDown >= 10) {
+                        rushDownRadius = 14;
+                        rushDownBorderWidth = 6;
+                        rushDownColor = '#ffff00';
+                        hasMarkedRush10 = true;
+                    }
+                }
+                
+                // 条件2: 差值>=50
+                if (!hasMarkedDiff50 && Math.abs(d.diff) >= 50) {
+                    diffRadius = 16;
+                    diffBorderWidth = 7;
+                    diffColor = '#ff00ff';
+                    hasMarkedDiff50 = true;
+                    hasMarkedDiff20 = true;
+                }
+                // 条件3: 差值>=20
+                else if (!hasMarkedDiff20 && Math.abs(d.diff) >= 20) {
+                    diffRadius = 14;
+                    diffBorderWidth = 6;
+                    diffColor = '#ff6600';
+                    hasMarkedDiff20 = true;
+                }
+                
+                rushUpPointRadius.push(rushUpRadius);
+                rushUpPointBorderWidth.push(rushUpBorderWidth);
+                rushUpPointBackgroundColor.push(rushUpColor);
+                
+                rushDownPointRadius.push(rushDownRadius);
+                rushDownPointBorderWidth.push(rushDownBorderWidth);
+                rushDownPointBackgroundColor.push(rushDownColor);
+                
+                diffPointRadius.push(diffRadius);
+                diffPointBorderWidth.push(diffBorderWidth);
+                diffPointBackgroundColor.push(diffColor);
+            });
+            
+            // 应用样式
+            trendChart.data.datasets[0].pointRadius = rushUpPointRadius;
+            trendChart.data.datasets[0].pointBorderWidth = rushUpPointBorderWidth;
+            trendChart.data.datasets[0].pointBackgroundColor = rushUpPointBackgroundColor;
+            
+            trendChart.data.datasets[1].pointRadius = rushDownPointRadius;
+            trendChart.data.datasets[1].pointBorderWidth = rushDownPointBorderWidth;
+            trendChart.data.datasets[1].pointBackgroundColor = rushDownPointBackgroundColor;
+            
+            trendChart.data.datasets[2].pointRadius = diffPointRadius;
+            trendChart.data.datasets[2].pointBorderWidth = diffPointBorderWidth;
+            trendChart.data.datasets[2].pointBackgroundColor = diffPointBackgroundColor;
             
             trendChart.update();
         }
@@ -541,9 +692,10 @@
         }
 
         // 页面加载时初始化
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             initChart();
-            loadData();
+            await loadHistoryData();  // 先加载历史数据
+            loadData();  // 再加载最新数据
             startAutoRefresh();
             startCountdown();
         });
