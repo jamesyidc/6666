@@ -1169,15 +1169,37 @@
                     plugins: {
                         legend: {
                             labels: {
-                                color: '#eee'
+                                color: '#eee',
+                                font: { size: 14 },
+                                padding: 15
                             }
                         },
                         title: {
                             display: true,
-                            text: '急涨/急跌趋势图',
+                            text: '急涨/急跌历史趋势图（今日数据）',
                             color: '#4a9eff',
                             font: {
-                                size: 16
+                                size: 18,
+                                weight: 'bold'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#4a9eff',
+                            bodyColor: '#eee',
+                            borderColor: '#4a9eff',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.parsed.y;
+                                    return label;
+                                }
                             }
                         }
                     },
@@ -1185,35 +1207,45 @@
                         x: {
                             ticks: {
                                 color: '#888',
+                                font: { size: 12 },
                                 maxRotation: 45,
                                 minRotation: 45
                             },
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
+                                color: 'rgba(255, 255, 255, 0.1)',
+                                drawBorder: false
                             }
                         },
                         y: {
                             type: 'linear',
                             display: true,
                             position: 'left',
+                            beginAtZero: true,
                             ticks: {
-                                color: '#888'
+                                color: '#888',
+                                font: { size: 12 },
+                                stepSize: 1
                             },
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
+                                color: 'rgba(255, 255, 255, 0.1)',
+                                drawBorder: false
                             },
                             title: {
                                 display: true,
                                 text: '急涨/急跌/差值',
-                                color: '#888'
+                                color: '#aaa',
+                                font: { size: 13 }
                             }
                         },
                         y1: {
                             type: 'linear',
                             display: true,
                             position: 'right',
+                            beginAtZero: true,
                             ticks: {
-                                color: '#888'
+                                color: '#888',
+                                font: { size: 12 },
+                                stepSize: 1
                             },
                             grid: {
                                 drawOnChartArea: false,
@@ -1221,7 +1253,8 @@
                             title: {
                                 display: true,
                                 text: '计次',
-                                color: '#888'
+                                color: '#aaa',
+                                font: { size: 13 }
                             }
                         }
                     }
@@ -1257,39 +1290,9 @@
             }
         }
 
-        function updateChart(data) {
-            const stats = data.stats;
-            const updateTime = data.updateTime;
-            
-            // 提取计次值
-            let countValue = 0;
-            if (stats.percentage) {
-                // 从 "计次=2" 或类似格式提取
-                const match = stats.percentage.match(/(\d+)/);
-                if (match) {
-                    countValue = parseInt(match[1]);
-                }
-            }
-
-            const rushUp = parseInt(stats.rushUp) || 0;
-            const rushDown = parseInt(stats.rushDown) || 0;
-            const diff = rushUp - rushDown;
-
-            // 添加新数据点
-            historyData.push({
-                time: updateTime.split(' ')[1].substring(0, 5), // 只取时分
-                rushUp: rushUp,
-                rushDown: rushDown,
-                diff: diff,
-                count: countValue
-            });
-
-            // 保持最多50个数据点
-            if (historyData.length > MAX_HISTORY_POINTS) {
-                historyData.shift();
-            }
-
-            updateChartWithHighlight();
+        async function updateChart(data) {
+            // ✅ 新逻辑：每次刷新时重新加载完整历史数据，而不是累加
+            await loadHistoryData();
         }
 
         function updateChartWithHighlight() {
