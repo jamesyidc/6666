@@ -399,8 +399,16 @@
                 <span class="stat-value" id="status">-</span>
             </div>
             <div class="stat-item">
+                <span class="stat-label">比值：</span>
+                <span class="stat-value" id="ratio">-</span>
+            </div>
+            <div class="stat-item">
                 <span class="stat-label">绿色数量：</span>
                 <span class="stat-value" id="greenCount">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">百分比：</span>
+                <span class="stat-value" id="percentage">-</span>
             </div>
         </div>
 
@@ -708,7 +716,9 @@
                                 <span>急涨: <span class="positive">${item.rush_up}</span></span>
                                 <span>急跌: <span class="negative">${item.rush_down}</span></span>
                                 <span>状态: ${item.status}</span>
+                                <span>比值: ${item.ratio || '无'}</span>
                                 <span>绿色: ${item.green_count}</span>
+                                <span>百分比: ${item.percentage || '无'}</span>
                             </div>
                         </div>
                     `;
@@ -750,7 +760,9 @@
             document.getElementById('rushUp').textContent = record.rush_up;
             document.getElementById('rushDown').textContent = record.rush_down;
             document.getElementById('status').textContent = record.status;
+            document.getElementById('ratio').textContent = record.ratio || '无';
             document.getElementById('greenCount').textContent = record.green_count;
+            document.getElementById('percentage').textContent = record.percentage || '无';
             
             // 显示币种数据
             displayCoins(record.coins);
