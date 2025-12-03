@@ -483,6 +483,82 @@
         .priority-4 { background: #ffcc00; color: #000; }
         .priority-5 { background: #99cc00; color: #000; }
         .priority-6 { background: #666666; color: #fff; }
+
+        /* 创新高低记录面板 */
+        .price-records-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .record-box {
+            background: linear-gradient(135deg, #16213e 0%, #1a2332 100%);
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #2a3f5f;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .record-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(74, 158, 255, 0.3);
+        }
+
+        .record-box.high {
+            border-color: rgba(255, 68, 68, 0.5);
+        }
+
+        .record-box.low {
+            border-color: rgba(0, 255, 136, 0.5);
+        }
+
+        .record-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .record-title.high {
+            color: #ff4444;
+        }
+
+        .record-title.low {
+            color: #00ff88;
+        }
+
+        .record-count {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .record-count.high {
+            color: #ff4444;
+        }
+
+        .record-count.low {
+            color: #00ff88;
+        }
+
+        .record-stars {
+            font-size: 32px;
+            margin: 15px 0;
+            min-height: 40px;
+        }
+
+        .record-desc {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .price-records-panel {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -652,6 +728,25 @@
             </div>
         </div>
 
+        <!-- 创新高低记录面板 -->
+        <div class="price-records-panel">
+            <!-- 今日创新低记录 -->
+            <div class="record-box low">
+                <div class="record-title low">📉 今日创新低记录</div>
+                <div class="record-count low" id="newLowCount">0</div>
+                <div class="record-stars" id="newLowStars">-</div>
+                <div class="record-desc" id="newLowDesc">等待数据加载...</div>
+            </div>
+
+            <!-- 今日创新高记录 -->
+            <div class="record-box high">
+                <div class="record-title high">🔥 今日创新高记录</div>
+                <div class="record-count high" id="newHighCount">0</div>
+                <div class="record-stars" id="newHighStars">-</div>
+                <div class="record-desc" id="newHighDesc">等待数据加载...</div>
+            </div>
+        </div>
+
         <!-- 曲线图 -->
         <div class="chart-container">
             <canvas id="trendChart"></canvas>
@@ -713,6 +808,72 @@
             if (ratio1 > 70 && ratio2 > 120) return { level: 4, text: '等级4', stars: '⭐⭐' };
             if (ratio1 > 80 && ratio2 > 110) return { level: 5, text: '等级5', stars: '⭐' };
             return { level: 6, text: '等级6', stars: '—' };
+        }
+
+        // 更新创新高低记录
+        async function updatePriceRecords() {
+            try {
+                const response = await fetch('/api/price-comparison/today');
+                const result = await response.json();
+                
+                if (!result.success) {
+                    console.error('获取创新高低记录失败:', result.error);
+                    return;
+                }
+                
+                const data = result.data;
+                
+                // 更新创新低记录
+                const newLowCount = data.new_low_count || 0;
+                document.getElementById('newLowCount').textContent = newLowCount;
+                
+                let lowStars = '';
+                let lowDesc = '';
+                if (newLowCount >= 1 && newLowCount <= 3) {
+                    lowStars = '☆';
+                    lowDesc = '1颗空心星';
+                } else if (newLowCount > 3 && newLowCount <= 10) {
+                    lowStars = '☆☆';
+                    lowDesc = '2颗空心星';
+                } else if (newLowCount > 10) {
+                    lowStars = '☆☆☆';
+                    lowDesc = '3颗空心星';
+                } else {
+                    lowStars = '-';
+                    lowDesc = '暂无创新低记录';
+                }
+                
+                document.getElementById('newLowStars').textContent = lowStars;
+                document.getElementById('newLowDesc').textContent = lowDesc;
+                
+                // 更新创新高记录
+                const newHighCount = data.new_high_count || 0;
+                document.getElementById('newHighCount').textContent = newHighCount;
+                
+                let highStars = '';
+                let highDesc = '';
+                if (newHighCount >= 1 && newHighCount <= 3) {
+                    highStars = '★';
+                    highDesc = '1颗实心星';
+                } else if (newHighCount > 3 && newHighCount <= 10) {
+                    highStars = '★★';
+                    highDesc = '2颗实心星';
+                } else if (newHighCount > 10) {
+                    highStars = '★★★';
+                    highDesc = '3颗实心星';
+                } else {
+                    highStars = '-';
+                    highDesc = '暂无创新高记录';
+                }
+                
+                document.getElementById('newHighStars').textContent = highStars;
+                document.getElementById('newHighDesc').textContent = highDesc;
+                
+                console.log(`📊 创新高低记录: 创新高 ${newHighCount} 次, 创新低 ${newLowCount} 次`);
+                
+            } catch (error) {
+                console.error('更新创新高低记录失败:', error);
+            }
         }
 
         // 更新星级提醒面板
@@ -1522,6 +1683,9 @@
 
                 // 更新星级提醒面板（传入币种数据）
                 updateAlertPanel(data.stats, data.coins);
+
+                // 更新创新高低记录
+                await updatePriceRecords();
 
                 // 更新曲线图
                 updateChart(data);
