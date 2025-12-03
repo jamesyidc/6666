@@ -254,8 +254,11 @@ def sync_panic_wash_data():
     try:
         import sqlite3
         
-        # 从恐慌清洗API获取最新数据
-        from panic_wash_simple import get_panic_wash_data_sync
+        # 从恐慌清洗API获取最新数据（优先使用V4读取器，支持本地文件）
+        try:
+            from panic_wash_reader_v4 import get_panic_wash_data_sync
+        except:
+            from panic_wash_simple import get_panic_wash_data_sync
         data = get_panic_wash_data_sync()
         
         if not data:
@@ -414,7 +417,10 @@ def coin_list_test():
 def get_panic_wash_api():
     """恐慌清洗API - 直接返回数据"""
     try:
-        from panic_wash_simple import get_panic_wash_data_sync
+        try:
+            from panic_wash_reader_v4 import get_panic_wash_data_sync
+        except:
+            from panic_wash_simple import get_panic_wash_data_sync
         data = get_panic_wash_data_sync()
         
         if data:
