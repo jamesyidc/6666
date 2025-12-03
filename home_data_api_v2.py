@@ -911,31 +911,45 @@ def get_panic_wash_history():
         # 获取查询参数
         start_time = request.args.get('start')
         end_time = request.args.get('end')
-        
-        if not start_time or not end_time:
-            return jsonify({
-                'success': False,
-                'error': '请提供开始和结束时间'
-            }), 400
+        limit = request.args.get('limit', 1000)  # 默认最多返回1000条
         
         conn = sqlite3.connect('crypto_data.db')
         cursor = conn.cursor()
         
         # 查询历史数据
-        cursor.execute('''
-            SELECT 
-                record_time,
-                panic_indicator,
-                panic_color,
-                trend_rating,
-                market_zone,
-                liquidation_24h_people,
-                liquidation_24h_amount,
-                total_position
-            FROM panic_wash_history
-            WHERE record_time BETWEEN ? AND ?
-            ORDER BY record_time ASC
-        ''', (start_time, end_time))
+        if start_time and end_time:
+            # 按时间范围查询
+            cursor.execute('''
+                SELECT 
+                    record_time,
+                    panic_indicator,
+                    panic_color,
+                    trend_rating,
+                    market_zone,
+                    liquidation_24h_people,
+                    liquidation_24h_amount,
+                    total_position
+                FROM panic_wash_history
+                WHERE record_time BETWEEN ? AND ?
+                ORDER BY record_time DESC
+                LIMIT ?
+            ''', (start_time, end_time, limit))
+        else:
+            # 查询所有数据（或最近的limit条）
+            cursor.execute('''
+                SELECT 
+                    record_time,
+                    panic_indicator,
+                    panic_color,
+                    trend_rating,
+                    market_zone,
+                    liquidation_24h_people,
+                    liquidation_24h_amount,
+                    total_position
+                FROM panic_wash_history
+                ORDER BY record_time DESC
+                LIMIT ?
+            ''', (limit,))
         
         rows = cursor.fetchall()
         conn.close()
@@ -950,10 +964,15 @@ def get_panic_wash_history():
             else:
                 time_display = time_str
             
+            # 组合恐慌指标和颜色
+            panic_indicator_full = f"{row[1]}-{row[2]}" if row[2] else str(row[1])
+            
             data.append({
                 'time': time_display,
+                'record_time': row[0],
                 'full_time': row[0],
-                'panic_indicator': row[1],
+                'panic_indicator': panic_indicator_full,
+                'panic_indicator_value': row[1],
                 'panic_color': row[2],
                 'trend_rating': row[3],
                 'market_zone': row[4],
