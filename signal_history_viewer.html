@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>做多做空信号历史回看</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a9eff;
+            margin-bottom: 20px;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #4a9eff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            transition: background 0.3s;
+        }
+
+        .back-button:hover {
+            background: #3a8eef;
+        }
+
+        .control-panel {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            color: #888;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        input[type="date"],
+        input[type="time"],
+        button {
+            padding: 8px 12px;
+            border: 1px solid #2a2a3e;
+            border-radius: 4px;
+            background: #0f1419;
+            color: #eee;
+            font-size: 14px;
+        }
+
+        button {
+            background: #4a9eff;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #3a8eef;
+        }
+
+        .stats-bar {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat-item {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            background: #0f1419;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .stat-value.long {
+            color: #00ff88;
+        }
+
+        .stat-value.short {
+            color: #ff4444;
+        }
+
+        .stat-value.neutral {
+            color: #4a9eff;
+        }
+
+        .chart-container {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            height: 500px;
+            display: none;
+        }
+
+        .timeline {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .timeline-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .timeline-item {
+            background: #0f1419;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+            border-left: 4px solid #4a9eff;
+        }
+
+        .timeline-item:hover {
+            background: #1e2838;
+        }
+
+        .timeline-item.active {
+            background: #2a3848;
+            border-left-color: #00ff88;
+        }
+
+        .timeline-time {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4a9eff;
+            margin-bottom: 5px;
+        }
+
+        .timeline-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #aaa;
+            flex-wrap: wrap;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #4a9eff;
+        }
+
+        .error {
+            background: #ff4444;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .info-box {
+            background: #0f1419;
+            padding: 10px 15px;
+            border-radius: 4px;
+            color: #aaa;
+            font-size: 13px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f1419;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4a9eff;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a8eef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-button">← 返回首页</a>
+        <h1>📊 做多做空信号历史回看</h1>
+        
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <div class="control-row">
+                <div class="control-group">
+                    <label>选择日期：</label>
+                    <input type="date" id="dateInput" />
+                </div>
+                <div class="control-group">
+                    <label>时间范围：</label>
+                    <input type="time" id="startTime" value="00:00" />
+                    <span style="color: #888;">至</span>
+                    <input type="time" id="endTime" value="23:59" />
+                </div>
+                <button id="queryBtn" onclick="loadTimelineData()">🔍 查询</button>
+                <button onclick="loadTodayData()">📅 今天</button>
+            </div>
+            
+            <div class="info-box" id="dbInfo">
+                加载中...
+            </div>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item">
+                <div class="stat-label">记录时间</div>
+                <div class="stat-value neutral" id="recordTime">-</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">总信号数</div>
+                <div class="stat-value neutral" id="totalCount">-</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">做多信号</div>
+                <div class="stat-value long" id="longCount">-</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">做空信号</div>
+                <div class="stat-value short" id="shortCount">-</div>
+            </div>
+        </div>
+
+        <!-- 趋势图表 -->
+        <div class="chart-container" id="chartContainer">
+            <canvas id="trendChart"></canvas>
+        </div>
+
+        <!-- 时间轴 -->
+        <div class="timeline">
+            <h3 style="color: #4a9eff; margin-bottom: 15px;">📅 历史记录</h3>
+            <div class="timeline-list" id="timelineList">
+                <div class="loading">请选择日期查询</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = [];
+        let selectedIndex = -1;
+        let trendChart = null;
+
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '总信号数',
+                            data: [],
+                            borderColor: '#4a9eff',
+                            backgroundColor: 'rgba(74, 158, 255, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: '#4a9eff',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: '做多信号',
+                            data: [],
+                            borderColor: '#00ff88',
+                            backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: '#00ff88',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: '做空信号',
+                            data: [],
+                            borderColor: '#ff4444',
+                            backgroundColor: 'rgba(255, 68, 68, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: '#ff4444',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { 
+                                color: '#eee',
+                                font: { size: 14 },
+                                padding: 15
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '做多做空信号历史趋势图',
+                            color: '#4a9eff',
+                            font: { size: 18, weight: 'bold' }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#4a9eff',
+                            bodyColor: '#eee',
+                            borderColor: '#4a9eff',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { 
+                                color: '#888',
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: { 
+                                color: '#888',
+                                beginAtZero: true,
+                                stepSize: 1
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新图表
+        function updateChart() {
+            if (!trendChart || currentData.length === 0) {
+                document.getElementById('chartContainer').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('chartContainer').style.display = 'block';
+            
+            // 按时间排序
+            const sortedData = [...currentData].sort((a, b) => 
+                new Date(a.record_time) - new Date(b.record_time)
+            );
+            
+            // 提取时间标签
+            trendChart.data.labels = sortedData.map(d => {
+                const time = d.record_time.split(' ')[1];
+                return time.substring(0, 5); // HH:MM
+            });
+            
+            // 提取数据
+            trendChart.data.datasets[0].data = sortedData.map(d => parseInt(d.total) || 0);
+            trendChart.data.datasets[1].data = sortedData.map(d => parseInt(d.long) || 0);
+            trendChart.data.datasets[2].data = sortedData.map(d => parseInt(d.short) || 0);
+            
+            trendChart.update('active');
+        }
+
+        // 加载时间轴数据
+        async function loadTimelineData() {
+            const date = document.getElementById('dateInput').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            if (!date) {
+                alert('请选择日期');
+                return;
+            }
+            
+            try {
+                document.getElementById('timelineList').innerHTML = '<div class="loading">正在查询...</div>';
+                
+                const response = await fetch(`/api/signal-stats/query?date=${date}&start_time=${startTime}&end_time=${endTime}&limit=200`);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || '查询失败');
+                }
+                
+                currentData = result.data;
+                
+                if (currentData.length === 0) {
+                    document.getElementById('timelineList').innerHTML = '<div class="loading">没有找到数据</div>';
+                    return;
+                }
+                
+                // 显示时间轴
+                const html = currentData.map((item, index) => `
+                    <div class="timeline-item" onclick="selectRecord(${index})">
+                        <div class="timeline-time">${item.record_time}</div>
+                        <div class="timeline-stats">
+                            <span>总计: <span style="color: #4a9eff">${item.total}</span></span>
+                            <span>做多: <span style="color: #00ff88">${item.long}</span></span>
+                            <span>做空: <span style="color: #ff4444">${item.short}</span></span>
+                            <span>抄底: ${item.chaodi}</span>
+                            <span>底部: ${item.dibu}</span>
+                            <span>顶部: ${item.dingbu}</span>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('timelineList').innerHTML = html;
+                
+                // 更新图表
+                updateChart();
+                
+                // 自动选择第一条记录
+                if (currentData.length > 0) {
+                    selectRecord(0);
+                }
+                
+            } catch (error) {
+                console.error('查询失败:', error);
+                document.getElementById('timelineList').innerHTML = `<div class="error">❌ ${error.message}</div>`;
+            }
+        }
+
+        // 选择记录
+        function selectRecord(index) {
+            selectedIndex = index;
+            const record = currentData[index];
+            
+            // 更新时间轴高亮
+            document.querySelectorAll('.timeline-item').forEach((el, i) => {
+                if (i === index) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+            
+            // 显示统计信息
+            document.getElementById('statsBar').style.display = 'flex';
+            document.getElementById('recordTime').textContent = record.record_time;
+            document.getElementById('totalCount').textContent = record.total;
+            document.getElementById('longCount').textContent = record.long;
+            document.getElementById('shortCount').textContent = record.short;
+        }
+
+        // 加载今天的数据
+        function loadTodayData() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = today;
+            loadTimelineData();
+        }
+
+        // 加载数据库统计
+        async function loadDbStats() {
+            try {
+                const response = await fetch('/api/signal-stats/stats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('dbInfo').textContent = 
+                        `数据库统计: 共 ${result.total_records} 条记录 | 时间范围: ${result.time_range.start || '无'} ~ ${result.time_range.end || '无'}`;
+                }
+            } catch (error) {
+                console.error('加载统计失败:', error);
+            }
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            loadDbStats();
+            
+            // 设置默认日期为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = today;
+        });
+    </script>
+</body>
+</html>

@@ -411,6 +411,169 @@ def import_current():
             'error': str(e)
         }), 500
 
+# ============== 信号统计历史API ==============
+
+@app.route('/signal-history')
+def signal_history_page():
+    """信号统计历史回看页面"""
+    return send_file('signal_history_viewer.html')
+
+@app.route('/api/signal-stats/save', methods=['POST'])
+def save_signal_stats():
+    """保存信号统计数据"""
+    try:
+        from flask import request
+        import sqlite3
+        
+        data = request.json
+        record_time = data.get('record_time')
+        
+        if not record_time:
+            record_time = datetime.now().strftime('%Y-%m-%d %H:%M:00')
+        
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT OR REPLACE INTO signal_stats_history 
+            (record_time, total_count, long_count, short_count, 
+             chaodi_count, dibu_count, dingbu_count, source_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            record_time,
+            data.get('total', 0),
+            data.get('long', 0),
+            data.get('short', 0),
+            data.get('chaodi', 0),
+            data.get('dibu', 0),
+            data.get('dingbu', 0),
+            data.get('source_url', '')
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': '保存成功',
+            'record_time': record_time
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/signal-stats/query')
+def query_signal_stats():
+    """查询信号统计历史数据"""
+    try:
+        from flask import request
+        import sqlite3
+        
+        date = request.args.get('date')
+        start_time = request.args.get('start_time')
+        end_time = request.args.get('end_time')
+        limit = request.args.get('limit', 200, type=int)
+        
+        conn = sqlite3.connect('crypto_data.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # 构建查询
+        where_clauses = []
+        params = []
+        
+        if date:
+            if start_time and end_time:
+                where_clauses.append('record_time BETWEEN ? AND ?')
+                params.extend([f'{date} {start_time}:00', f'{date} {end_time}:59'])
+            else:
+                where_clauses.append('DATE(record_time) = ?')
+                params.append(date)
+        
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ''
+        
+        query = f'''
+            SELECT 
+                record_time, total_count, long_count, short_count,
+                chaodi_count, dibu_count, dingbu_count, source_url
+            FROM signal_stats_history
+            {where_sql}
+            ORDER BY record_time DESC
+            LIMIT ?
+        '''
+        params.append(limit)
+        
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        
+        data = []
+        for row in rows:
+            data.append({
+                'record_time': row['record_time'],
+                'total': row['total_count'],
+                'long': row['long_count'],
+                'short': row['short_count'],
+                'chaodi': row['chaodi_count'],
+                'dibu': row['dibu_count'],
+                'dingbu': row['dingbu_count'],
+                'source_url': row['source_url']
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'count': len(data),
+            'data': data
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/signal-stats/stats')
+def signal_stats_db_stats():
+    """获取信号统计数据库统计信息"""
+    try:
+        import sqlite3
+        
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT COUNT(*) FROM signal_stats_history')
+        total = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT MIN(record_time), MAX(record_time) FROM signal_stats_history')
+        time_range = cursor.fetchone()
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'total_records': total,
+            'time_range': {
+                'start': time_range[0],
+                'end': time_range[1]
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     print("="*60)
     print("首页数据监控服务器 V2 (带缓存)")
