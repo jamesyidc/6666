@@ -183,6 +183,21 @@ def history():
     """历史回看页面"""
     return send_file('history_viewer.html')
 
+@app.route('/panic-wash')
+def panic_wash():
+    """恐慌清洗指标监控页面"""
+    return send_file('panic_wash_monitor.html')
+
+@app.route('/api/panic-wash')
+def get_panic_wash_api():
+    """恐慌清洗API代理"""
+    import requests
+    try:
+        response = requests.get('http://localhost:5004/api/panic-wash', timeout=10)
+        return response.json(), response.status_code
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/home-data')
 def get_home_data():
     """获取首页数据API（使用缓存）"""

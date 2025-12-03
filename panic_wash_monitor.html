@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>恐慌清洗指标监控</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .back-button {
+            position: absolute;
+            left: 0;
+            background: #4a9eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-button:hover {
+            background: #3a8eef;
+            transform: translateX(-5px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a9eff;
+            font-size: 32px;
+            text-shadow: 0 0 20px rgba(74, 158, 255, 0.5);
+        }
+
+        .main-card {
+            background: rgba(22, 33, 62, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(74, 158, 255, 0.2);
+        }
+
+        .indicator-display {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .indicator-value {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 0 0 30px currentColor;
+        }
+
+        .indicator-label {
+            font-size: 24px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .indicator-status {
+            display: inline-block;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .status-green {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 2px solid #00ff88;
+        }
+
+        .status-red {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            border: 2px solid #ff4444;
+        }
+
+        .status-yellow {
+            background: rgba(255, 170, 0, 0.2);
+            color: #ffaa00;
+            border: 2px solid #ffaa00;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .data-item {
+            background: rgba(26, 26, 46, 0.6);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(74, 158, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .data-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(74, 158, 255, 0.3);
+            border-color: rgba(74, 158, 255, 0.5);
+        }
+
+        .data-label {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .data-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4a9eff;
+        }
+
+        .data-value.large {
+            font-size: 32px;
+        }
+
+        .update-time {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(26, 26, 46, 0.4);
+            border-radius: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 20px;
+            color: #4a9eff;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px 20px;
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 68, 68, 0.3);
+        }
+
+        .rating-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .star {
+            color: #ffaa00;
+            font-size: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .indicator-value {
+                font-size: 48px;
+            }
+
+            .data-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-button" onclick="window.location.href='/'">
+                ← 返回首页
+            </button>
+            <h1>⚠️ 恐慌清洗指标监控</h1>
+        </div>
+
+        <div id="loadingMsg" class="loading">正在加载数据</div>
+        <div id="errorMsg" class="error" style="display:none;"></div>
+
+        <div id="mainCard" class="main-card" style="display:none;">
+            <!-- 主指标显示 -->
+            <div class="indicator-display">
+                <div class="indicator-label">恐慌清洗指标</div>
+                <div class="indicator-value" id="indicatorValue">-</div>
+                <div class="indicator-status" id="indicatorStatus">-</div>
+                <div class="rating-display" id="ratingDisplay"></div>
+            </div>
+
+            <!-- 数据网格 -->
+            <div class="data-grid">
+                <div class="data-item">
+                    <div class="data-label">市场区间</div>
+                    <div class="data-value" id="marketZone">-</div>
+                </div>
+
+                <div class="data-item">
+                    <div class="data-label">24h爆仓人数</div>
+                    <div class="data-value large" id="liquidationPeople">-</div>
+                </div>
+
+                <div class="data-item">
+                    <div class="data-label">24h爆仓金额 (亿)</div>
+                    <div class="data-value large" id="liquidationAmount">-</div>
+                </div>
+
+                <div class="data-item">
+                    <div class="data-label">全网持仓量 (亿)</div>
+                    <div class="data-value large" id="totalPosition">-</div>
+                </div>
+            </div>
+
+            <!-- 更新时间 -->
+            <div class="update-time" id="updateTime">
+                更新时间: -
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let autoRefreshTimer = null;
+
+        async function loadData() {
+            try {
+                const response = await fetch('/api/panic-wash');
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || '数据加载失败');
+                }
+
+                const data = result.data;
+
+                // 解析恐慌清洗指标 (例如: 10.77-绿)
+                const indicatorParts = data.panic_indicator.split('-');
+                const indicatorValue = indicatorParts[0];
+                const indicatorColor = indicatorParts[1] || '';
+
+                // 显示主指标
+                document.getElementById('indicatorValue').textContent = indicatorValue;
+                document.getElementById('indicatorValue').style.color = 
+                    indicatorColor === '绿' ? '#00ff88' :
+                    indicatorColor === '红' ? '#ff4444' :
+                    indicatorColor === '黄' ? '#ffaa00' : '#4a9eff';
+
+                // 显示状态标签
+                const statusElement = document.getElementById('indicatorStatus');
+                statusElement.textContent = indicatorColor;
+                statusElement.className = 'indicator-status ' + 
+                    (indicatorColor === '绿' ? 'status-green' :
+                     indicatorColor === '红' ? 'status-red' :
+                     indicatorColor === '黄' ? 'status-yellow' : '');
+
+                // 显示趋势评级（星星）
+                const rating = parseInt(data.trend_rating) || 0;
+                const ratingDisplay = document.getElementById('ratingDisplay');
+                ratingDisplay.innerHTML = '';
+                for (let i = 0; i < rating; i++) {
+                    ratingDisplay.innerHTML += '<span class="star">★</span>';
+                }
+                if (rating > 0) {
+                    ratingDisplay.innerHTML += ` <span style="color: #888; font-size: 16px; margin-left: 10px;">(${rating}星)</span>`;
+                }
+
+                // 显示其他数据
+                document.getElementById('marketZone').textContent = data.market_zone;
+                document.getElementById('liquidationPeople').textContent = 
+                    parseInt(data.liquidation_24h_people).toLocaleString();
+                document.getElementById('liquidationAmount').textContent = data.liquidation_24h_amount;
+                document.getElementById('totalPosition').textContent = data.total_position;
+                document.getElementById('updateTime').textContent = `更新时间: ${data.update_time}`;
+
+                // 隐藏加载提示，显示内容
+                document.getElementById('loadingMsg').style.display = 'none';
+                document.getElementById('errorMsg').style.display = 'none';
+                document.getElementById('mainCard').style.display = 'block';
+
+            } catch (error) {
+                console.error('加载失败:', error);
+                document.getElementById('loadingMsg').style.display = 'none';
+                document.getElementById('mainCard').style.display = 'none';
+                document.getElementById('errorMsg').textContent = `❌ 数据加载失败: ${error.message}`;
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        }
+
+        function startAutoRefresh() {
+            // 每5分钟刷新一次
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+            }
+            
+            autoRefreshTimer = setInterval(() => {
+                console.log('自动刷新数据...');
+                loadData();
+            }, 300000); // 5分钟 = 300000毫秒
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            startAutoRefresh();
+        });
+    </script>
+</body>
+</html>
