@@ -891,6 +891,97 @@
             // 提取计次数据
             trendChart.data.datasets[3].data = sortedData.map(d => parseInt(d.count_times) || 0);
             
+            // 🌟 根据条件设置数据点高亮
+            // 标记：急涨或急跌 >= 10（只标注第一次）
+            let hasMarkedRush10 = false;
+            // 标记：差值 >= 20 或 <= -20（只标注第一次）
+            let hasMarkedDiff20 = false;
+            // 标记：差值 >= 50 或 <= -50（只标注第一次）
+            let hasMarkedDiff50 = false;
+            
+            // 为急涨/急跌曲线设置高亮点
+            const rushUpPointRadius = [];
+            const rushUpPointBorderWidth = [];
+            const rushUpPointBackgroundColor = [];
+            const rushDownPointRadius = [];
+            const rushDownPointBorderWidth = [];
+            const rushDownPointBackgroundColor = [];
+            
+            // 为差值曲线设置高亮点
+            const diffPointRadius = [];
+            const diffPointBorderWidth = [];
+            const diffPointBackgroundColor = [];
+            
+            sortedData.forEach((d, index) => {
+                const rushUp = parseInt(d.rush_up) || 0;
+                const rushDown = parseInt(d.rush_down) || 0;
+                const diff = rushUp - rushDown;
+                
+                // 默认样式
+                let rushRadius = 7;
+                let rushBorderWidth = 3;
+                let rushUpColor = '#ff4444';
+                let rushDownColor = '#00ff88';
+                
+                let diffRadius = 6;
+                let diffBorderWidth = 2;
+                let diffColor = '#ffaa00';
+                
+                // 条件1: 急涨或急跌 >= 10（只标注第一次）
+                if (!hasMarkedRush10 && (rushUp >= 10 || rushDown >= 10)) {
+                    rushRadius = 14;
+                    rushBorderWidth = 6;
+                    rushUpColor = '#ffff00';  // 黄色高亮
+                    rushDownColor = '#ffff00';
+                    hasMarkedRush10 = true;
+                    console.log(`🌟 高亮：急涨/急跌>=10 at ${d.record_time}, 急涨=${rushUp}, 急跌=${rushDown}`);
+                }
+                
+                // 条件2: 差值 >= 50 或 <= -50（只标注第一次，最高优先级）
+                if (!hasMarkedDiff50 && Math.abs(diff) >= 50) {
+                    diffRadius = 16;
+                    diffBorderWidth = 7;
+                    diffColor = '#ff00ff';  // 紫红色高亮（极端）
+                    hasMarkedDiff50 = true;
+                    hasMarkedDiff20 = true;  // 也满足20条件，跳过
+                    console.log(`🌟🌟🌟 高亮：差值>=50 at ${d.record_time}, 差值=${diff}`);
+                }
+                // 条件3: 差值 >= 20 或 <= -20（只标注第一次）
+                else if (!hasMarkedDiff20 && Math.abs(diff) >= 20) {
+                    diffRadius = 14;
+                    diffBorderWidth = 6;
+                    diffColor = '#ff6600';  // 橙红色高亮
+                    hasMarkedDiff20 = true;
+                    console.log(`🌟🌟 高亮：差值>=20 at ${d.record_time}, 差值=${diff}`);
+                }
+                
+                // 记录每个点的样式
+                rushUpPointRadius.push(rushRadius);
+                rushUpPointBorderWidth.push(rushBorderWidth);
+                rushUpPointBackgroundColor.push(rushUpColor);
+                
+                rushDownPointRadius.push(rushRadius);
+                rushDownPointBorderWidth.push(rushBorderWidth);
+                rushDownPointBackgroundColor.push(rushDownColor);
+                
+                diffPointRadius.push(diffRadius);
+                diffPointBorderWidth.push(diffBorderWidth);
+                diffPointBackgroundColor.push(diffColor);
+            });
+            
+            // 应用高亮样式
+            trendChart.data.datasets[0].pointRadius = rushUpPointRadius;
+            trendChart.data.datasets[0].pointBorderWidth = rushUpPointBorderWidth;
+            trendChart.data.datasets[0].pointBackgroundColor = rushUpPointBackgroundColor;
+            
+            trendChart.data.datasets[1].pointRadius = rushDownPointRadius;
+            trendChart.data.datasets[1].pointBorderWidth = rushDownPointBorderWidth;
+            trendChart.data.datasets[1].pointBackgroundColor = rushDownPointBackgroundColor;
+            
+            trendChart.data.datasets[2].pointRadius = diffPointRadius;
+            trendChart.data.datasets[2].pointBorderWidth = diffPointBorderWidth;
+            trendChart.data.datasets[2].pointBackgroundColor = diffPointBackgroundColor;
+            
             console.log('时间点:', trendChart.data.labels);
             console.log('急涨数据:', trendChart.data.datasets[0].data);
             console.log('急跌数据:', trendChart.data.datasets[1].data);
