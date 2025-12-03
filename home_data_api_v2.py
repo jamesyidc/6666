@@ -353,6 +353,11 @@ def panic_wash_history():
     """恐慌清洗历史曲线页面"""
     return send_file('panic_wash_history.html')
 
+@app.route('/test-coin-display')
+def test_coin_display():
+    """币名显示测试页面"""
+    return send_file('test_coin_display.html')
+
 @app.route('/api/panic-wash')
 def get_panic_wash_api():
     """恐慌清洗API - 直接返回数据"""
