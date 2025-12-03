@@ -128,6 +128,25 @@ def update_cache():
             print(f"✅ 缓存更新成功")
             print(f"   文件名: {result['filename']}")
             print(f"   时间差: {result['time_diff']:.1f} 分钟")
+            
+            # 自动保存到数据库
+            try:
+                from import_history_simple import parse_filename_datetime, parse_home_data as parse_for_db, save_to_database
+                
+                filename = result['filename']
+                content = result['content']
+                record_time = parse_filename_datetime(filename)
+                
+                if record_time:
+                    stats, coins = parse_for_db(content)
+                    success, msg = save_to_database(filename, record_time, stats, coins)
+                    if success:
+                        print(f"   💾 已自动保存到数据库")
+                    else:
+                        print(f"   💾 数据库: {msg}")
+            except Exception as db_error:
+                print(f"   ⚠️  保存到数据库失败: {str(db_error)}")
+            
             print(f"{'='*60}\n")
         else:
             print("❌ 获取数据失败")
