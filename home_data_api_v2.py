@@ -358,6 +358,11 @@ def test_coin_display():
     """币名显示测试页面"""
     return send_file('test_coin_display.html')
 
+@app.route('/coin-list-test')
+def coin_list_test():
+    """币名列表简单测试页面"""
+    return send_file('coin_list_simple.html')
+
 @app.route('/api/panic-wash')
 def get_panic_wash_api():
     """恐慌清洗API - 直接返回数据"""
