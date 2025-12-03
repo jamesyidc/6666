@@ -36,7 +36,10 @@ def parse_home_data(content):
         'status': '',
         'ratio': '',
         'greenCount': 0,
-        'percentage': ''
+        'percentage': '',
+        'difference': '',
+        'priceLowest': '',
+        'priceNewHigh': ''
     }
     coins = []
     
@@ -65,6 +68,15 @@ def parse_home_data(content):
                     stats['greenCount'] = int(match.group()) if match else 0
                 elif '百分比' in key:
                     stats['percentage'] = value
+                elif '差值结果' in key:
+                    # 差值：9 ★
+                    stats['difference'] = value.split('：')[1] if '：' in value else value
+                elif '比价最低得分' in key:
+                    # 比价最低 0 0
+                    stats['priceLowest'] = value.replace('比价最低', '').strip()
+                elif '仓位得分' in key:
+                    # 比价创新高 0 0
+                    stats['priceNewHigh'] = value.replace('比价创新高', '').strip()
         
         # 币种数据
         if '[超级列表框_首页开始]' in line:
@@ -116,8 +128,9 @@ def save_to_database(filename, record_time, stats, coins):
         # 插入统计数据
         cursor.execute('''
             INSERT INTO stats_history 
-            (filename, record_time, rush_up, rush_down, status, ratio, green_count, percentage)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (filename, record_time, rush_up, rush_down, status, ratio, green_count, percentage,
+             difference, price_lowest, price_new_high)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             filename,
             record_time,
@@ -126,7 +139,10 @@ def save_to_database(filename, record_time, stats, coins):
             stats['status'],
             stats['ratio'],
             stats['greenCount'],
-            stats['percentage']
+            stats['percentage'],
+            stats['difference'],
+            stats['priceLowest'],
+            stats['priceNewHigh']
         ))
         
         stats_id = cursor.lastrowid

@@ -403,12 +403,24 @@
                 <span class="stat-value" id="ratio">-</span>
             </div>
             <div class="stat-item">
+                <span class="stat-label">差值：</span>
+                <span class="stat-value" id="difference">-</span>
+            </div>
+            <div class="stat-item">
                 <span class="stat-label">绿色数量：</span>
                 <span class="stat-value" id="greenCount">-</span>
             </div>
             <div class="stat-item">
                 <span class="stat-label">百分比：</span>
                 <span class="stat-value" id="percentage">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比价最低：</span>
+                <span class="stat-value" id="priceLowest">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比价创新高：</span>
+                <span class="stat-value" id="priceNewHigh">-</span>
             </div>
         </div>
 
@@ -717,8 +729,11 @@
                                 <span>急跌: <span class="negative">${item.rush_down}</span></span>
                                 <span>状态: ${item.status}</span>
                                 <span>比值: ${item.ratio || '无'}</span>
+                                <span>差值: ${item.difference || '无'}</span>
                                 <span>绿色: ${item.green_count}</span>
                                 <span>百分比: ${item.percentage || '无'}</span>
+                                <span>比价最低: ${item.price_lowest || '无'}</span>
+                                <span>比价创新高: ${item.price_new_high || '无'}</span>
                             </div>
                         </div>
                     `;
@@ -761,8 +776,11 @@
             document.getElementById('rushDown').textContent = record.rush_down;
             document.getElementById('status').textContent = record.status;
             document.getElementById('ratio').textContent = record.ratio || '无';
+            document.getElementById('difference').textContent = record.difference || '无';
             document.getElementById('greenCount').textContent = record.green_count;
             document.getElementById('percentage').textContent = record.percentage || '无';
+            document.getElementById('priceLowest').textContent = record.price_lowest || '无';
+            document.getElementById('priceNewHigh').textContent = record.price_new_high || '无';
             
             // 显示币种数据
             displayCoins(record.coins);
