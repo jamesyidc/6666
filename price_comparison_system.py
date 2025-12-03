@@ -189,16 +189,16 @@ class PriceComparisonSystem:
         
         # 比价逻辑
         if current_price > highest_price:
-            # 创新高
+            # 当前价 > 最高价：更新最高价，最高计次+1
             result['action'] = 'new_high'
             result['old_value'] = highest_price
             result['new_value'] = current_price
             
-            # 更新最高价
+            # 更新最高价，计次+1
             cursor.execute('''
                 UPDATE price_baseline
                 SET highest_price = ?, 
-                    highest_count = 0,
+                    highest_count = highest_count + 1,
                     last_price = ?,
                     highest_ratio = ?,
                     lowest_ratio = ?,
@@ -222,13 +222,12 @@ class PriceComparisonSystem:
             ''', (symbol, record_date))
             
         elif current_price >= lowest_price:
-            # 在最高价和最低价之间，最高价计次+1
-            result['action'] = 'high_count_inc'
+            # 在最高价和最低价之间：不改变计次
+            result['action'] = 'no_change'
             
             cursor.execute('''
                 UPDATE price_baseline
-                SET highest_count = highest_count + 1,
-                    last_price = ?,
+                SET last_price = ?,
                     highest_ratio = ?,
                     lowest_ratio = ?,
                     last_update_time = ?
@@ -236,16 +235,16 @@ class PriceComparisonSystem:
             ''', (current_price, highest_ratio, lowest_ratio, update_time, symbol))
             
         elif current_price < lowest_price:
-            # 创新低
+            # 当前价 < 最低价：更新最低价，最低计次+1
             result['action'] = 'new_low'
             result['old_value'] = lowest_price
             result['new_value'] = current_price
             
-            # 更新最低价
+            # 更新最低价，计次+1
             cursor.execute('''
                 UPDATE price_baseline
                 SET lowest_price = ?,
-                    lowest_count = 0,
+                    lowest_count = lowest_count + 1,
                     last_price = ?,
                     highest_ratio = ?,
                     lowest_ratio = ?,

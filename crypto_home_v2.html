@@ -485,80 +485,7 @@
         .priority-6 { background: #666666; color: #fff; }
 
         /* 创新高低记录面板 */
-        .price-records-panel {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
 
-        .record-box {
-            background: linear-gradient(135deg, #16213e 0%, #1a2332 100%);
-            padding: 25px;
-            border-radius: 12px;
-            border: 2px solid #2a3f5f;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .record-box:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(74, 158, 255, 0.3);
-        }
-
-        .record-box.high {
-            border-color: rgba(255, 68, 68, 0.5);
-        }
-
-        .record-box.low {
-            border-color: rgba(0, 255, 136, 0.5);
-        }
-
-        .record-title {
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-
-        .record-title.high {
-            color: #ff4444;
-        }
-
-        .record-title.low {
-            color: #00ff88;
-        }
-
-        .record-count {
-            font-size: 48px;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-
-        .record-count.high {
-            color: #ff4444;
-        }
-
-        .record-count.low {
-            color: #00ff88;
-        }
-
-        .record-stars {
-            font-size: 32px;
-            margin: 15px 0;
-            min-height: 40px;
-        }
-
-        .record-desc {
-            font-size: 14px;
-            color: #aaa;
-            margin-top: 10px;
-        }
-
-        @media (max-width: 768px) {
-            .price-records-panel {
-                grid-template-columns: 1fr;
-            }
-        }
     </style>
 </head>
 <body>
@@ -622,7 +549,23 @@
             </div>
             
             <div class="alert-grid">
-                <!-- 1. 急涨提醒 -->
+                <!-- 1. 今日创新低记录 -->
+                <div class="alert-box" id="alertNewLow" style="background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%); border-color: #00ff88;">
+                    <div class="alert-box-title" style="color: #00ff88;">📉 创新低记录</div>
+                    <div class="alert-box-value" id="newLowCount" style="color: #00ff88;">0</div>
+                    <div class="alert-box-stars" id="newLowStars">-</div>
+                    <div class="alert-box-desc" id="newLowDesc">等待数据</div>
+                </div>
+
+                <!-- 2. 今日创新高记录 -->
+                <div class="alert-box" id="alertNewHigh" style="background: linear-gradient(135deg, rgba(255, 68, 68, 0.15) 0%, rgba(255, 68, 68, 0.05) 100%); border-color: #ff4444;">
+                    <div class="alert-box-title" style="color: #ff4444;">🔥 创新高记录</div>
+                    <div class="alert-box-value" id="newHighCount" style="color: #ff4444;">0</div>
+                    <div class="alert-box-stars" id="newHighStars">-</div>
+                    <div class="alert-box-desc" id="newHighDesc">等待数据</div>
+                </div>
+
+                <!-- 3. 急涨提醒 -->
                 <div class="alert-box" id="alertRushUp">
                     <div class="alert-box-title">急涨提醒</div>
                     <div class="alert-box-value" id="alertRushUpValue">0</div>
@@ -630,7 +573,7 @@
                     <div class="alert-box-desc" id="alertRushUpDesc">等待数据</div>
                 </div>
 
-                <!-- 2. 急跌提醒 -->
+                <!-- 4. 急跌提醒 -->
                 <div class="alert-box" id="alertRushDown">
                     <div class="alert-box-title">急跌提醒</div>
                     <div class="alert-box-value" id="alertRushDownValue">0</div>
@@ -729,24 +672,6 @@
         </div>
 
         <!-- 创新高低记录面板 -->
-        <div class="price-records-panel">
-            <!-- 今日创新低记录 -->
-            <div class="record-box low">
-                <div class="record-title low">📉 今日创新低记录</div>
-                <div class="record-count low" id="newLowCount">0</div>
-                <div class="record-stars" id="newLowStars">-</div>
-                <div class="record-desc" id="newLowDesc">等待数据加载...</div>
-            </div>
-
-            <!-- 今日创新高记录 -->
-            <div class="record-box high">
-                <div class="record-title high">🔥 今日创新高记录</div>
-                <div class="record-count high" id="newHighCount">0</div>
-                <div class="record-stars" id="newHighStars">-</div>
-                <div class="record-desc" id="newHighDesc">等待数据加载...</div>
-            </div>
-        </div>
-
         <!-- 曲线图 -->
         <div class="chart-container">
             <canvas id="trendChart"></canvas>
