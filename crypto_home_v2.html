@@ -71,6 +71,139 @@
             font-size: 14px;
         }
 
+        /* 星级提醒面板 */
+        .alert-panel {
+            background: linear-gradient(135deg, #16213e 0%, #1a2332 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 2px solid #2a3f5f;
+        }
+
+        .alert-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4a9eff;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .alert-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .alert-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(74, 158, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .alert-box:hover {
+            transform: translateY(-3px);
+            border-color: #4a9eff;
+            box-shadow: 0 5px 20px rgba(74, 158, 255, 0.3);
+        }
+
+        .alert-box.warning {
+            border-color: rgba(255, 204, 0, 0.5);
+        }
+
+        .alert-box.danger {
+            border-color: rgba(255, 68, 68, 0.5);
+        }
+
+        .alert-box-title {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .alert-box-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .alert-box-stars {
+            font-size: 28px;
+            margin-bottom: 5px;
+            min-height: 35px;
+        }
+
+        .star-filled {
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .star-empty {
+            color: #4a9eff;
+            text-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
+        }
+
+        .alert-box-desc {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .alert-summary {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-label {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .summary-value {
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        .summary-value.filled {
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .summary-value.empty {
+            color: #4a9eff;
+            text-shadow: 0 0 20px rgba(74, 158, 255, 0.5);
+        }
+
+        @media (max-width: 1200px) {
+            .alert-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .alert-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .alert-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .chart-container {
             background: #16213e;
             padding: 20px;
@@ -218,6 +351,65 @@
             </div>
         </div>
 
+        <!-- 星级提醒面板 -->
+        <div class="alert-panel">
+            <div class="alert-title">⭐ 星级提醒系统</div>
+            
+            <div class="alert-grid">
+                <!-- 1. 急涨提醒 -->
+                <div class="alert-box" id="alertRushUp">
+                    <div class="alert-box-title">急涨提醒</div>
+                    <div class="alert-box-value" id="alertRushUpValue">0</div>
+                    <div class="alert-box-stars" id="alertRushUpStars">-</div>
+                    <div class="alert-box-desc" id="alertRushUpDesc">等待数据</div>
+                </div>
+
+                <!-- 2. 急跌提醒 -->
+                <div class="alert-box" id="alertRushDown">
+                    <div class="alert-box-title">急跌提醒</div>
+                    <div class="alert-box-value" id="alertRushDownValue">0</div>
+                    <div class="alert-box-stars" id="alertRushDownStars">-</div>
+                    <div class="alert-box-desc" id="alertRushDownDesc">等待数据</div>
+                </div>
+
+                <!-- 3. 差值正值 -->
+                <div class="alert-box" id="alertDiffPositive">
+                    <div class="alert-box-title">差值正值</div>
+                    <div class="alert-box-value" id="alertDiffPositiveValue">0</div>
+                    <div class="alert-box-stars" id="alertDiffPositiveStars">-</div>
+                    <div class="alert-box-desc" id="alertDiffPositiveDesc">等待数据</div>
+                </div>
+
+                <!-- 4. 差值负值 -->
+                <div class="alert-box" id="alertDiffNegative">
+                    <div class="alert-box-title">差值负值</div>
+                    <div class="alert-box-value" id="alertDiffNegativeValue">0</div>
+                    <div class="alert-box-stars" id="alertDiffNegativeStars">-</div>
+                    <div class="alert-box-desc" id="alertDiffNegativeDesc">等待数据</div>
+                </div>
+
+                <!-- 5. 持仓量 -->
+                <div class="alert-box" id="alertPosition">
+                    <div class="alert-box-title">全网持仓量</div>
+                    <div class="alert-box-value" id="alertPositionValue">0<span style="font-size:14px;">亿</span></div>
+                    <div class="alert-box-stars" id="alertPositionStars">-</div>
+                    <div class="alert-box-desc" id="alertPositionDesc">等待数据</div>
+                </div>
+            </div>
+
+            <!-- 统计汇总 -->
+            <div class="alert-summary">
+                <div class="summary-item">
+                    <div class="summary-label">实心星星总数</div>
+                    <div class="summary-value filled" id="totalFilledStars">0 ★</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">空心星星总数</div>
+                    <div class="summary-value empty" id="totalEmptyStars">0 ☆</div>
+                </div>
+            </div>
+        </div>
+
         <!-- 曲线图 -->
         <div class="chart-container">
             <canvas id="trendChart"></canvas>
@@ -279,6 +471,182 @@
             if (ratio1 > 70 && ratio2 > 120) return { level: 4, text: '等级4', stars: '⭐⭐' };
             if (ratio1 > 80 && ratio2 > 110) return { level: 5, text: '等级5', stars: '⭐' };
             return { level: 6, text: '等级6', stars: '—' };
+        }
+
+        // 更新星级提醒面板
+        function updateAlertPanel(stats) {
+            // 获取数据并转换为数字
+            const rushUp = parseInt(stats.rushUp) || 0;
+            const rushDown = parseInt(stats.rushDown) || 0;
+            const diff = rushUp - rushDown;
+
+            // 从恐慌清洗API获取持仓量数据
+            fetch('/api/panic-wash')
+                .then(res => res.json())
+                .then(result => {
+                    const position = result.success ? parseFloat(result.data.total_position) : 0;
+                    calculateAndUpdateAlerts(rushUp, rushDown, diff, position);
+                })
+                .catch(() => {
+                    // 如果获取失败，使用0作为持仓量
+                    calculateAndUpdateAlerts(rushUp, rushDown, diff, 0);
+                });
+        }
+
+        function calculateAndUpdateAlerts(rushUp, rushDown, diff, position) {
+            let totalFilled = 0;  // 实心星星总数
+            let totalEmpty = 0;   // 空心星星总数
+
+            // 1. 急涨提醒（实心星）
+            let rushUpStars = 0;
+            let rushUpDesc = '';
+            if (rushUp >= 100) {
+                rushUpStars = 3;
+                rushUpDesc = '超高急涨！';
+            } else if (rushUp >= 50) {
+                rushUpStars = 2;
+                rushUpDesc = '高急涨';
+            } else if (rushUp >= 10) {
+                rushUpStars = 1;
+                rushUpDesc = '有急涨';
+            } else {
+                rushUpDesc = '正常';
+            }
+            totalFilled += rushUpStars;
+
+            document.getElementById('alertRushUpValue').textContent = rushUp;
+            document.getElementById('alertRushUpStars').innerHTML = 
+                '<span class="star-filled">' + '★'.repeat(rushUpStars) + '</span>';
+            document.getElementById('alertRushUpDesc').textContent = rushUpDesc;
+            document.getElementById('alertRushUp').className = 
+                'alert-box' + (rushUpStars >= 2 ? ' danger' : rushUpStars >= 1 ? ' warning' : '');
+
+            // 2. 急跌提醒（空心星）
+            let rushDownStars = 0;
+            let rushDownDesc = '';
+            if (rushDown >= 100) {
+                rushDownStars = 3;
+                rushDownDesc = '超高急跌！';
+            } else if (rushDown >= 50) {
+                rushDownStars = 2;
+                rushDownDesc = '高急跌';
+            } else if (rushDown >= 10) {
+                rushDownStars = 1;
+                rushDownDesc = '有急跌';
+            } else {
+                rushDownDesc = '正常';
+            }
+            totalEmpty += rushDownStars;
+
+            document.getElementById('alertRushDownValue').textContent = rushDown;
+            document.getElementById('alertRushDownStars').innerHTML = 
+                '<span class="star-empty">' + '☆'.repeat(rushDownStars) + '</span>';
+            document.getElementById('alertRushDownDesc').textContent = rushDownDesc;
+            document.getElementById('alertRushDown').className = 
+                'alert-box' + (rushDownStars >= 2 ? ' danger' : rushDownStars >= 1 ? ' warning' : '');
+
+            // 3. 差值正值（实心星）
+            let diffPosStars = 0;
+            let diffPosDesc = '';
+            if (diff >= 50) {
+                diffPosStars = 3;
+                diffPosDesc = '极强多头！';
+            } else if (diff >= 20) {
+                diffPosStars = 2;
+                diffPosDesc = '强多头';
+            } else if (diff >= 10) {
+                diffPosStars = 1;
+                diffPosDesc = '偏多头';
+            } else if (diff > 0) {
+                diffPosDesc = '微多头';
+            } else {
+                diffPosDesc = '-';
+            }
+            if (diff >= 10) {
+                totalFilled += diffPosStars;
+            }
+
+            document.getElementById('alertDiffPositiveValue').textContent = diff >= 0 ? `+${diff}` : '-';
+            if (diff >= 10) {
+                document.getElementById('alertDiffPositiveStars').innerHTML = 
+                    '<span class="star-filled">' + '★'.repeat(diffPosStars) + '</span>';
+            } else {
+                document.getElementById('alertDiffPositiveStars').textContent = '-';
+            }
+            document.getElementById('alertDiffPositiveDesc').textContent = diffPosDesc;
+            document.getElementById('alertDiffPositive').className = 
+                'alert-box' + (diffPosStars >= 2 ? ' danger' : diffPosStars >= 1 ? ' warning' : '');
+
+            // 4. 差值负值（空心星）
+            let diffNegStars = 0;
+            let diffNegDesc = '';
+            if (diff <= -50) {
+                diffNegStars = 3;
+                diffNegDesc = '极强空头！';
+            } else if (diff <= -20) {
+                diffNegStars = 2;
+                diffNegDesc = '强空头';
+            } else if (diff <= -10) {
+                diffNegStars = 1;
+                diffNegDesc = '偏空头';
+            } else if (diff < 0) {
+                diffNegDesc = '微空头';
+            } else {
+                diffNegDesc = '-';
+            }
+            if (diff <= -10) {
+                totalEmpty += diffNegStars;
+            }
+
+            document.getElementById('alertDiffNegativeValue').textContent = diff <= 0 ? diff : '-';
+            if (diff <= -10) {
+                document.getElementById('alertDiffNegativeStars').innerHTML = 
+                    '<span class="star-empty">' + '☆'.repeat(diffNegStars) + '</span>';
+            } else {
+                document.getElementById('alertDiffNegativeStars').textContent = '-';
+            }
+            document.getElementById('alertDiffNegativeDesc').textContent = diffNegDesc;
+            document.getElementById('alertDiffNegative').className = 
+                'alert-box' + (diffNegStars >= 2 ? ' danger' : diffNegStars >= 1 ? ' warning' : '');
+
+            // 5. 持仓量（实心星）
+            let positionStars = 0;
+            let positionDesc = '';
+            if (position > 0) {
+                if (position <= 91) {
+                    positionStars = 3;
+                    positionDesc = '极低持仓！';
+                } else if (position > 91 && position < 95) {
+                    positionStars = 2;
+                    positionDesc = '低持仓';
+                } else if (position >= 95 && position < 100) {
+                    positionStars = 1;
+                    positionDesc = '偏低持仓';
+                } else {
+                    positionDesc = '正常持仓';
+                }
+                totalFilled += positionStars;
+            } else {
+                positionDesc = '等待数据';
+            }
+
+            document.getElementById('alertPositionValue').innerHTML = 
+                position > 0 ? `${position}<span style="font-size:14px;">亿</span>` : '-';
+            if (positionStars > 0) {
+                document.getElementById('alertPositionStars').innerHTML = 
+                    '<span class="star-filled">' + '★'.repeat(positionStars) + '</span>';
+            } else {
+                document.getElementById('alertPositionStars').textContent = '-';
+            }
+            document.getElementById('alertPositionDesc').textContent = positionDesc;
+            document.getElementById('alertPosition').className = 
+                'alert-box' + (positionStars >= 2 ? ' danger' : positionStars >= 1 ? ' warning' : '');
+
+            // 更新总计
+            document.getElementById('totalFilledStars').textContent = `${totalFilled} ★`;
+            document.getElementById('totalEmptyStars').textContent = `${totalEmpty} ☆`;
+
+            console.log(`星级统计 - 实心: ${totalFilled}★, 空心: ${totalEmpty}☆`);
         }
 
         function initChart() {
@@ -605,6 +973,9 @@
                 document.getElementById('greenCount').textContent = data.stats.greenCount || 0;
                 document.getElementById('percentage').textContent = data.stats.percentage || '-';
                 document.getElementById('updateTime').textContent = `更新时间: ${data.updateTime}`;
+
+                // 更新星级提醒面板
+                updateAlertPanel(data.stats);
 
                 // 更新曲线图
                 updateChart(data);
