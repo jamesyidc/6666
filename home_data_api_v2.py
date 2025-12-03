@@ -470,6 +470,11 @@ def panic_wash_history():
     """恐慌清洗历史曲线页面"""
     return send_file('panic_wash_history.html')
 
+@app.route('/test-cache')
+def test_cache():
+    """缓存测试页面"""
+    return send_file('test_cache.html')
+
 @app.route('/test-coin-display')
 def test_coin_display():
     """币名显示测试页面"""
