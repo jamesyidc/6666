@@ -426,6 +426,47 @@
             margin-left: 10px;
         }
 
+        .refresh-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 15px;
+            background: linear-gradient(135deg, #00c853 0%, #00e676 100%);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 15px;
+        }
+
+        .refresh-btn:hover {
+            background: linear-gradient(135deg, #00e676 0%, #00ff88 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 200, 83, 0.4);
+        }
+
+        .refresh-btn:active {
+            transform: translateY(0);
+        }
+
+        .refresh-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .refresh-btn.refreshing {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         .priority-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -480,6 +521,9 @@
             <div class="stat-item">
                 <span class="update-time" id="updateTime">更新时间: --</span>
                 <span class="countdown" id="countdown"></span>
+                <button class="refresh-btn" id="refreshBtn" onclick="forceRefreshData()">
+                    <span id="refreshIcon">🔄</span> 立即刷新
+                </button>
             </div>
         </div>
 
@@ -1329,6 +1373,103 @@
             trendChart.data.datasets[2].pointBackgroundColor = diffPointBackgroundColor;
             
             trendChart.update();
+        }
+
+        async function forceRefreshData() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            const refreshIcon = document.getElementById('refreshIcon');
+            
+            try {
+                // 禁用按钮并显示加载状态
+                refreshBtn.disabled = true;
+                refreshIcon.classList.add('refreshing');
+                refreshIcon.textContent = '⏳';
+                
+                console.log('🔄 开始强制刷新数据...');
+                
+                const response = await fetch('/api/home-data/force-refresh');
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || '数据刷新失败');
+                }
+
+                console.log('✅ 数据刷新成功:', result.message);
+                
+                const data = result.data;
+
+                // 更新统计信息
+                document.getElementById('rushUp').textContent = data.stats.rushUp || 0;
+                document.getElementById('rushDown').textContent = data.stats.rushDown || 0;
+                document.getElementById('status').textContent = data.stats.status || '-';
+                document.getElementById('ratio').textContent = data.stats.ratio || '-';
+                document.getElementById('greenCount').textContent = data.stats.greenCount || 0;
+                document.getElementById('percentage').textContent = data.stats.percentage || '-';
+                document.getElementById('updateTime').textContent = `更新时间: ${data.updateTime}`;
+
+                // 更新星级提醒面板（传入币种数据）
+                updateAlertPanel(data.stats, data.coins);
+
+                // 更新曲线图
+                updateChart(data);
+
+                // 更新表格数据
+                const tbody = document.getElementById('tableBody');
+                tbody.innerHTML = '';
+
+                data.coins.forEach(coin => {
+                    const row = document.createElement('tr');
+                    
+                    const changeClass = parseFloat(coin.change) > 0 ? 'positive' : 
+                                       parseFloat(coin.change) < 0 ? 'negative' : 'neutral';
+                    
+                    const change24hClass = parseFloat(coin.change24h) > 0 ? 'positive' : 
+                                          parseFloat(coin.change24h) < 0 ? 'negative' : 'neutral';
+
+                    // 计算优先级
+                    const priority = calculatePriority(coin.ratio1, coin.ratio2);
+
+                    row.innerHTML = `
+                        <td><span class="priority-badge priority-${priority.level}">${priority.text}</span></td>
+                        <td>${coin.index}</td>
+                        <td class="symbol">${coin.symbol}</td>
+                        <td class="${changeClass}">${coin.change}</td>
+                        <td>${coin.rushUp > 0 ? `<span class="rush-up">${coin.rushUp}</span>` : coin.rushUp}</td>
+                        <td>${coin.rushDown > 0 ? `<span class="rush-down">${coin.rushDown}</span>` : coin.rushDown}</td>
+                        <td>${coin.updateTime}</td>
+                        <td>${coin.highPrice}</td>
+                        <td>${coin.highTime}</td>
+                        <td>${coin.decline}</td>
+                        <td class="${change24hClass}">${coin.change24h}</td>
+                        <td>${coin.rank}</td>
+                        <td>${coin.currentPrice}</td>
+                        <td>${coin.ratio1}</td>
+                        <td>${coin.ratio2}</td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                });
+
+                // 显示表格
+                document.getElementById('dataTable').style.display = 'table';
+                document.getElementById('loadingMsg').style.display = 'none';
+                document.getElementById('errorMsg').style.display = 'none';
+                
+                // 重启倒计时
+                startCountdown(600); // 10分钟
+
+                console.log('📊 数据刷新完成');
+                
+            } catch (error) {
+                console.error('❌ 数据刷新失败:', error);
+                document.getElementById('errorMsg').textContent = `刷新失败: ${error.message}`;
+                document.getElementById('errorMsg').style.display = 'block';
+            } finally {
+                // 恢复按钮状态
+                refreshBtn.disabled = false;
+                refreshIcon.classList.remove('refreshing');
+                refreshIcon.textContent = '🔄';
+            }
         }
 
         async function loadData() {

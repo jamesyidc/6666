@@ -24,7 +24,14 @@ CACHE = {
 }
 
 # 缓存有效期（秒）
-CACHE_VALIDITY = 300  # 5分钟
+CACHE_VALIDITY = 60  # 1分钟（降低缓存时间以获取更及时的数据）
+
+# 更新周期（秒）- 匹配Google Drive的3分钟更新周期
+UPDATE_CYCLE = 180  # 3分钟更新一次（匹配数据源更新频率）
+
+# Google Drive上传等待时间（秒）- 在每个3分钟周期的10-15秒之间获取数据
+GDRIVE_WAIT_TIME = 10  # 等待到第10秒开始获取数据
+GDRIVE_WAIT_MAX = 15  # 最多等待到第15秒
 
 def parse_home_data(content):
     """解析首页数据内容"""
@@ -298,34 +305,69 @@ def sync_panic_wash_data():
         return False
 
 def background_updater():
-    """后台定时更新线程"""
+    """后台定时更新线程 - 按照3分钟周期，在每个周期的第10-15秒之间更新"""
     import time as time_module
+    
+    # 首次启动时，等待到下一个合适的时间点
+    print("🚀 后台更新线程启动")
+    print(f"⏰ 更新周期: {UPDATE_CYCLE}秒 ({UPDATE_CYCLE/60:.1f}分钟)")
+    print(f"⏰ 数据采集窗口: 每个周期的第{GDRIVE_WAIT_TIME}-{GDRIVE_WAIT_MAX}秒")
     
     while True:
         try:
-            # 获取当前秒数
-            current_second = datetime.now().second
+            current_time = datetime.now()
+            current_minute = current_time.minute
+            current_second = current_time.second
             
-            # 如果当前秒数小于15秒，等待到15秒（给Google Drive留出上传时间）
-            if current_second < 15:
-                wait_seconds = 15 - current_second
-                print(f"⏰ 等待{wait_seconds}秒，确保Google Drive数据已上传...")
+            # 计算距离下一个3分钟周期的时间
+            # 3分钟周期: 0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57
+            minutes_since_cycle = current_minute % 3
+            
+            if minutes_since_cycle == 0:
+                # 当前正好是3分钟周期的开始
+                if current_second < GDRIVE_WAIT_TIME:
+                    # 等待到第10秒
+                    wait_seconds = GDRIVE_WAIT_TIME - current_second
+                    print(f"⏰ 等待{wait_seconds}秒到达数据采集窗口 (第{GDRIVE_WAIT_TIME}秒)...")
+                    time_module.sleep(wait_seconds)
+                elif current_second > GDRIVE_WAIT_MAX:
+                    # 已经过了采集窗口，等待到下一个周期
+                    wait_seconds = 180 - current_second + GDRIVE_WAIT_TIME
+                    print(f"⏰ 已过采集窗口，等待{wait_seconds}秒到下一个周期...")
+                    time_module.sleep(wait_seconds)
+                else:
+                    # 正好在采集窗口内，立即采集
+                    print(f"✅ 当前在数据采集窗口内 (第{current_second}秒)，开始采集...")
+            else:
+                # 不在3分钟周期的开始，计算等待时间
+                wait_minutes = 3 - minutes_since_cycle
+                wait_seconds = wait_minutes * 60 - current_second + GDRIVE_WAIT_TIME
+                print(f"⏰ 等待{wait_seconds}秒 ({wait_seconds/60:.1f}分钟) 到下一个数据采集窗口...")
                 time_module.sleep(wait_seconds)
+                current_time = datetime.now()
+                current_second = current_time.second
+                print(f"✅ 到达数据采集窗口 (第{current_second}秒)，开始采集...")
             
-            # 更新首页数据缓存
+            # 执行数据更新
+            print(f"📡 [{datetime.now().strftime('%H:%M:%S')}] 开始数据更新...")
             update_cache()
-            
-            # 同步信号统计数据
             sync_signal_stats()
-            
-            # 同步恐慌清洗数据
             sync_panic_wash_data()
             
-            # 每3分钟更新一次（匹配Google Drive更新周期）
-            print(f"⏰ 下次更新时间: {(datetime.now() + timedelta(seconds=180)).strftime('%H:%M:%S')}")
-            time.sleep(180)
+            # 计算下次更新时间
+            next_update = datetime.now() + timedelta(seconds=UPDATE_CYCLE)
+            print(f"✅ 数据更新完成")
+            print(f"⏰ 下次更新时间: {next_update.strftime('%H:%M:%S')}")
+            print(f"{'='*70}\n")
+            
+            # 等待到下一个周期
+            time.sleep(UPDATE_CYCLE - (datetime.now().second % 60) + GDRIVE_WAIT_TIME)
+            
         except Exception as e:
-            print(f"后台更新线程错误: {str(e)}")
+            print(f"❌ 后台更新线程错误: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            print(f"⏰ 60秒后重试...")
             time.sleep(60)
 
 @app.route('/')
@@ -409,6 +451,38 @@ def get_home_data():
             'filename': cached['filename'],
             'time_diff': cached['time_diff'],
             'cached_at': datetime.fromtimestamp(CACHE['last_update']).strftime('%Y-%m-%d %H:%M:%S') if CACHE['last_update'] else None
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/home-data/force-refresh')
+def force_refresh_home_data():
+    """强制刷新首页数据API（绕过缓存立即获取最新数据）"""
+    try:
+        print("🔄 收到强制刷新请求，立即获取最新数据...")
+        update_cache()
+        
+        if CACHE['data'] is None:
+            return jsonify({
+                'success': False,
+                'error': '数据刷新失败'
+            }), 503
+        
+        cached = CACHE['data']
+        
+        return jsonify({
+            'success': True,
+            'data': cached['parsed_data'],
+            'filename': cached['filename'],
+            'time_diff': cached['time_diff'],
+            'cached_at': datetime.fromtimestamp(CACHE['last_update']).strftime('%Y-%m-%d %H:%M:%S') if CACHE['last_update'] else None,
+            'message': '已强制刷新数据'
         })
         
     except Exception as e:
