@@ -24,10 +24,44 @@
             margin: 0 auto;
         }
 
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
         h1 {
             text-align: center;
             color: #4a9eff;
-            margin-bottom: 20px;
+            margin: 0;
+        }
+
+        .back-button {
+            position: absolute;
+            left: 0;
+            background: #4a9eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-button:hover {
+            background: #3a8eef;
+            transform: translateX(-5px);
+        }
+
+        .back-button:active {
+            transform: translateX(-5px) scale(0.95);
         }
 
         .control-panel {
@@ -356,7 +390,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>📊 加密货币数据历史回看</h1>
+        <div class="header">
+            <button class="back-button" onclick="window.location.href='/'">
+                ← 返回首页
+            </button>
+            <h1>📊 加密货币数据历史回看</h1>
+        </div>
         
         <!-- 控制面板 -->
         <div class="control-panel">
