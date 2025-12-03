@@ -1266,7 +1266,8 @@
         async function loadHistoryData() {
             try {
                 const today = new Date().toISOString().split('T')[0];
-                const response = await fetch(`/api/history/query?start_time=${today}%2000:00:00&end_time=${today}%2023:59:59&limit=200`);
+                // ✅ 优化：只查询最近50条记录，减少数据库查询时间
+                const response = await fetch(`/api/history/query?start_time=${today}%2000:00:00&end_time=${today}%2023:59:59&limit=50`);
                 const result = await response.json();
                 
                 if (result.success && result.data && result.data.length > 0) {
@@ -1292,8 +1293,8 @@
         }
 
         async function updateChart(data) {
-            // ✅ 新逻辑：每次刷新时重新加载完整历史数据，而不是累加
-            await loadHistoryData();
+            // ✅ 优化：只在后台异步加载历史数据，不阻塞UI更新
+            loadHistoryData();  // 不使用 await，让它异步加载
         }
 
         function updateChartWithHighlight() {
@@ -1608,8 +1609,12 @@
         // 页面加载时初始化
         window.addEventListener('DOMContentLoaded', async () => {
             initChart();
-            await loadHistoryData();  // 先加载历史数据
-            loadData();  // 再加载最新数据
+            
+            // ✅ 优化：并行加载数据，不阻塞
+            // 先加载最新数据（显示表格），同时后台加载历史数据（显示图表）
+            loadData();  // 立即加载最新数据（不等待）
+            loadHistoryData();  // 并行加载历史数据（不等待）
+            
             startAutoRefresh();
             startCountdown();
         });
