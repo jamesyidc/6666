@@ -157,11 +157,101 @@ def update_cache():
     finally:
         CACHE['updating'] = False
 
+def sync_signal_stats():
+    """同步做多做空信号统计数据"""
+    try:
+        print("\n" + "="*60)
+        print("同步信号统计数据...")
+        print("="*60)
+        
+        import requests
+        from datetime import timezone, timedelta
+        
+        BEIJING_TZ = timezone(timedelta(hours=8))
+        EXTERNAL_API = "https://8080-ieo4kftymfy546kbm6o33-2e77fc33.sandbox.novita.ai/api/filtered-signals/stats"
+        
+        # 获取数据
+        params = {
+            'limit': 200,
+            'rsi_short_threshold': 65,
+            'rsi_long_threshold': 30
+        }
+        
+        response = requests.get(EXTERNAL_API, params=params, timeout=10)
+        data = response.json()
+        
+        if not data.get('success'):
+            print(f"❌ API返回失败")
+            return False
+        
+        # 提取数据
+        summary = data.get('summary', {})
+        breakdown = data.get('breakdown', {})
+        
+        # 生成记录时间（北京时间，精确到分钟）
+        beijing_now = datetime.now(BEIJING_TZ)
+        record_time = beijing_now.strftime('%Y-%m-%d %H:%M:00')
+        
+        total_count = summary.get('total', 0)
+        long_count = summary.get('long', 0)
+        short_count = summary.get('short', 0)
+        chaodi_count = breakdown.get('抄底做多', 0)
+        dibu_count = breakdown.get('底部做多', 0)
+        dingbu_count = breakdown.get('顶部做空', 0)
+        
+        # 保存到数据库
+        import sqlite3
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        # 检查是否已存在
+        cursor.execute(
+            'SELECT id FROM signal_stats_history WHERE record_time = ?',
+            (record_time,)
+        )
+        existing = cursor.fetchone()
+        
+        if existing:
+            print(f"⏭️  记录已存在: {record_time}")
+            conn.close()
+            return False
+        
+        # 插入数据
+        cursor.execute('''
+            INSERT INTO signal_stats_history 
+            (record_time, total_count, long_count, short_count,
+             chaodi_count, dibu_count, dingbu_count, source_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            record_time, total_count, long_count, short_count,
+            chaodi_count, dibu_count, dingbu_count, EXTERNAL_API
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ 信号数据同步成功: {record_time}")
+        print(f"   总计: {total_count}, 做多: {long_count}, 做空: {short_count}")
+        print("="*60 + "\n")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ 信号数据同步失败: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
 def background_updater():
     """后台定时更新线程"""
     while True:
         try:
+            # 更新首页数据缓存
             update_cache()
+            
+            # 同步信号统计数据
+            sync_signal_stats()
+            
             # 每5分钟更新一次
             time.sleep(300)
         except Exception as e:
