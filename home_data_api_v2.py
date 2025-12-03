@@ -10,7 +10,7 @@ import sys
 import os
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -244,16 +244,28 @@ def sync_signal_stats():
 
 def background_updater():
     """后台定时更新线程"""
+    import time as time_module
+    
     while True:
         try:
+            # 获取当前秒数
+            current_second = datetime.now().second
+            
+            # 如果当前秒数小于15秒，等待到15秒（给Google Drive留出上传时间）
+            if current_second < 15:
+                wait_seconds = 15 - current_second
+                print(f"⏰ 等待{wait_seconds}秒，确保Google Drive数据已上传...")
+                time_module.sleep(wait_seconds)
+            
             # 更新首页数据缓存
             update_cache()
             
             # 同步信号统计数据
             sync_signal_stats()
             
-            # 每5分钟更新一次
-            time.sleep(300)
+            # 每3分钟更新一次（匹配Google Drive更新周期）
+            print(f"⏰ 下次更新时间: {(datetime.now() + timedelta(seconds=180)).strftime('%H:%M:%S')}")
+            time.sleep(180)
         except Exception as e:
             print(f"后台更新线程错误: {str(e)}")
             time.sleep(60)
