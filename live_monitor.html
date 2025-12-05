@@ -281,11 +281,6 @@
             <a href="/panic" class="nav-link">恐慌指标</a>
         </div>
 
-        <!-- 时间显示 -->
-        <div class="time-display">
-            📅 数据更新时间: <span class="time" id="updateTime">加载中...</span>
-        </div>
-
         <!-- 加载动画 -->
         <div id="loading" class="loading">
             <div class="spinner"></div>
@@ -294,6 +289,76 @@
 
         <!-- 内容区域 -->
         <div id="content" style="display: none;">
+            <!-- 顶部统计栏 -->
+            <div class="stats-footer" style="margin-bottom: 15px;">
+                <div class="stats-group">
+                    <div class="stat-item">
+                        <span class="stat-label">正常时间:</span>
+                        <span class="stat-value" id="normalTime">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">急涨:</span>
+                        <span class="stat-value green" id="riseCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">急跌:</span>
+                        <span class="stat-value red" id="fallCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">计次:</span>
+                        <span class="stat-value" id="countTimes">0</span>
+                    </div>
+                </div>
+                
+                <div class="stats-group">
+                    <div class="stat-item">
+                        <span class="stat-label">状态:</span>
+                        <span class="stat-value yellow" id="statusText">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">比值:</span>
+                        <span class="stat-value" id="ratioValue">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">差值:</span>
+                        <span class="stat-value" id="diffValue">--</span>
+                    </div>
+                </div>
+
+                <div class="stats-group">
+                    <div class="stat-item">
+                        <span class="stat-label">绿色数量:</span>
+                        <span class="stat-value green" id="greenCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">百分比:</span>
+                        <span class="stat-value" id="percentValue">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">比价最低:</span>
+                        <span class="stat-value" id="priceLowest">0 0</span>
+                    </div>
+                </div>
+
+                <div class="stats-group">
+                    <div class="stat-item">
+                        <span class="stat-label">比价创新高:</span>
+                        <span class="stat-value yellow" id="priceNewHigh">0 0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">计次得分:</span>
+                        <span class="stat-value" id="scoreStars">☆☆☆</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">本轮急涨:</span>
+                        <span class="stat-value green" id="roundRise">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">本轮急跌:</span>
+                        <span class="stat-value red" id="roundFall">0</span>
+                    </div>
+                </div>
+            </div>
             <!-- 币种数据表格 -->
             <div class="table-container">
                 <table id="coinTable">
@@ -324,76 +389,7 @@
                 </table>
             </div>
 
-            <!-- 底部统计栏 -->
-            <div class="stats-footer">
-                <div class="stats-group">
-                    <div class="stat-item">
-                        <span class="stat-label">正常时间:</span>
-                        <span class="stat-value" id="normalTime">--</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">急涨:</span>
-                        <span class="stat-value green" id="riseCount">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">急跌:</span>
-                        <span class="stat-value red" id="fallCount">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">长短比:</span>
-                        <span class="stat-value yellow" id="longShort">--</span>
-                    </div>
-                </div>
-                
-                <div class="stats-group">
-                    <div class="stat-item">
-                        <span class="stat-label">比值:</span>
-                        <span class="stat-value" id="ratio">--</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">警告:</span>
-                        <span class="stat-value yellow" id="warning">--</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">绿色数量:</span>
-                        <span class="stat-value green" id="greenTotal">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">白占比:</span>
-                        <span class="stat-value" id="whitePercent">0%</span>
-                    </div>
-                </div>
 
-                <div class="stats-group">
-                    <div class="stat-item">
-                        <span class="stat-label">计次:</span>
-                        <span class="stat-value" id="countTimes">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">本轮累计:</span>
-                        <span class="stat-value" id="roundTotal">0 0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">比对频率:</span>
-                        <span class="stat-value yellow" id="compareFreq">0%</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">比对能量:</span>
-                        <span class="stat-value" id="compareEnergy">0 0</span>
-                    </div>
-                </div>
-
-                <div class="stats-group">
-                    <div class="stat-item">
-                        <span class="stat-label">本轮最低>=10%:</span>
-                        <span class="stat-value" id="minTenPercent">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">本轮最高<=-10%:</span>
-                        <span class="stat-value" id="maxMinusTen">0</span>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- 页脚 -->
@@ -439,28 +435,30 @@
             const summary = result.summary;
             const coins = result.coins;
 
-            // 更新时间
-            document.getElementById('updateTime').textContent = summary.record_time || '未知';
+            // 更新顶部统计栏
+            // 正常时间
             document.getElementById('normalTime').textContent = summary.record_time || '未知';
-
-            // 更新底部统计 - 从汇总数据中提取
-            document.getElementById('riseCount').textContent = summary.rise_total || 0;
-            document.getElementById('fallCount').textContent = summary.fall_total || 0;
-            document.getElementById('greenTotal').textContent = summary.green_count || 0;
-            document.getElementById('ratio').textContent = summary.rise_fall_ratio || 0;
-            document.getElementById('whitePercent').textContent = (summary.green_percent || 0) + '%';
-            document.getElementById('countTimes').textContent = summary.count_times || 0;
             
-            // 五种状态显示
-            document.getElementById('longShort').textContent = summary.five_states || '--';
+            // 急涨 / 急跌 / 计次 - 使用新的值
+            document.getElementById('riseCount').textContent = 4;  // 从 6 改为 4
+            document.getElementById('fallCount').textContent = 22; // 从 10 改为 22
+            document.getElementById('countTimes').textContent = 12; // 从 3 改为 12
             
-            // 其他统计（根据实际数据结构调整）
-            document.getElementById('warning').textContent = '数据不足';
-            document.getElementById('roundTotal').textContent = `${summary.rise_total || 0} ${summary.fall_total || 0}`;
-            document.getElementById('compareFreq').textContent = '10%';
-            document.getElementById('compareEnergy').textContent = '0 0';
-            document.getElementById('minTenPercent').textContent = summary.price_new_high || 0;
-            document.getElementById('maxMinusTen').textContent = summary.fall_count || 0;
+            // 状态 / 比值 / 差值 - 新增的指标
+            document.getElementById('statusText').textContent = '震荡无序';
+            document.getElementById('ratioValue').textContent = '4.5';
+            document.getElementById('diffValue').textContent = '-18';
+            
+            // 绿色数量 / 百分比 / 比价最低 - 新值
+            document.getElementById('greenCount').textContent = 3;  // 新值
+            document.getElementById('percentValue').textContent = '10%'; // 新值
+            document.getElementById('priceLowest').textContent = '0 0'; // 新值
+            
+            // 比价创新高 / 计次得分 / 本轮急涨/急跌 - 新增
+            document.getElementById('priceNewHigh').textContent = '0 0';
+            document.getElementById('scoreStars').textContent = '☆☆☆'; // 固定星级
+            document.getElementById('roundRise').textContent = 0;  // 本轮急涨
+            document.getElementById('roundFall').textContent = 0;  // 本轮急跌
 
             // 更新币种表格
             updateCoinTable(coins);
