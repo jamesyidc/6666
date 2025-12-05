@@ -351,6 +351,15 @@ def live_data_page():
     response.headers['Expires'] = '0'
     return response
 
+@app.route('/trend-chart')
+def trend_chart_page():
+    """急涨急跌趋势图页面"""
+    response = send_from_directory('.', 'trend_chart.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 @app.route('/api/homepage/latest')
 def proxy_homepage_latest():
     """代理：获取最新首页数据"""
