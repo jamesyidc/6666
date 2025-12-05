@@ -49,18 +49,28 @@ class RealTimePanicWashCollector:
                     
                     # 全网持仓量（美元）
                     if hold_data['code'] == 0 and 'data' in hold_data:
-                        hold_info = hold_data['data']
-                        # 尝试从不同字段获取持仓量
-                        total_position = hold_info.get('totalOpenInterestUsd', 
-                                        hold_info.get('totalPosition', 95e9))
+                        # data是数组，最后一个元素是全网总计
+                        hold_list = hold_data['data']
+                        if isinstance(hold_list, list) and len(hold_list) > 0:
+                            # 找到exchange为"全网总计"的条目
+                            for item in hold_list:
+                                if '全网' in item.get('exchange', '') or 'total' in item.get('exchange', '').lower():
+                                    total_position = item.get('amount', 95e9)
+                                    break
+                            else:
+                                # 如果没找到，使用最后一个（通常是总计）
+                                total_position = hold_list[-1].get('amount', 95e9)
+                        else:
+                            total_position = 95e9
                     else:
                         total_position = 95e9
-                except Exception:
+                except Exception as e:
+                    print(f"  ⚠️ 获取持仓量失败，使用默认值: {e}")
                     total_position = 95e9  # 默认值
                 
                 # 计算恐慌指数: (万人) / (亿美元) × 100%
                 if total_position > 0:
-                    panic_index = (hour_24_people / 10000) / (total_position / 1e9) * 100
+                    panic_index = (hour_24_people / 10000) / (total_position / 1e8) * 100
                 else:
                     panic_index = 0
                 
