@@ -300,14 +300,17 @@
             });
         }
 
-        // 格式化金额
+        // 格式化金额（使用中文单位：亿、万）
         function formatAmount(amount) {
-            if (amount >= 1e9) {
-                return '$' + (amount / 1e9).toFixed(2) + 'B';
-            } else if (amount >= 1e6) {
-                return '$' + (amount / 1e6).toFixed(2) + 'M';
+            if (amount >= 1e8) {
+                // 大于等于1亿，显示为"XX.XX亿"
+                return (amount / 1e8).toFixed(2) + '亿';
+            } else if (amount >= 1e4) {
+                // 大于等于1万，显示为"XX.XX万"
+                return (amount / 1e4).toFixed(2) + '万';
             } else {
-                return '$' + formatNumber(amount, 0);
+                // 小于1万，显示原值
+                return formatNumber(amount, 2);
             }
         }
 
@@ -322,7 +325,7 @@
                     
                     document.getElementById('hour1Amount').textContent = formatAmount(data.hour_1_amount);
                     document.getElementById('hour24Amount').textContent = formatAmount(data.hour_24_amount);
-                    document.getElementById('hour24People').textContent = formatNumber(data.hour_24_people, 0) + ' 人';
+                    document.getElementById('hour24People').textContent = (data.hour_24_people / 10000).toFixed(2) + ' 万人';
                     document.getElementById('totalPosition').textContent = formatAmount(data.total_position);
                     document.getElementById('panicIndex').textContent = data.panic_index.toFixed(2) + '%';
                     document.getElementById('updateTime').textContent = data.record_time;
@@ -360,8 +363,8 @@
 
             // 准备所有数据
             const panicData = data.map(d => d.panic_index.toFixed(2));
-            const peopleData = data.map(d => d.hour_24_people);
-            const positionData = data.map(d => d.total_position / 1e9); // 转换为十亿
+            const peopleData = data.map(d => d.hour_24_people / 10000); // 转换为万人
+            const positionData = data.map(d => d.total_position / 1e8); // 转换为亿
             
             // 销毁旧图表
             if (combinedChart) {
@@ -386,7 +389,7 @@
                             borderWidth: 3
                         },
                         {
-                            label: '👥 24H爆仓人数',
+                            label: '👥 24H爆仓人数 (万人)',
                             data: peopleData,
                             borderColor: '#ffa502',
                             backgroundColor: 'rgba(255, 165, 2, 0.1)',
@@ -395,7 +398,7 @@
                             borderWidth: 2
                         },
                         {
-                            label: '💰 全网持仓量 (B)',
+                            label: '💰 全网持仓量 (亿)',
                             data: positionData,
                             borderColor: '#4a9eff',
                             backgroundColor: 'rgba(74, 158, 255, 0.1)',
@@ -448,7 +451,7 @@
                             position: 'right',
                             title: {
                                 display: true,
-                                text: '爆仓人数',
+                                text: '爆仓人数 (万人)',
                                 color: '#ffa502'
                             },
                             ticks: { color: '#ffa502' },
