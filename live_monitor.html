@@ -27,11 +27,11 @@
         /* 头部 */
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .header h1 {
-            font-size: 36px;
+            font-size: 32px;
             color: #00d4ff;
             text-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
             margin-bottom: 10px;
@@ -50,14 +50,15 @@
 
         .nav-link {
             display: inline-block;
-            padding: 10px 20px;
-            margin: 0 10px;
+            padding: 8px 16px;
+            margin: 0 8px;
             background: rgba(0, 212, 255, 0.2);
             border: 1px solid rgba(0, 212, 255, 0.5);
-            border-radius: 8px;
+            border-radius: 6px;
             color: #00d4ff;
             text-decoration: none;
             transition: all 0.3s;
+            font-size: 14px;
         }
 
         .nav-link:hover {
@@ -65,70 +66,18 @@
             transform: translateY(-2px);
         }
 
-        /* 汇总数据卡片 */
-        .summary-panel {
-            background: rgba(0, 212, 255, 0.1);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
-
-        .summary-item {
+        /* 时间显示 - 紧凑版 */
+        .time-display {
             text-align: center;
             padding: 10px;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 8px;
-        }
-
-        .summary-label {
-            font-size: 12px;
-            color: #888;
-            margin-bottom: 5px;
-        }
-
-        .summary-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #00d4ff;
-        }
-
-        .summary-value.green {
-            color: #2ed573;
-        }
-
-        .summary-value.red {
-            color: #ff4757;
-        }
-
-        .summary-value.yellow {
-            color: #ffa502;
-        }
-
-        /* 时间显示 */
-        .time-display {
-            text-align: center;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .time-display h3 {
-            color: #00d4ff;
-            margin-bottom: 10px;
-            font-size: 18px;
+            margin-bottom: 15px;
+            font-size: 14px;
         }
 
         .time-display .time {
-            font-size: 20px;
-            color: #fff;
+            color: #00d4ff;
             font-weight: bold;
         }
 
@@ -136,8 +85,9 @@
         .table-container {
             background: rgba(0, 0, 0, 0.4);
             border-radius: 12px;
-            padding: 20px;
+            padding: 15px;
             overflow-x: auto;
+            margin-bottom: 15px;
         }
 
         table {
@@ -149,10 +99,10 @@
         th {
             background: rgba(0, 212, 255, 0.2);
             color: #00d4ff;
-            padding: 12px 8px;
+            padding: 10px 6px;
             text-align: center;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
             border: 1px solid rgba(0, 212, 255, 0.3);
             position: sticky;
             top: 0;
@@ -160,10 +110,10 @@
         }
 
         td {
-            padding: 10px 8px;
+            padding: 8px 6px;
             text-align: center;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 13px;
+            font-size: 12px;
         }
 
         tr:hover {
@@ -173,9 +123,9 @@
         /* 状态样式 */
         .signal {
             display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 11px;
             font-weight: bold;
         }
 
@@ -205,10 +155,10 @@
         /* 排行标签 */
         .rank {
             display: inline-block;
-            padding: 4px 10px;
-            border-radius: 4px;
+            padding: 3px 8px;
+            border-radius: 3px;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
         }
 
         .rank-1 { background: #ff4757; color: #fff; }
@@ -217,6 +167,55 @@
         .rank-4 { background: #ffcc00; color: #333; }
         .rank-5 { background: #2ed573; color: #fff; }
         .rank-6 { background: #00d4ff; color: #fff; }
+
+        /* 底部统计栏 */
+        .stats-footer {
+            background: rgba(0, 212, 255, 0.15);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stats-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 13px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .stat-value.green {
+            color: #2ed573;
+        }
+
+        .stat-value.red {
+            color: #ff4757;
+        }
+
+        .stat-value.yellow {
+            color: #ffa502;
+        }
 
         /* 加载动画 */
         .loading {
@@ -241,10 +240,9 @@
         /* 页脚 */
         .footer {
             text-align: center;
-            margin-top: 30px;
-            padding: 20px;
+            padding: 15px;
             color: #666;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         /* 响应式设计 */
@@ -253,16 +251,17 @@
                 font-size: 24px;
             }
 
-            .summary-grid {
-                grid-template-columns: repeat(2, 1fr);
+            .stats-footer {
+                flex-direction: column;
+                align-items: flex-start;
             }
 
             table {
-                font-size: 11px;
+                font-size: 10px;
             }
 
             th, td {
-                padding: 8px 4px;
+                padding: 6px 4px;
             }
         }
     </style>
@@ -284,8 +283,7 @@
 
         <!-- 时间显示 -->
         <div class="time-display">
-            <h3>📅 数据更新时间</h3>
-            <div class="time" id="updateTime">加载中...</div>
+            📅 数据更新时间: <span class="time" id="updateTime">加载中...</span>
         </div>
 
         <!-- 加载动画 -->
@@ -296,64 +294,8 @@
 
         <!-- 内容区域 -->
         <div id="content" style="display: none;">
-            <!-- 汇总数据 -->
-            <div class="summary-panel">
-                <h3 style="color: #00d4ff; margin-bottom: 15px; text-align: center;">📈 市场汇总数据</h3>
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <div class="summary-label">急涨总和</div>
-                        <div class="summary-value green" id="riseTotal">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">急跌总和</div>
-                        <div class="summary-value red" id="fallTotal">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">五种状态</div>
-                        <div class="summary-value" style="font-size: 16px;" id="fiveStates">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">急涨急跌比值</div>
-                        <div class="summary-value yellow" id="riseRatio">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">绿色数量</div>
-                        <div class="summary-value green" id="greenCount">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">绿色百分比</div>
-                        <div class="summary-value green" id="greenPercent">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">计次</div>
-                        <div class="summary-value" id="countTimes">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">全绿得分</div>
-                        <div class="summary-value green" id="allGreenScore">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">比价最低得分</div>
-                        <div class="summary-value" id="priceLowest">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">比价创新高</div>
-                        <div class="summary-value yellow" id="priceNewHigh">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">急跌数量</div>
-                        <div class="summary-value red" id="fallCount">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">差值结果</div>
-                        <div class="summary-value" id="diffResult">-</div>
-                    </div>
-                </div>
-            </div>
-
             <!-- 币种数据表格 -->
             <div class="table-container">
-                <h3 style="color: #00d4ff; margin-bottom: 15px;">💰 币种详细数据</h3>
                 <table id="coinTable">
                     <thead>
                         <tr>
@@ -365,8 +307,8 @@
                             <th>更新时间</th>
                             <th>历史高位</th>
                             <th>高位时间</th>
-                            <th>与现价跌幅</th>
-                            <th>24h涨幅</th>
+                            <th>涨幅</th>
+                            <th>24涨幅</th>
                             <th>+4%</th>
                             <th>-3%</th>
                             <th>排行</th>
@@ -380,6 +322,77 @@
                         <!-- 数据将通过JavaScript填充 -->
                     </tbody>
                 </table>
+            </div>
+
+            <!-- 底部统计栏 -->
+            <div class="stats-footer">
+                <div class="stats-group">
+                    <div class="stat-item">
+                        <span class="stat-label">正常时间:</span>
+                        <span class="stat-value" id="normalTime">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">急涨:</span>
+                        <span class="stat-value green" id="riseCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">急跌:</span>
+                        <span class="stat-value red" id="fallCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">长短比:</span>
+                        <span class="stat-value yellow" id="longShort">--</span>
+                    </div>
+                </div>
+                
+                <div class="stats-group">
+                    <div class="stat-item">
+                        <span class="stat-label">比值:</span>
+                        <span class="stat-value" id="ratio">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">警告:</span>
+                        <span class="stat-value yellow" id="warning">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">绿色数量:</span>
+                        <span class="stat-value green" id="greenTotal">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">白占比:</span>
+                        <span class="stat-value" id="whitePercent">0%</span>
+                    </div>
+                </div>
+
+                <div class="stats-group">
+                    <div class="stat-item">
+                        <span class="stat-label">计次:</span>
+                        <span class="stat-value" id="countTimes">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">本轮累计:</span>
+                        <span class="stat-value" id="roundTotal">0 0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">比对频率:</span>
+                        <span class="stat-value yellow" id="compareFreq">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">比对能量:</span>
+                        <span class="stat-value" id="compareEnergy">0 0</span>
+                    </div>
+                </div>
+
+                <div class="stats-group">
+                    <div class="stat-item">
+                        <span class="stat-label">本轮最低>=10%:</span>
+                        <span class="stat-value" id="minTenPercent">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">本轮最高<=-10%:</span>
+                        <span class="stat-value" id="maxMinusTen">0</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -428,20 +441,26 @@
 
             // 更新时间
             document.getElementById('updateTime').textContent = summary.record_time || '未知';
+            document.getElementById('normalTime').textContent = summary.record_time || '未知';
 
-            // 更新汇总数据
-            document.getElementById('riseTotal').textContent = summary.rise_total || 0;
-            document.getElementById('fallTotal').textContent = summary.fall_total || 0;
-            document.getElementById('fiveStates').textContent = summary.five_states || '-';
-            document.getElementById('riseRatio').textContent = summary.rise_fall_ratio || 0;
-            document.getElementById('greenCount').textContent = summary.green_count || 0;
-            document.getElementById('greenPercent').textContent = (summary.green_percent || 0) + '%';
+            // 更新底部统计 - 从汇总数据中提取
+            document.getElementById('riseCount').textContent = summary.rise_total || 0;
+            document.getElementById('fallCount').textContent = summary.fall_total || 0;
+            document.getElementById('greenTotal').textContent = summary.green_count || 0;
+            document.getElementById('ratio').textContent = summary.rise_fall_ratio || 0;
+            document.getElementById('whitePercent').textContent = (summary.green_percent || 0) + '%';
             document.getElementById('countTimes').textContent = summary.count_times || 0;
-            document.getElementById('allGreenScore').textContent = summary.all_green_score || 0;
-            document.getElementById('priceLowest').textContent = summary.price_lowest_score || 0;
-            document.getElementById('priceNewHigh').textContent = summary.price_new_high || 0;
-            document.getElementById('fallCount').textContent = summary.fall_count || 0;
-            document.getElementById('diffResult').textContent = summary.diff_result || 0;
+            
+            // 五种状态显示
+            document.getElementById('longShort').textContent = summary.five_states || '--';
+            
+            // 其他统计（根据实际数据结构调整）
+            document.getElementById('warning').textContent = '数据不足';
+            document.getElementById('roundTotal').textContent = `${summary.rise_total || 0} ${summary.fall_total || 0}`;
+            document.getElementById('compareFreq').textContent = '10%';
+            document.getElementById('compareEnergy').textContent = '0 0';
+            document.getElementById('minTenPercent').textContent = summary.price_new_high || 0;
+            document.getElementById('maxMinusTen').textContent = summary.fall_count || 0;
 
             // 更新币种表格
             updateCoinTable(coins);
@@ -461,6 +480,9 @@
                 // 24h涨幅颜色
                 const change24Class = coin.change_24h > 0 ? 'positive' : coin.change_24h < 0 ? 'negative' : '';
                 
+                // 涨幅颜色
+                const dropClass = coin.drop_from_high < 0 ? 'negative' : '';
+                
                 // 排行样式
                 const rankClass = `rank rank-${coin.ranking}`;
                 
@@ -468,12 +490,12 @@
                     <td>${coin.seq_num}</td>
                     <td><strong>${coin.coin_name}</strong></td>
                     <td class="${riseSpeedClass}">${coin.rise_speed.toFixed(2)}</td>
-                    <td>${coin.rise_signal > 0 ? `<span class="signal rise">${coin.rise_signal}</span>` : '-'}</td>
-                    <td>${coin.fall_signal > 0 ? `<span class="signal fall">${coin.fall_signal}</span>` : '-'}</td>
+                    <td>${coin.rise_signal > 0 ? `<span class="signal rise">${coin.rise_signal}</span>` : '0'}</td>
+                    <td>${coin.fall_signal > 0 ? `<span class="signal fall">${coin.fall_signal}</span>` : '0'}</td>
                     <td style="font-size: 11px;">${coin.update_time}</td>
                     <td>${coin.history_high.toFixed(2)}</td>
                     <td style="font-size: 11px;">${coin.high_time}</td>
-                    <td class="negative">${coin.drop_from_high.toFixed(2)}%</td>
+                    <td class="${dropClass}">${coin.drop_from_high.toFixed(2)}%</td>
                     <td class="${change24Class}">${coin.change_24h > 0 ? '+' : ''}${coin.change_24h.toFixed(2)}%</td>
                     <td>${coin.plus_4_percent || 0}</td>
                     <td>${coin.minus_3_percent || 0}</td>
