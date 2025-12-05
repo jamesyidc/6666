@@ -224,6 +224,47 @@ def get_panic_history_api():
                 'error': str(e)
             }), 500
 
+# 新版恐慌清洗API的直接代理路由（用于前端页面）
+@app.route('/api/panic-wash/latest')
+def proxy_panic_wash_latest():
+    """代理：获取最新恐慌清洗数据"""
+    import requests
+    try:
+        response = requests.get('http://localhost:5002/api/panic-wash/latest', timeout=5)
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/panic-wash/history')
+def proxy_panic_wash_history():
+    """代理：获取恐慌清洗历史数据"""
+    import requests
+    try:
+        response = requests.get('http://localhost:5002/api/panic-wash/history', timeout=5)
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/panic-wash/stats')
+def proxy_panic_wash_stats():
+    """代理：获取恐慌清洗统计信息"""
+    import requests
+    try:
+        response = requests.get('http://localhost:5002/api/panic-wash/stats', timeout=5)
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/panic-wash/refresh', methods=['POST'])
+def proxy_panic_wash_refresh():
+    """代理：手动刷新恐慌清洗数据"""
+    import requests
+    try:
+        response = requests.post('http://localhost:5002/api/panic-wash/refresh', timeout=10)
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 def calculate_priority_level(ratio1_str, ratio2_str):
     """
     根据最高占比和最低占比计算优先级等级
