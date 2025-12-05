@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>恐慌指数历史统计</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-value.large {
+            font-size: 32px;
+        }
+
+        .chart-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            position: relative;
+            height: 400px;
+        }
+
+        .chart-title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .update-time {
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .update-time strong {
+            color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .error {
+            text-align: center;
+            padding: 30px;
+            color: #f44336;
+            background: #ffebee;
+            border-radius: 10px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .stat-value {
+                font-size: 20px;
+            }
+
+            .stat-value.large {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 恐慌指数历史统计</h1>
+        <div class="subtitle">24小时恐慌清洗指标趋势分析</div>
+        
+        <div id="current-stats">
+            <div class="loading">加载中...</div>
+        </div>
+
+        <!-- 恐慌指数历史曲线 -->
+        <div class="chart-container">
+            <div class="chart-title">📈 恐慌指数历史曲线（最近24小时）</div>
+            <canvas id="panicChart"></canvas>
+        </div>
+
+        <!-- 爆仓数据历史曲线 -->
+        <div class="chart-container">
+            <div class="chart-title">📉 24h爆仓人数趋势（最近24小时）</div>
+            <canvas id="liquidationChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let panicChart = null;
+        let liquidationChart = null;
+
+        async function loadCurrentData() {
+            try {
+                const response = await fetch('/api/monitor/panic');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const data = result.data;
+                    displayCurrentStats(data);
+                } else {
+                    showError('当前数据加载失败');
+                }
+            } catch (error) {
+                console.error('加载失败:', error);
+                showError('网络连接失败');
+            }
+        }
+
+        async function loadHistoryData() {
+            try {
+                const response = await fetch('/api/monitor/panic/history?hours=24');
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    displayCharts(result.data);
+                } else {
+                    console.log('暂无历史数据');
+                }
+            } catch (error) {
+                console.error('加载历史数据失败:', error);
+            }
+        }
+
+        function displayCurrentStats(data) {
+            const html = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">恐慌清洗指标</div>
+                        <div class="stat-value large">${data.panic_indicator}</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-label">趋势评级</div>
+                        <div class="stat-value large">${data.trend_rating}</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-label">市场区间</div>
+                        <div class="stat-value">${data.market_zone}</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-label">24h爆仓人数</div>
+                        <div class="stat-value">${parseInt(data.liquidation_24h_count).toLocaleString()}</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-label">24h爆仓金额</div>
+                        <div class="stat-value">${data.liquidation_24h_amount} 亿美元</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-label">全网持仓量</div>
+                        <div class="stat-value">${data.total_position} 亿美元</div>
+                    </div>
+                </div>
+                
+                <div class="update-time">
+                    📅 更新时间: <strong>${data.update_time}</strong>
+                </div>
+            `;
+            
+            document.getElementById('current-stats').innerHTML = html;
+        }
+
+        function displayCharts(historyData) {
+            // 准备数据
+            const times = historyData.map(item => {
+                const time = new Date(item.time);
+                return time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            });
+            
+            // 恐慌指数数据（提取数值部分）
+            const panicValues = historyData.map(item => {
+                const match = item.panic_indicator.match(/[\d.]+/);
+                return match ? parseFloat(match[0]) : 0;
+            });
+            
+            // 爆仓人数数据
+            const liquidationCounts = historyData.map(item => {
+                return parseInt(item.liquidation_24h_count) || 0;
+            });
+
+            // 绘制恐慌指数曲线
+            displayPanicChart(times, panicValues);
+            
+            // 绘制爆仓人数曲线
+            displayLiquidationChart(times, liquidationCounts);
+        }
+
+        function displayPanicChart(times, values) {
+            // 销毁旧图表
+            if (panicChart) {
+                panicChart.destroy();
+            }
+
+            // 创建新图表
+            const ctx = document.getElementById('panicChart').getContext('2d');
+            panicChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: times,
+                    datasets: [
+                        {
+                            label: '恐慌清洗指标',
+                            data: values,
+                            borderColor: 'rgb(255, 152, 0)',
+                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(255, 152, 0)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return '恐慌指数: ' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 11
+                                },
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayLiquidationChart(times, values) {
+            // 销毁旧图表
+            if (liquidationChart) {
+                liquidationChart.destroy();
+            }
+
+            // 创建新图表
+            const ctx = document.getElementById('liquidationChart').getContext('2d');
+            liquidationChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: times,
+                    datasets: [
+                        {
+                            label: '24h爆仓人数',
+                            data: values,
+                            borderColor: 'rgb(156, 39, 176)',
+                            backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(156, 39, 176)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return '爆仓人数: ' + context.parsed.y.toLocaleString() + ' 人';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 11
+                                },
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                },
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function showError(message) {
+            document.getElementById('current-stats').innerHTML = `
+                <div class="error">❌ ${message}</div>
+            `;
+        }
+
+        // 页面加载时获取数据
+        loadCurrentData();
+        loadHistoryData();
+        
+        // 每10秒自动刷新当前数据
+        setInterval(loadCurrentData, 10000);
+        
+        // 每30秒刷新历史图表
+        setInterval(loadHistoryData, 30000);
+    </script>
+</body>
+</html>
