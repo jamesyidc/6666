@@ -246,19 +246,24 @@ class PanicWashCalculator:
 
 # 临时解决方案：使用模拟数据
 class MockPanicWashCalculator(PanicWashCalculator):
-    """模拟数据版本（用于测试）"""
+    """模拟数据版本（用于测试）- 使用真实数据范围"""
     
     async def scrape_data(self):
-        """返回模拟数据"""
+        """返回模拟数据（基于真实数据范围）"""
         import random
         
-        # 模拟合理的爆仓数据
-        hour_24_people = random.randint(40000, 60000)
-        total_position = random.uniform(10000000000, 15000000000)  # 100-150亿美元
+        # 基于真实数据范围：
+        # 1H爆仓: $250.7万
+        # 24H爆仓: $1.93亿 (≈ ¥13.68亿)
+        # 24H爆仓人数: 25,375人
+        # 全网持仓: $95.69亿
+        
+        hour_24_people = random.randint(20000, 30000)  # 2-3万人
+        total_position = random.uniform(90e9, 100e9)   # 90-100亿美元
         
         data = {
-            'hour_1_amount': random.uniform(1000000, 5000000),  # 100-500万美元
-            'hour_24_amount': random.uniform(80000000, 120000000),  # 8000-12000万美元
+            'hour_1_amount': random.uniform(2e6, 5e6),        # 200-500万美元
+            'hour_24_amount': random.uniform(150e6, 250e6),   # 1.5-2.5亿美元
             'hour_24_people': hour_24_people,
             'total_position': total_position,
             'panic_index': hour_24_people / total_position,
@@ -266,12 +271,12 @@ class MockPanicWashCalculator(PanicWashCalculator):
             'success': True
         }
         
-        print(f"📊 模拟数据:")
-        print(f"  1小时爆仓: ${data['hour_1_amount']:,.2f}")
-        print(f"  24小时爆仓: ${data['hour_24_amount']:,.2f}")
+        print(f"📊 模拟数据（真实范围）:")
+        print(f"  1小时爆仓: ${data['hour_1_amount']/1e6:.2f}M (≈ ¥{data['hour_1_amount']*7.1/1e6:.2f}M)")
+        print(f"  24小时爆仓: ${data['hour_24_amount']/1e6:.2f}M (≈ ¥{data['hour_24_amount']*7.1/1e8:.2f}亿)")
         print(f"  24小时爆仓人数: {data['hour_24_people']:,}")
-        print(f"  全网持仓量: ${data['total_position']:,.2f}")
-        print(f"  恐慌指数: {data['panic_index']:.6f}")
+        print(f"  全网持仓量: ${data['total_position']/1e9:.2f}B")
+        print(f"  恐慌指数: {data['panic_index']:.8f}")
         
         return data
 
