@@ -246,13 +246,8 @@
             <button class="refresh-btn" onclick="refreshData()">🔄 手动刷新</button>
 
             <div class="chart-container">
-                <div class="chart-title">📈 恐慌清洗指数趋势（24小时）</div>
-                <canvas id="panicChart"></canvas>
-            </div>
-
-            <div class="chart-container">
-                <div class="chart-title">📊 爆仓数据趋势（24小时）</div>
-                <canvas id="liquidationChart"></canvas>
+                <div class="chart-title">📊 恐慌清洗指数 & 爆仓数据趋势（24小时）</div>
+                <canvas id="combinedChart"></canvas>
             </div>
 
             <div class="update-info">
@@ -294,8 +289,7 @@
     </div>
 
     <script>
-        let panicChart = null;
-        let liquidationChart = null;
+        let combinedChart = null;
 
         // 格式化数字
         function formatNumber(num, decimals = 2) {
@@ -356,7 +350,7 @@
             }
         }
 
-        // 更新图表
+        // 更新合并图表
         function updateCharts(data) {
             const labels = data.map(d => {
                 const time = new Date(d.record_time);
@@ -364,89 +358,75 @@
                        time.getMinutes().toString().padStart(2, '0');
             });
 
-            // 恐慌指数图表
+            // 准备所有数据
             const panicData = data.map(d => d.panic_index.toFixed(2));
-            
-            if (panicChart) {
-                panicChart.destroy();
-            }
-
-            const ctx1 = document.getElementById('panicChart').getContext('2d');
-            panicChart = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '恐慌清洗指数 (%)',
-                        data: panicData,
-                        borderColor: '#ff4757',
-                        backgroundColor: 'rgba(255, 71, 87, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            labels: { color: '#eee' }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            ticks: { color: '#888' },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                        },
-                        x: {
-                            ticks: { color: '#888' },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                        }
-                    }
-                }
-            });
-
-            // 爆仓数据图表
             const peopleData = data.map(d => d.hour_24_people);
             const positionData = data.map(d => d.total_position / 1e9); // 转换为十亿
-
-            if (liquidationChart) {
-                liquidationChart.destroy();
+            
+            // 销毁旧图表
+            if (combinedChart) {
+                combinedChart.destroy();
             }
 
-            const ctx2 = document.getElementById('liquidationChart').getContext('2d');
-            liquidationChart = new Chart(ctx2, {
+            // 创建合并图表（三条曲线）
+            const ctx = document.getElementById('combinedChart').getContext('2d');
+            combinedChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [
                         {
-                            label: '24H爆仓人数',
+                            label: '🔥 恐慌清洗指数 (%)',
+                            data: panicData,
+                            borderColor: '#ff4757',
+                            backgroundColor: 'rgba(255, 71, 87, 0.1)',
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 3
+                        },
+                        {
+                            label: '👥 24H爆仓人数',
                             data: peopleData,
                             borderColor: '#ffa502',
                             backgroundColor: 'rgba(255, 165, 2, 0.1)',
-                            yAxisID: 'y',
-                            tension: 0.4
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            borderWidth: 2
                         },
                         {
-                            label: '全网持仓量 (B)',
+                            label: '💰 全网持仓量 (B)',
                             data: positionData,
                             borderColor: '#4a9eff',
                             backgroundColor: 'rgba(74, 158, 255, 0.1)',
-                            yAxisID: 'y1',
-                            tension: 0.4
+                            yAxisID: 'y2',
+                            tension: 0.4,
+                            borderWidth: 2
                         }
                     ]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: true,
                     interaction: {
                         mode: 'index',
                         intersect: false,
                     },
                     plugins: {
                         legend: {
-                            labels: { color: '#eee' }
+                            labels: { 
+                                color: '#eee',
+                                font: { size: 13 },
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1
                         }
                     },
                     scales: {
@@ -454,19 +434,40 @@
                             type: 'linear',
                             display: true,
                             position: 'left',
-                            ticks: { color: '#ffa502' },
+                            title: {
+                                display: true,
+                                text: '恐慌指数 (%)',
+                                color: '#ff4757'
+                            },
+                            ticks: { color: '#ff4757' },
                             grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         },
                         y1: {
                             type: 'linear',
                             display: true,
                             position: 'right',
+                            title: {
+                                display: true,
+                                text: '爆仓人数',
+                                color: '#ffa502'
+                            },
+                            ticks: { color: '#ffa502' },
+                            grid: { drawOnChartArea: false }
+                        },
+                        y2: {
+                            type: 'linear',
+                            display: false, // 隐藏第三个Y轴，只在图例中显示
+                            position: 'right',
                             ticks: { color: '#4a9eff' },
                             grid: { drawOnChartArea: false }
                         },
                         x: {
-                            ticks: { color: '#888' },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            ticks: { 
+                                color: '#888',
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
                         }
                     }
                 }
