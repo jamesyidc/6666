@@ -265,6 +265,28 @@ def proxy_panic_wash_refresh():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/panic-wash/query')
+def proxy_panic_wash_query():
+    """代理：按日期时间查询恐慌清洗数据"""
+    import requests
+    from flask import request
+    try:
+        # 获取查询参数
+        start = request.args.get('start')
+        end = request.args.get('end')
+        
+        if not start or not end:
+            return jsonify({'success': False, 'message': '请提供start和end参数'}), 400
+        
+        # 转发请求到5002端口
+        response = requests.get(
+            f'http://localhost:5002/api/panic-wash/query?start={start}&end={end}',
+            timeout=10
+        )
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 def calculate_priority_level(ratio1_str, ratio2_str):
     """
     根据最高占比和最低占比计算优先级等级
