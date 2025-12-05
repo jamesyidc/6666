@@ -341,6 +341,64 @@ def proxy_signal_monitor_test():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# 首页数据API代理
+@app.route('/live-data')
+def live_data_page():
+    """实时监控数据页面"""
+    response = send_from_directory('.', 'live_monitor.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@app.route('/api/homepage/latest')
+def proxy_homepage_latest():
+    """代理：获取最新首页数据"""
+    import requests
+    try:
+        response = requests.get('http://localhost:5004/api/homepage/latest', timeout=5)
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/homepage/history')
+def proxy_homepage_history():
+    """代理：获取首页历史数据"""
+    import requests
+    try:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        start_time = request.args.get('start_time', '00:00:00')
+        end_time = request.args.get('end_time', '23:59:59')
+        
+        response = requests.get(
+            f'http://localhost:5004/api/homepage/history?start_date={start_date}&end_date={end_date}&start_time={start_time}&end_time={end_time}',
+            timeout=10
+        )
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/homepage/stats')
+def proxy_homepage_stats():
+    """代理：获取首页统计信息"""
+    import requests
+    try:
+        response = requests.get('http://localhost:5004/api/homepage/stats', timeout=5)
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/homepage/test')
+def proxy_homepage_test():
+    """代理：测试首页数据API"""
+    import requests
+    try:
+        response = requests.get('http://localhost:5004/api/homepage/test', timeout=5)
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 def calculate_priority_level(ratio1_str, ratio2_str):
     """
     根据最高占比和最低占比计算优先级等级
