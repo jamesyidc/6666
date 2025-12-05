@@ -445,7 +445,12 @@
                                 text: '持仓余额 (亿)',
                                 color: '#4a9eff'
                             },
-                            ticks: { color: '#4a9eff' },
+                            min: 90,           // 最小值：90亿
+                            max: 120,          // 最大值：120亿
+                            ticks: { 
+                                color: '#4a9eff',
+                                stepSize: 3    // 步长：3亿（90, 93, 96, 99, 102, 105, 108, 111, 114, 117, 120）
+                            },
                             grid: { drawOnChartArea: false }
                         },
                         x: {
