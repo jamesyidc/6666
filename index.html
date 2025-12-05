@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加密货币监控系统</title>
+    <title>虚拟币系统监控中心</title>
     <style>
         * {
             margin: 0;
@@ -12,44 +12,51 @@
         }
 
         body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Microsoft YaHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
             color: #eee;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 20px;
         }
 
         .container {
-            max-width: 1000px;
-            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        h1 {
+        /* 头部标题 */
+        .header {
             text-align: center;
-            color: #4a9eff;
             margin-bottom: 50px;
-            font-size: 48px;
-            text-shadow: 0 0 20px rgba(74, 158, 255, 0.5);
         }
 
-        .cards {
+        .header h1 {
+            font-size: 48px;
+            color: #00d4ff;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+            margin-bottom: 15px;
+        }
+
+        .header p {
+            font-size: 18px;
+            color: #888;
+        }
+
+        /* 功能卡片网格 */
+        .cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
         }
 
         .card {
-            background: rgba(22, 33, 62, 0.8);
-            backdrop-filter: blur(10px);
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 212, 255, 0.05));
+            border: 2px solid rgba(0, 212, 255, 0.3);
             border-radius: 16px;
-            padding: 40px;
-            text-align: center;
+            padding: 30px;
             cursor: pointer;
             transition: all 0.3s ease;
-            border: 2px solid transparent;
             position: relative;
             overflow: hidden;
         }
@@ -57,321 +64,391 @@
         .card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(74, 158, 255, 0.1) 0%, rgba(0, 255, 136, 0.1) 100%);
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
 
         .card:hover {
-            transform: translateY(-10px);
-            border-color: #4a9eff;
-            box-shadow: 0 20px 40px rgba(74, 158, 255, 0.3);
+            transform: translateY(-8px);
+            border-color: #00d4ff;
+            box-shadow: 0 15px 40px rgba(0, 212, 255, 0.4);
         }
 
         .card:hover::before {
             opacity: 1;
         }
 
-        .card-icon {
-            font-size: 80px;
+        .card-header {
+            display: flex;
+            align-items: center;
             margin-bottom: 20px;
             position: relative;
             z-index: 1;
         }
 
+        .card-icon {
+            font-size: 48px;
+            margin-right: 15px;
+        }
+
         .card-title {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             color: #fff;
-            margin-bottom: 15px;
-            position: relative;
-            z-index: 1;
+        }
+
+        .card-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, #ff4757, #ff6348);
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+            color: #fff;
         }
 
         .card-description {
-            font-size: 16px;
+            font-size: 15px;
             color: #aaa;
             line-height: 1.6;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             position: relative;
             z-index: 1;
         }
 
         .card-features {
-            text-align: left;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             position: relative;
             z-index: 1;
         }
 
-        .feature-item {
+        .feature {
+            display: flex;
+            align-items: center;
             padding: 8px 0;
-            color: #888;
             font-size: 14px;
+            color: #888;
         }
 
-        .feature-item::before {
-            content: '✓ ';
-            color: #00ff88;
+        .feature::before {
+            content: '✓';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: rgba(46, 213, 115, 0.2);
+            border-radius: 50%;
+            color: #2ed573;
             font-weight: bold;
-            margin-right: 8px;
+            text-align: center;
+            line-height: 20px;
+            margin-right: 10px;
+            font-size: 12px;
         }
 
         .card-button {
             display: inline-block;
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #4a9eff 0%, #3a8eef 100%);
-            color: #fff;
-            border-radius: 8px;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #0f2027;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            border-radius: 10px;
             text-decoration: none;
-            font-weight: 600;
             transition: all 0.3s ease;
             position: relative;
             z-index: 1;
         }
 
         .card-button:hover {
-            background: linear-gradient(135deg, #3a8eef 0%, #2a7edf 100%);
-            box-shadow: 0 5px 15px rgba(74, 158, 255, 0.4);
+            background: linear-gradient(135deg, #00e5ff, #00aadd);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.5);
+            transform: translateY(-2px);
         }
 
+        /* 页脚 */
         .footer {
             text-align: center;
             margin-top: 50px;
+            padding: 20px;
+            border-top: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .footer-info {
             color: #666;
             font-size: 14px;
+            margin-bottom: 10px;
         }
 
-        .stats-bar {
-            background: rgba(22, 33, 62, 0.6);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 40px;
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 20px;
+        .footer-links {
+            margin-top: 15px;
         }
 
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #4a9eff;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
+        .footer-link {
+            color: #00d4ff;
+            text-decoration: none;
+            margin: 0 15px;
             font-size: 14px;
-            color: #888;
+            transition: color 0.3s;
         }
 
+        .footer-link:hover {
+            color: #00e5ff;
+            text-decoration: underline;
+        }
+
+        /* 状态指示器 */
+        .status-badge {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #2ed573;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* 响应式设计 */
         @media (max-width: 768px) {
-            h1 {
+            .header h1 {
                 font-size: 32px;
-                margin-bottom: 30px;
             }
 
-            .cards {
+            .header p {
+                font-size: 14px;
+            }
+
+            .cards-grid {
                 grid-template-columns: 1fr;
+                gap: 20px;
             }
 
             .card {
-                padding: 30px;
+                padding: 20px;
             }
 
             .card-icon {
-                font-size: 60px;
+                font-size: 36px;
             }
 
             .card-title {
-                font-size: 24px;
-            }
-
-            .quick-nav-btn {
-                font-size: 16px !important;
-                padding: 12px 30px !important;
+                font-size: 20px;
             }
         }
 
-        /* 快捷导航按钮悬停效果 */
-        .quick-nav-btn:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 12px 30px rgba(74, 158, 255, 0.6);
+        /* 新增：高亮推荐 */
+        .card.featured {
+            border-color: #ffa502;
+            background: linear-gradient(135deg, rgba(255, 165, 2, 0.15), rgba(255, 165, 2, 0.05));
         }
 
-        .quick-nav-btn:active {
-            transform: translateY(-1px);
+        .card.featured:hover {
+            border-color: #ffa502;
+            box-shadow: 0 15px 40px rgba(255, 165, 2, 0.4);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🪙 加密货币监控系统</h1>
-        
-        <!-- 快捷导航栏 -->
-        <div class="quick-nav" style="text-align: center; margin: 20px 0 30px 0;">
-            <a href="/live" class="quick-nav-btn" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #4a9eff 0%, #667eea 100%); color: white; text-decoration: none; border-radius: 50px; font-size: 18px; font-weight: bold; box-shadow: 0 8px 20px rgba(74, 158, 255, 0.4); transition: all 0.3s; margin: 0 10px;">
-                ⭐ 实时监控
-            </a>
-            <a href="/panic-wash-v3" class="quick-nav-btn" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #00ff88 0%, #00cc88 100%); color: #1a1a2e; text-decoration: none; border-radius: 50px; font-size: 18px; font-weight: bold; box-shadow: 0 8px 20px rgba(0, 255, 136, 0.4); transition: all 0.3s; margin: 0 10px;">
-                📊 恐慌清洗V3
-            </a>
-            <a href="/price-comparison" class="quick-nav-btn" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #ffaa00 0%, #ff8800 100%); color: white; text-decoration: none; border-radius: 50px; font-size: 18px; font-weight: bold; box-shadow: 0 8px 20px rgba(255, 170, 0, 0.4); transition: all 0.3s; margin: 0 10px;">
-                🎯 比价系统
-            </a>
-        </div>
-        
-        <div class="stats-bar">
-            <div class="stat-item">
-                <div class="stat-value" id="totalRecords">-</div>
-                <div class="stat-label">历史记录</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="daysCount">-</div>
-                <div class="stat-label">覆盖天数</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="lastUpdate">-</div>
-                <div class="stat-label">最新更新</div>
-            </div>
+        <!-- 头部 -->
+        <div class="header">
+            <h1>🚀 虚拟币系统监控中心</h1>
+            <p><span class="status-badge"></span>所有服务运行正常 | 北京时间 | 数据实时更新</p>
         </div>
 
-        <div class="cards">
-            <div class="card" onclick="location.href='/live'">
-                <div class="card-icon">📊</div>
-                <div class="card-title">实时监控 ⭐</div>
+        <!-- 功能卡片 -->
+        <div class="cards-grid">
+            
+            <!-- 恐慌清洗指标 -->
+            <div class="card featured" onclick="location.href='/panic'">
+                <div class="card-header">
+                    <div class="card-icon">📈</div>
+                    <div>
+                        <div class="card-title">恐慌清洗指标<span class="card-badge">推荐</span></div>
+                    </div>
+                </div>
                 <div class="card-description">
-                    查看29种加密货币的实时数据，智能星级评价系统
+                    实时监控市场恐慌情绪，24小时爆仓数据，全网持仓量分析
                 </div>
                 <div class="card-features">
-                    <div class="feature-item">⭐ 智能星级评价（优先级1-6）</div>
-                    <div class="feature-item">📈 实时急涨急跌统计</div>
-                    <div class="feature-item">📊 趋势曲线图展示</div>
-                    <div class="feature-item">🔄 自动3分钟刷新</div>
+                    <div class="feature">恐慌指数实时监控</div>
+                    <div class="feature">24小时爆仓统计</div>
+                    <div class="feature">全网持仓量追踪</div>
+                    <div class="feature">历史数据查询（精确到分钟）</div>
+                    <div class="feature">自动刷新（每3分钟）</div>
                 </div>
-                <a href="/live" class="card-button">进入实时监控 ⭐</a>
+                <a href="/panic" class="card-button">进入恐慌指标监控 →</a>
             </div>
 
+            <!-- 信号监控 -->
+            <div class="card featured" onclick="location.href='/signal'">
+                <div class="card-header">
+                    <div class="card-icon">🎯</div>
+                    <div>
+                        <div class="card-title">信号监控<span class="card-badge">新功能</span></div>
+                    </div>
+                </div>
+                <div class="card-description">
+                    监控做空/做多信号，实时变化追踪，历史趋势可视化
+                </div>
+                <div class="card-features">
+                    <div class="feature">做空做多信号统计</div>
+                    <div class="feature">信号变化实时追踪</div>
+                    <div class="feature">趋势图表可视化</div>
+                    <div class="feature">历史数据查询</div>
+                    <div class="feature">自动更新（每3分钟）</div>
+                </div>
+                <a href="/signal" class="card-button">进入信号监控 →</a>
+            </div>
+
+            <!-- 实时监控 -->
+            <div class="card" onclick="location.href='/live'">
+                <div class="card-header">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">实时监控</div>
+                </div>
+                <div class="card-description">
+                    29种加密货币实时数据，智能星级评价，急涨急跌统计
+                </div>
+                <div class="card-features">
+                    <div class="feature">智能星级评价（优先级1-6）</div>
+                    <div class="feature">实时急涨急跌统计</div>
+                    <div class="feature">趋势曲线图展示</div>
+                    <div class="feature">自动刷新（每3分钟）</div>
+                </div>
+                <a href="/live" class="card-button">进入实时监控 →</a>
+            </div>
+
+            <!-- 历史回看 -->
             <div class="card" onclick="location.href='/history'">
-                <div class="card-icon">⏱️</div>
-                <div class="card-title">历史回看</div>
+                <div class="card-header">
+                    <div class="card-icon">⏱️</div>
+                    <div class="card-title">历史回看</div>
+                </div>
                 <div class="card-description">
                     按日期和时间查询历史数据，分析趋势变化
                 </div>
                 <div class="card-features">
-                    <div class="feature-item">日期时间筛选</div>
-                    <div class="feature-item">时间轴展示记录</div>
-                    <div class="feature-item">趋势对比分析</div>
-                    <div class="feature-item">完整历史数据</div>
+                    <div class="feature">日期时间筛选</div>
+                    <div class="feature">时间轴展示记录</div>
+                    <div class="feature">趋势对比分析</div>
+                    <div class="feature">完整历史数据</div>
                 </div>
-                <a href="/history" class="card-button">进入历史回看</a>
+                <a href="/history" class="card-button">进入历史回看 →</a>
             </div>
 
-            <div class="card" onclick="location.href='/signal-history'">
-                <div class="card-icon">🎯</div>
-                <div class="card-title">信号历史</div>
-                <div class="card-description">
-                    做多做空信号统计历史数据查询与分析
-                </div>
-                <div class="card-features">
-                    <div class="feature-item">做多做空信号统计</div>
-                    <div class="feature-item">历史趋势曲线</div>
-                    <div class="feature-item">时间序列分析</div>
-                    <div class="feature-item">信号类型分布</div>
-                </div>
-                <a href="/signal-history" class="card-button">进入信号历史</a>
-            </div>
-
-            <div class="card" onclick="location.href='/panic-wash'">
-                <div class="card-icon">🔥</div>
-                <div class="card-title">恐慌清洗指标</div>
-                <div class="card-description">
-                    实时监控市场恐慌情绪与清洗指标
-                </div>
-                <div class="card-features">
-                    <div class="feature-item">恐慌指标实时数据</div>
-                    <div class="feature-item">趋势评级与市场区间</div>
-                    <div class="feature-item">24h爆仓统计</div>
-                    <div class="feature-item">全网持仓量监控</div>
-                </div>
-                <a href="/panic-wash" class="card-button">进入恐慌监控</a>
-            </div>
-
-            <div class="card" onclick="location.href='/panic-wash-v3'">
-                <div class="card-icon">📈</div>
-                <div class="card-title">恐慌清洗监控V3 ⭐新版</div>
-                <div class="card-description">
-                    双Y轴曲线图 + 完整历史数据列表 + 3分钟自动更新
-                </div>
-                <div class="card-features">
-                    <div class="feature-item">📊 双Y轴曲线图（指标+持仓量）</div>
-                    <div class="feature-item">📋 完整历史数据列表</div>
-                    <div class="feature-item">🔄 3分钟自动更新</div>
-                    <div class="feature-item">🎯 按日期时间筛选</div>
-                </div>
-                <a href="/panic-wash-v3" class="card-button">进入监控V3 🚀</a>
-            </div>
-
+            <!-- 比价系统 -->
             <div class="card" onclick="location.href='/price-comparison'">
-                <div class="card-icon">🎯</div>
-                <div class="card-title">比价系统 ⭐新功能</div>
+                <div class="card-header">
+                    <div class="card-icon">💹</div>
+                    <div class="card-title">比价系统</div>
+                </div>
                 <div class="card-description">
                     自动跟踪币种创新高低，统计历史表现
                 </div>
                 <div class="card-features">
-                    <div class="feature-item">📊 价格基准管理（最高/最低价）</div>
-                    <div class="feature-item">🔥 创新高低自动检测</div>
-                    <div class="feature-item">📈 1日/3日/7日统计汇总</div>
-                    <div class="feature-item">💹 最高/最低占比计算</div>
+                    <div class="feature">价格基准管理</div>
+                    <div class="feature">创新高低自动检测</div>
+                    <div class="feature">1日/3日/7日统计</div>
+                    <div class="feature">占比计算分析</div>
                 </div>
-                <a href="/price-comparison" class="card-button">进入比价系统 🎯</a>
+                <a href="/price-comparison" class="card-button">进入比价系统 →</a>
             </div>
+
+            <!-- 信号历史 -->
+            <div class="card" onclick="location.href='/signal-history'">
+                <div class="card-header">
+                    <div class="card-icon">📉</div>
+                    <div class="card-title">信号历史</div>
+                </div>
+                <div class="card-description">
+                    做多做空信号统计历史数据查询与分析
+                </div>
+                <div class="card-features">
+                    <div class="feature">信号统计查询</div>
+                    <div class="feature">历史趋势曲线</div>
+                    <div class="feature">时间序列分析</div>
+                    <div class="feature">信号类型分布</div>
+                </div>
+                <a href="/signal-history" class="card-button">进入信号历史 →</a>
+            </div>
+
         </div>
 
+        <!-- 页脚 -->
         <div class="footer">
-            <p>数据来源：Google Drive | 自动更新：每5分钟 | 自动存档：实时保存</p>
+            <div class="footer-info">
+                🔄 自动更新：每3分钟 | 💾 数据源：Google Drive | 🕐 时区：北京时间 (UTC+8)
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/jamesyidc/6666.git" class="footer-link" target="_blank">📁 GitHub仓库</a>
+                <a href="/SIGNAL_MONITOR_GUIDE.md" class="footer-link" target="_blank">📖 使用文档</a>
+            </div>
+            <div class="footer-info" style="margin-top: 15px; font-size: 12px;">
+                © 2025 虚拟币系统监控中心 | Version 2.0
+            </div>
         </div>
     </div>
 
     <script>
-        // 加载统计信息
-        async function loadStats() {
-            try {
-                const response = await fetch('/api/history/stats');
-                const result = await response.json();
-                
-                if (result.success) {
-                    const stats = result.stats;
-                    document.getElementById('totalRecords').textContent = stats.total_records;
-                    document.getElementById('daysCount').textContent = stats.days;
-                    
-                    if (stats.latest) {
-                        const date = new Date(stats.latest);
-                        const timeStr = date.toLocaleString('zh-CN', {
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                        document.getElementById('lastUpdate').textContent = timeStr;
+        // 点击卡片跳转（排除按钮本身的点击）
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (!e.target.classList.contains('card-button')) {
+                    const href = this.getAttribute('onclick').match(/location\.href='([^']+)'/);
+                    if (href && href[1]) {
+                        window.location.href = href[1];
                     }
                 }
-            } catch (error) {
-                console.error('加载统计失败:', error);
+            });
+        });
+
+        // 阻止按钮的双重跳转
+        document.querySelectorAll('.card-button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+
+        // 更新当前时间
+        function updateTime() {
+            const options = {
+                timeZone: 'Asia/Shanghai',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            };
+            const beijingTime = new Date().toLocaleString('zh-CN', options);
+            const statusText = document.querySelector('.header p');
+            if (statusText) {
+                statusText.innerHTML = `<span class="status-badge"></span>所有服务运行正常 | 北京时间: ${beijingTime}`;
             }
         }
 
-        // 页面加载时初始化
-        window.addEventListener('DOMContentLoaded', loadStats);
+        // 页面加载时更新时间
+        updateTime();
+        // 每秒更新时间
+        setInterval(updateTime, 1000);
     </script>
 </body>
 </html>
