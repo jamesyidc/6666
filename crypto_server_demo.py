@@ -94,7 +94,16 @@ DEMO_STATS = {
 
 @app.route('/')
 def index():
-    """首页"""
+    """首页 - 虚拟币系统监控中心"""
+    response = send_from_directory('.', 'index.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@app.route('/live')
+def live_dashboard():
+    """实时监控面板 - 加密货币数据"""
     response = send_from_directory('.', 'crypto_dashboard.html')
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
@@ -103,17 +112,17 @@ def index():
 
 @app.route('/signal')
 def signal_monitor():
-    """信号监控页面 v3 - 全天数据表格+曲线图"""
-    response = send_from_directory('.', 'signal_monitor_v3.html')
+    """信号监控页面 - 新版独立模块"""
+    response = send_from_directory('.', 'signal_monitor.html')
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
 
-@app.route('/signal/v1')
-def signal_monitor_v1():
-    """信号监控页面 v1 - 旧版本（无曲线图）"""
-    response = send_from_directory('.', 'signal_monitor.html')
+@app.route('/signal/v3')
+def signal_monitor_v3():
+    """信号监控页面 v3 - 旧版本（表格+曲线图）"""
+    response = send_from_directory('.', 'signal_monitor_v3.html')
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
@@ -283,6 +292,51 @@ def proxy_panic_wash_query():
             f'http://localhost:5002/api/panic-wash/query?start={start}&end={end}',
             timeout=10
         )
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# 信号监控页面和API代理
+@app.route('/signal')
+def signal_monitor_page():
+    """信号监控页面"""
+    return send_file('signal_monitor.html')
+
+@app.route('/api/signal-monitor/latest')
+def proxy_signal_monitor_latest():
+    """代理：获取最新信号"""
+    import requests
+    try:
+        response = requests.get('http://localhost:5003/api/signal-monitor/latest', timeout=5)
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/signal-monitor/history')
+def proxy_signal_monitor_history():
+    """代理：获取历史信号"""
+    import requests
+    from flask import request
+    try:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        start_time = request.args.get('start_time', '00:00:00')
+        end_time = request.args.get('end_time', '23:59:59')
+        
+        response = requests.get(
+            f'http://localhost:5003/api/signal-monitor/history?start_date={start_date}&end_date={end_date}&start_time={start_time}&end_time={end_time}',
+            timeout=10
+        )
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/signal-monitor/test')
+def proxy_signal_monitor_test():
+    """代理：测试信号监控API"""
+    import requests
+    try:
+        response = requests.get('http://localhost:5003/api/signal-monitor/test', timeout=5)
         return jsonify(response.json())
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
