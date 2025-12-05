@@ -151,6 +151,57 @@ def panic_wash_page():
     """恐慌清洗指标页面"""
     return send_file('panic_wash_new.html')
 
+@app.route('/api/panic-wash/query')
+def query_data():
+    """按日期时间范围查询数据"""
+    try:
+        from flask import request
+        start_time = request.args.get('start')
+        end_time = request.args.get('end')
+        
+        if not start_time or not end_time:
+            return jsonify({
+                'success': False,
+                'message': '请提供start和end参数'
+            }), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT * FROM panic_wash_new 
+            WHERE record_time >= ? AND record_time <= ?
+            ORDER BY record_time ASC
+        ''', (start_time, end_time))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        data = []
+        for row in rows:
+            data.append({
+                'record_time': row['record_time'],
+                'hour_1_amount': row['hour_1_amount'],
+                'hour_24_amount': row['hour_24_amount'],
+                'hour_24_people': row['hour_24_people'],
+                'total_position': row['total_position'],
+                'panic_index': row['panic_index']
+            })
+        
+        return jsonify({
+            'success': True,
+            'count': len(data),
+            'start_time': start_time,
+            'end_time': end_time,
+            'data': data
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/panic-wash/stats')
 def get_stats():
     """获取统计信息"""

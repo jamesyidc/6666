@@ -245,6 +245,41 @@
 
             <button class="refresh-btn" onclick="refreshData()">🔄 手动刷新</button>
 
+            <!-- 历史数据查询 -->
+            <div style="margin: 30px 0; padding: 20px; background: rgba(74, 158, 255, 0.1); border-radius: 10px; border: 1px solid rgba(74, 158, 255, 0.3);">
+                <h3 style="color: #4a9eff; margin-bottom: 20px;">🔍 历史数据查询</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: end;">
+                    <div>
+                        <label style="display: block; color: #888; margin-bottom: 5px; font-size: 14px;">开始日期</label>
+                        <input type="date" id="startDate" style="padding: 8px 12px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff;">
+                    </div>
+                    <div>
+                        <label style="display: block; color: #888; margin-bottom: 5px; font-size: 14px;">开始时间</label>
+                        <input type="time" id="startTime" value="00:00" style="padding: 8px 12px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff;">
+                    </div>
+                    <div>
+                        <label style="display: block; color: #888; margin-bottom: 5px; font-size: 14px;">结束日期</label>
+                        <input type="date" id="endDate" style="padding: 8px 12px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff;">
+                    </div>
+                    <div>
+                        <label style="display: block; color: #888; margin-bottom: 5px; font-size: 14px;">结束时间</label>
+                        <input type="time" id="endTime" value="23:59" style="padding: 8px 12px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff;">
+                    </div>
+                    <button onclick="queryHistoryData()" style="padding: 10px 25px; background: #4a9eff; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.3s;">
+                        🔍 查询
+                    </button>
+                    <button onclick="resetQuery()" style="padding: 10px 25px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; cursor: pointer; transition: all 0.3s;">
+                        重置
+                    </button>
+                </div>
+                <div id="queryResult" style="margin-top: 20px; display: none;">
+                    <div style="color: #4a9eff; font-weight: bold; margin-bottom: 10px;">查询结果：<span id="resultCount">0</span> 条记录</div>
+                    <div id="queryStats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                        <!-- 统计信息将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+
             <div class="chart-container">
                 <div class="chart-title">📊 恐慌清洗指数 & 爆仓数据趋势（24小时）</div>
                 <canvas id="combinedChart"></canvas>
@@ -573,11 +608,95 @@
             }
         }
 
+        // 查询历史数据
+        async function queryHistoryData() {
+            const startDate = document.getElementById('startDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const endDate = document.getElementById('endDate').value;
+            const endTime = document.getElementById('endTime').value;
+
+            if (!startDate || !endDate) {
+                alert('请选择开始日期和结束日期');
+                return;
+            }
+
+            const startDateTime = `${startDate} ${startTime}:00`;
+            const endDateTime = `${endDate} ${endTime}:59`;
+
+            try {
+                const response = await fetch(`/api/panic-wash/query?start=${encodeURIComponent(startDateTime)}&end=${encodeURIComponent(endDateTime)}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    const data = result.data;
+                    document.getElementById('resultCount').textContent = data.length;
+                    
+                    if (data.length > 0) {
+                        // 计算统计信息
+                        const avgPanicIndex = (data.reduce((sum, d) => sum + d.panic_index, 0) / data.length).toFixed(2);
+                        const maxPanicIndex = Math.max(...data.map(d => d.panic_index)).toFixed(2);
+                        const minPanicIndex = Math.min(...data.map(d => d.panic_index)).toFixed(2);
+                        const avgPosition = (data.reduce((sum, d) => sum + d.total_position, 0) / data.length / 1e8).toFixed(2);
+
+                        document.getElementById('queryStats').innerHTML = `
+                            <div style="background: rgba(255,71,87,0.1); padding: 15px; border-radius: 8px; border-left: 3px solid #ff4757;">
+                                <div style="color: #888; font-size: 12px;">平均恐慌指数</div>
+                                <div style="color: #ff4757; font-size: 24px; font-weight: bold; margin-top: 5px;">${avgPanicIndex}%</div>
+                            </div>
+                            <div style="background: rgba(255,71,87,0.1); padding: 15px; border-radius: 8px; border-left: 3px solid #ff4757;">
+                                <div style="color: #888; font-size: 12px;">最高恐慌指数</div>
+                                <div style="color: #ff4757; font-size: 24px; font-weight: bold; margin-top: 5px;">${maxPanicIndex}%</div>
+                            </div>
+                            <div style="background: rgba(255,71,87,0.1); padding: 15px; border-radius: 8px; border-left: 3px solid #ff4757;">
+                                <div style="color: #888; font-size: 12px;">最低恐慌指数</div>
+                                <div style="color: #ff4757; font-size: 24px; font-weight: bold; margin-top: 5px;">${minPanicIndex}%</div>
+                            </div>
+                            <div style="background: rgba(74,158,255,0.1); padding: 15px; border-radius: 8px; border-left: 3px solid #4a9eff;">
+                                <div style="color: #888; font-size: 12px;">平均持仓余额</div>
+                                <div style="color: #4a9eff; font-size: 24px; font-weight: bold; margin-top: 5px;">${avgPosition}亿</div>
+                            </div>
+                        `;
+                        
+                        document.getElementById('queryResult').style.display = 'block';
+                        
+                        // 更新图表显示查询结果
+                        updateCharts(data);
+                    } else {
+                        alert('查询时间段内没有数据');
+                    }
+                } else {
+                    alert('查询失败：' + (result.message || '未知错误'));
+                }
+            } catch (error) {
+                alert('查询失败：' + error.message);
+                console.error('查询失败:', error);
+            }
+        }
+
+        // 重置查询
+        function resetQuery() {
+            // 设置默认日期（今天）
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').value = today;
+            document.getElementById('endDate').value = today;
+            document.getElementById('startTime').value = '00:00';
+            document.getElementById('endTime').value = '23:59';
+            document.getElementById('queryResult').style.display = 'none';
+            
+            // 重新加载24小时数据
+            loadHistoryData();
+        }
+
         // 初始化
         async function init() {
             await loadLatestData();
             await loadHistoryData();
             await load30DayCalendar();
+            
+            // 设置日期选择器默认值为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').value = today;
+            document.getElementById('endDate').value = today;
 
             // 每30秒自动刷新
             setInterval(async () => {
