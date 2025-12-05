@@ -5,7 +5,9 @@
 基于爆仓数据独立计算
 
 数据来源: https://history.btc123.fans/baocang/
-计算公式: 恐慌清洗指数 = 24小时爆仓人数 / 全网持仓量总计
+计算公式: 恐慌清洗指数 = (24小时爆仓人数 / 10000) / (全网持仓量 / 1e9) × 100%
+         即：(万人) / (亿美元) × 100%
+示例: 8.5431万人 / 95.79亿 = 8.82%
 更新频率: 每3分钟
 """
 
@@ -132,9 +134,9 @@ class PanicWashCalculator:
                 
                 await browser.close()
                 
-                # 计算恐慌指数
+                # 计算恐慌指数: (万人) / (亿美元) × 100%
                 if data['total_position'] > 0:
-                    data['panic_index'] = data['hour_24_people'] / data['total_position']
+                    data['panic_index'] = (data['hour_24_people'] / 10000) / (data['total_position'] / 1e9) * 100
                 else:
                     data['panic_index'] = 0
                 
@@ -255,18 +257,22 @@ class MockPanicWashCalculator(PanicWashCalculator):
         # 基于真实数据范围：
         # 1H爆仓: $250.7万
         # 24H爆仓: $1.93亿 (≈ ¥13.68亿)
-        # 24H爆仓人数: 25,375人
-        # 全网持仓: $95.69亿
+        # 24H爆仓人数: 8.5431万人 (85,431人)
+        # 全网持仓: $95.79亿
+        # 恐慌指数: 8.5431 / 95.79 = 8.82%
         
-        hour_24_people = random.randint(20000, 30000)  # 2-3万人
-        total_position = random.uniform(90e9, 100e9)   # 90-100亿美元
+        hour_24_people = random.randint(70000, 100000)  # 7-10万人
+        total_position = random.uniform(90e9, 100e9)    # 90-100亿美元
+        
+        # 计算恐慌指数: (万人) / (亿美元) × 100%
+        panic_index = (hour_24_people / 10000) / (total_position / 1e9) * 100
         
         data = {
             'hour_1_amount': random.uniform(2e6, 5e6),        # 200-500万美元
             'hour_24_amount': random.uniform(150e6, 250e6),   # 1.5-2.5亿美元
             'hour_24_people': hour_24_people,
             'total_position': total_position,
-            'panic_index': hour_24_people / total_position,
+            'panic_index': panic_index,
             'record_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'success': True
         }
@@ -274,9 +280,9 @@ class MockPanicWashCalculator(PanicWashCalculator):
         print(f"📊 模拟数据（真实范围）:")
         print(f"  1小时爆仓: ${data['hour_1_amount']/1e6:.2f}M (≈ ¥{data['hour_1_amount']*7.1/1e6:.2f}M)")
         print(f"  24小时爆仓: ${data['hour_24_amount']/1e6:.2f}M (≈ ¥{data['hour_24_amount']*7.1/1e8:.2f}亿)")
-        print(f"  24小时爆仓人数: {data['hour_24_people']:,}")
-        print(f"  全网持仓量: ${data['total_position']/1e9:.2f}B")
-        print(f"  恐慌指数: {data['panic_index']:.8f}")
+        print(f"  24小时爆仓人数: {data['hour_24_people']:,}人 ({data['hour_24_people']/10000:.4f}万人)")
+        print(f"  全网持仓量: ${data['total_position']/1e9:.2f}B ({data['total_position']/1e9:.2f}亿)")
+        print(f"  恐慌指数: {panic_index:.2f}% (公式: {data['hour_24_people']/10000:.4f} / {data['total_position']/1e9:.2f} × 100%)")
         
         return data
 

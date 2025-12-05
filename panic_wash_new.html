@@ -204,7 +204,8 @@
         <div class="formula">
             <div class="formula-title">📐 计算公式</div>
             <div class="formula-content">
-                恐慌清洗指数 = 24小时爆仓人数 / 全网持仓量总计<br>
+                恐慌清洗指数 = (24小时爆仓人数/万) / (全网持仓量/亿) × 100%<br>
+                示例: 8.5431万人 / 95.79亿 = 8.92%<br>
                 数据来源: https://history.btc123.fans/baocang/
             </div>
         </div>
@@ -298,7 +299,7 @@
                     document.getElementById('hour24Amount').textContent = formatAmount(data.hour_24_amount);
                     document.getElementById('hour24People').textContent = formatNumber(data.hour_24_people, 0) + ' 人';
                     document.getElementById('totalPosition').textContent = formatAmount(data.total_position);
-                    document.getElementById('panicIndex').textContent = (data.panic_index * 1000000).toFixed(2);
+                    document.getElementById('panicIndex').textContent = data.panic_index.toFixed(2) + '%';
                     document.getElementById('updateTime').textContent = data.record_time;
 
                     // 显示内容
@@ -333,7 +334,7 @@
             });
 
             // 恐慌指数图表
-            const panicData = data.map(d => (d.panic_index * 1000000).toFixed(2));
+            const panicData = data.map(d => d.panic_index.toFixed(2));
             
             if (panicChart) {
                 panicChart.destroy();
@@ -345,7 +346,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: '恐慌清洗指数 (×10⁶)',
+                        label: '恐慌清洗指数 (%)',
                         data: panicData,
                         borderColor: '#ff4757',
                         backgroundColor: 'rgba(255, 71, 87, 0.1)',
