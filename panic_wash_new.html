@@ -389,20 +389,11 @@
                             borderWidth: 3
                         },
                         {
-                            label: '👥 24H爆仓人数 (万人)',
-                            data: peopleData,
-                            borderColor: '#ffa502',
-                            backgroundColor: 'rgba(255, 165, 2, 0.1)',
-                            yAxisID: 'y1',
-                            tension: 0.4,
-                            borderWidth: 2
-                        },
-                        {
-                            label: '💰 全网持仓量 (亿)',
+                            label: '💰 持仓余额 (亿)',
                             data: positionData,
                             borderColor: '#4a9eff',
                             backgroundColor: 'rgba(74, 158, 255, 0.1)',
-                            yAxisID: 'y2',
+                            yAxisID: 'y1',
                             tension: 0.4,
                             borderWidth: 2
                         }
@@ -451,16 +442,9 @@
                             position: 'right',
                             title: {
                                 display: true,
-                                text: '爆仓人数 (万人)',
-                                color: '#ffa502'
+                                text: '持仓余额 (亿)',
+                                color: '#4a9eff'
                             },
-                            ticks: { color: '#ffa502' },
-                            grid: { drawOnChartArea: false }
-                        },
-                        y2: {
-                            type: 'linear',
-                            display: false, // 隐藏第三个Y轴，只在图例中显示
-                            position: 'right',
                             ticks: { color: '#4a9eff' },
                             grid: { drawOnChartArea: false }
                         },
