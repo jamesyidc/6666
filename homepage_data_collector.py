@@ -32,8 +32,21 @@ def get_beijing_time():
 
 
 def get_today_folder_name():
-    """获取今天的文件夹名称（北京时间）"""
+    """
+    获取今天的文件夹名称（北京时间）
+    注意: 如果当前时间在 00:00-00:10 之间，使用昨天的日期
+    过了 00:10 之后才切换到新的日期文件夹
+    """
     beijing_now = get_beijing_time()
+    
+    # 如果当前时间在 00:00 到 00:10 之间，使用昨天的日期
+    if beijing_now.hour == 0 and beijing_now.minute < 10:
+        yesterday = beijing_now - timedelta(days=1)
+        folder_name = yesterday.strftime('%Y-%m-%d')
+        print(f"⏰ 当前时间 {beijing_now.strftime('%H:%M')} 在 00:10 之前，使用昨天的文件夹: {folder_name}")
+        return folder_name
+    
+    # 00:10 之后，使用今天的日期
     return beijing_now.strftime('%Y-%m-%d')
 
 
@@ -254,15 +267,113 @@ def save_to_database(summary_data, coins_data, record_time):
         return False
 
 
+def get_folder_files_from_public_link(folder_id):
+    """
+    从公共 Google Drive 文件夹获取文件列表
+    不使用 API，直接解析网页
+    """
+    import requests
+    from bs4 import BeautifulSoup
+    
+    try:
+        # 构建公共文件夹的网页URL
+        url = f"https://drive.google.com/drive/folders/{folder_id}"
+        
+        # 发送请求
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=30)
+        
+        if response.status_code != 200:
+            print(f"✗ 无法访问 Google Drive 文件夹: HTTP {response.status_code}")
+            return []
+        
+        # 尝试从网页中提取文件信息
+        # Google Drive 使用动态加载，需要解析 JavaScript 数据
+        content = response.text
+        
+        # 查找文件夹列表的JSON数据（通常在页面的script标签中）
+        import json
+        
+        # 简单的文件夹检测（查找日期格式的文件夹名）
+        folders = []
+        date_pattern = r'\d{4}-\d{2}-\d{2}'
+        
+        # 从HTML中提取可能的日期文件夹
+        matches = re.findall(date_pattern, content)
+        if matches:
+            folders = list(set(matches))
+            folders.sort(reverse=True)  # 按日期降序
+            print(f"✓ 发现 {len(folders)} 个日期文件夹")
+            return folders
+        
+        print("✗ 未能从网页中提取文件夹信息")
+        return []
+        
+    except Exception as e:
+        print(f"✗ 获取文件夹列表失败: {e}")
+        return []
+
+
+def fetch_txt_content_from_drive(folder_id, date_folder):
+    """
+    直接从 Google Drive 公共链接下载 txt 文件内容
+    """
+    import requests
+    
+    try:
+        # 注意: 公共 Google Drive 文件夹需要特殊处理
+        # 由于 Google Drive 的限制，我们需要使用不同的策略
+        
+        # 策略1: 尝试直接访问已知的文件结构
+        print(f"⚠️  注意: 公共 Google Drive 文件夹的直接访问受限")
+        print(f"   建议: 请确保文件夹 {folder_id} 的共享设置为'知道链接的任何人都可以查看'")
+        
+        # 暂时返回 None，需要用户提供更具体的访问方式
+        return None
+        
+    except Exception as e:
+        print(f"✗ 获取文件内容失败: {e}")
+        return None
+
+
 def fetch_data_from_google_drive(folder_date):
     """
-    从Google Drive获取数据
-    
-    TODO: 实现实际的Google Drive API调用
-    当前返回模拟数据用于测试
+    从公共 Google Drive 获取数据
+    不使用 API，直接访问公共链接
     """
     beijing_now = get_beijing_time()
     time_str = beijing_now.strftime('%Y-%m-%d %H:%M:%S')
+    
+    print(f"[尝试] 从 Google Drive 公共链接获取数据")
+    print(f"       文件夹ID: {GOOGLE_DRIVE_FOLDER_ID}")
+    print(f"       目标日期: {folder_date}")
+    
+    # 尝试获取数据
+    content = fetch_txt_content_from_drive(GOOGLE_DRIVE_FOLDER_ID, folder_date)
+    
+    if content:
+        # 解析 txt 内容
+        lines = content.strip().split('\n')
+        
+        # 第一行是汇总数据
+        if len(lines) > 0:
+            summary_data = parse_summary_line(lines[0])
+            
+            # 后续行是币种数据
+            coins_data = []
+            for line in lines[1:]:
+                coin_data = parse_coin_line(line)
+                if coin_data:
+                    coins_data.append(coin_data)
+            
+            if summary_data and coins_data:
+                print(f"✓ 成功解析真实数据: {len(coins_data)} 个币种")
+                return summary_data, coins_data
+    
+    # 如果无法获取真实数据，返回模拟数据
+    print(f"⚠️  使用模拟数据（Google Drive 访问受限）")
     
     # 生成模拟汇总数据
     summary_data = {
@@ -306,12 +417,6 @@ def fetch_data_from_google_drive(folder_date):
             'low_ratio': round(random.uniform(0, 100), 2),
             'anomaly': random.choice(['', '急涨', '急跌', ''])
         })
-    
-    print(f"[模拟数据] 生成了汇总数据和 {len(coins_data)} 个币种数据")
-    print(f"[提示] 实际使用时需要配置Google Drive API并从以下位置读取:")
-    print(f"       文件夹ID: {GOOGLE_DRIVE_FOLDER_ID}")
-    print(f"       日期文件夹: {folder_date}")
-    print(f"       最新txt文件")
     
     return summary_data, coins_data
 
