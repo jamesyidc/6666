@@ -254,12 +254,12 @@ class MockPanicWashCalculator(PanicWashCalculator):
         """返回模拟数据（基于真实数据范围）"""
         import random
         
-        # 基于真实数据范围：
-        # 1H爆仓: $250.7万
-        # 24H爆仓: $1.93亿 (≈ ¥13.68亿)
+        # 基于最新真实数据范围（2025-12-05更新）：
+        # 1H爆仓: $284.38万 ≈ $2.84M
+        # 24H爆仓: $1.94亿 ≈ $194M
         # 24H爆仓人数: 8.5431万人 (85,431人)
         # 全网持仓: $95.79亿
-        # 恐慌指数: 8.5431 / 95.79 = 8.82%
+        # 恐慌指数: 8.5431 / 95.79 = 8.92%
         
         hour_24_people = random.randint(70000, 100000)  # 7-10万人
         total_position = random.uniform(90e9, 100e9)    # 90-100亿美元
@@ -268,8 +268,8 @@ class MockPanicWashCalculator(PanicWashCalculator):
         panic_index = (hour_24_people / 10000) / (total_position / 1e9) * 100
         
         data = {
-            'hour_1_amount': random.uniform(2e6, 5e6),        # 200-500万美元
-            'hour_24_amount': random.uniform(150e6, 250e6),   # 1.5-2.5亿美元
+            'hour_1_amount': random.uniform(2.5e6, 3.5e6),    # 250-350万美元 (基于284万)
+            'hour_24_amount': random.uniform(180e6, 210e6),   # 1.8-2.1亿美元 (基于194M)
             'hour_24_people': hour_24_people,
             'total_position': total_position,
             'panic_index': panic_index,
