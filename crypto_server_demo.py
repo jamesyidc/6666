@@ -121,8 +121,8 @@ def signal_monitor_v1():
 
 @app.route('/panic')
 def panic_monitor():
-    """恐慌指数监控页面 v2 - 曲线图+数据表格"""
-    response = send_from_directory('.', 'panic_monitor_v2.html')
+    """恐慌清洗指标页面 - 新版本（独立计算）"""
+    response = send_from_directory('.', 'panic_wash_new.html')
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
@@ -130,8 +130,8 @@ def panic_monitor():
 
 @app.route('/panic-chart')
 def panic_chart():
-    """恐慌指数历史统计页面"""
-    response = send_from_directory('.', 'panic_chart.html')
+    """恐慌清洗指标页面（重定向到新版本）"""
+    response = send_from_directory('.', 'panic_wash_new.html')
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
@@ -162,25 +162,18 @@ def get_signal_data():
 
 @app.route('/api/monitor/panic')
 def get_panic_data():
-    """获取恐慌清洗数据API（自动从 Google Drive 读取，失败时使用演示数据，并保存到数据库）"""
+    """获取恐慌清洗数据API - 代理到新API服务"""
+    import requests
     try:
-        # 自动读取数据（优先 Google Drive）
-        data = monitor_reader.get_panic_data()
-        
-        # 保存到数据库（用于历史曲线）
-        try:
-            db.save_panic_data(data)
-        except Exception as save_error:
-            print(f"⚠️  保存恐慌清洗数据到数据库失败: {save_error}")
-        
-        return jsonify({
-            'success': True,
-            'data': data
-        })
+        # 代理请求到新的恐慌清洗API服务（端口5002）
+        response = requests.get('http://localhost:5002/api/panic-wash/latest', timeout=5)
+        return jsonify(response.json())
     except Exception as e:
+        # 降级处理：返回旧版数据或错误信息
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': str(e),
+            'message': '新版恐慌清洗指标服务未启动，请访问: http://localhost:5002'
         }), 500
 
 @app.route('/api/monitor/signal/history')
@@ -207,25 +200,29 @@ def get_signal_history():
 
 @app.route('/api/monitor/panic/history')
 def get_panic_history_api():
-    """获取恐慌清洗历史数据API"""
+    """获取恐慌清洗历史数据API - 代理到新API服务"""
+    import requests
     try:
-        # 获取查询参数
-        date = request.args.get('date')  # 可选，格式：YYYY-MM-DD
-        hours = request.args.get('hours', 24, type=int)  # 默认查询24小时
-        
-        # 查询历史数据
-        history = db.get_panic_history(date=date, hours=hours)
-        
-        return jsonify({
-            'success': True,
-            'data': history,
-            'count': len(history)
-        })
+        # 代理请求到新的恐慌清洗API服务（端口5002）
+        response = requests.get('http://localhost:5002/api/panic-wash/history', timeout=5)
+        return jsonify(response.json())
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        # 降级处理：返回旧版数据
+        try:
+            date = request.args.get('date')
+            hours = request.args.get('hours', 24, type=int)
+            history = db.get_panic_history(date=date, hours=hours)
+            return jsonify({
+                'success': True,
+                'data': history,
+                'count': len(history),
+                'source': 'fallback_old_data'
+            })
+        except:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
 
 def calculate_priority_level(ratio1_str, ratio2_str):
     """

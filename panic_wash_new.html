@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>恐慌清洗指标 - 独立计算</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a9eff;
+            margin-bottom: 10px;
+            font-size: 32px;
+            text-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .nav-link {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 0 10px;
+            background: rgba(74, 158, 255, 0.2);
+            border: 1px solid rgba(74, 158, 255, 0.5);
+            border-radius: 8px;
+            color: #4a9eff;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover {
+            background: rgba(74, 158, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(74, 158, 255, 0.2);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a9eff;
+        }
+
+        .stat-value.red {
+            color: #ff4757;
+        }
+
+        .stat-value.green {
+            color: #00ff88;
+        }
+
+        .stat-value.yellow {
+            color: #ffa502;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            color: #4a9eff;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .update-info {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        .formula {
+            background: rgba(74, 158, 255, 0.1);
+            border-left: 3px solid #4a9eff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .formula-title {
+            color: #4a9eff;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .formula-content {
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+        }
+
+        .refresh-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #4a9eff 0%, #667eea 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74, 158, 255, 0.4);
+        }
+
+        .refresh-btn:active {
+            transform: translateY(0);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(74, 158, 255, 0.3);
+            border-top-color: #4a9eff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 恐慌清洗指标</h1>
+        <div class="subtitle">基于爆仓数据独立计算 | 每3分钟更新一次</div>
+
+        <div class="nav-links">
+            <a href="/" class="nav-link">← 返回主页</a>
+            <a href="/signal" class="nav-link">信号监控</a>
+        </div>
+
+        <div class="formula">
+            <div class="formula-title">📐 计算公式</div>
+            <div class="formula-content">
+                恐慌清洗指数 = 24小时爆仓人数 / 全网持仓量总计<br>
+                数据来源: https://history.btc123.fans/baocang/
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>正在加载数据...</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <div class="stats-panel">
+                <div class="stat-card">
+                    <div class="stat-label">💰 1小时爆仓金额</div>
+                    <div class="stat-value" id="hour1Amount">-</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">💸 24小时爆仓金额</div>
+                    <div class="stat-value" id="hour24Amount">-</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">👥 24小时爆仓人数</div>
+                    <div class="stat-value yellow" id="hour24People">-</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">🏦 全网持仓量总计</div>
+                    <div class="stat-value" id="totalPosition">-</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">🔥 恐慌清洗指数</div>
+                    <div class="stat-value red" id="panicIndex">-</div>
+                </div>
+            </div>
+
+            <button class="refresh-btn" onclick="refreshData()">🔄 手动刷新</button>
+
+            <div class="chart-container">
+                <div class="chart-title">📈 恐慌清洗指数趋势（24小时）</div>
+                <canvas id="panicChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">📊 爆仓数据趋势（24小时）</div>
+                <canvas id="liquidationChart"></canvas>
+            </div>
+
+            <div class="update-info">
+                <p>最后更新时间: <span id="updateTime">-</span></p>
+                <p>自动刷新频率: 每30秒</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let panicChart = null;
+        let liquidationChart = null;
+
+        // 格式化数字
+        function formatNumber(num, decimals = 2) {
+            if (num === null || num === undefined) return '-';
+            return Number(num).toLocaleString('en-US', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+
+        // 格式化金额
+        function formatAmount(amount) {
+            if (amount >= 1e9) {
+                return '$' + (amount / 1e9).toFixed(2) + 'B';
+            } else if (amount >= 1e6) {
+                return '$' + (amount / 1e6).toFixed(2) + 'M';
+            } else {
+                return '$' + formatNumber(amount, 0);
+            }
+        }
+
+        // 加载最新数据
+        async function loadLatestData() {
+            try {
+                const response = await fetch('/api/panic-wash/latest');
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    const data = result.data;
+                    
+                    document.getElementById('hour1Amount').textContent = formatAmount(data.hour_1_amount);
+                    document.getElementById('hour24Amount').textContent = formatAmount(data.hour_24_amount);
+                    document.getElementById('hour24People').textContent = formatNumber(data.hour_24_people, 0) + ' 人';
+                    document.getElementById('totalPosition').textContent = formatAmount(data.total_position);
+                    document.getElementById('panicIndex').textContent = (data.panic_index * 1000000).toFixed(2);
+                    document.getElementById('updateTime').textContent = data.record_time;
+
+                    // 显示内容
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('content').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+
+        // 加载历史数据
+        async function loadHistoryData() {
+            try {
+                const response = await fetch('/api/panic-wash/history');
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    updateCharts(result.data);
+                }
+            } catch (error) {
+                console.error('加载历史数据失败:', error);
+            }
+        }
+
+        // 更新图表
+        function updateCharts(data) {
+            const labels = data.map(d => {
+                const time = new Date(d.record_time);
+                return time.getHours().toString().padStart(2, '0') + ':' + 
+                       time.getMinutes().toString().padStart(2, '0');
+            });
+
+            // 恐慌指数图表
+            const panicData = data.map(d => (d.panic_index * 1000000).toFixed(2));
+            
+            if (panicChart) {
+                panicChart.destroy();
+            }
+
+            const ctx1 = document.getElementById('panicChart').getContext('2d');
+            panicChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '恐慌清洗指数 (×10⁶)',
+                        data: panicData,
+                        borderColor: '#ff4757',
+                        backgroundColor: 'rgba(255, 71, 87, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#eee' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { color: '#888' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#888' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+
+            // 爆仓数据图表
+            const peopleData = data.map(d => d.hour_24_people);
+            const positionData = data.map(d => d.total_position / 1e9); // 转换为十亿
+
+            if (liquidationChart) {
+                liquidationChart.destroy();
+            }
+
+            const ctx2 = document.getElementById('liquidationChart').getContext('2d');
+            liquidationChart = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '24H爆仓人数',
+                            data: peopleData,
+                            borderColor: '#ffa502',
+                            backgroundColor: 'rgba(255, 165, 2, 0.1)',
+                            yAxisID: 'y',
+                            tension: 0.4
+                        },
+                        {
+                            label: '全网持仓量 (B)',
+                            data: positionData,
+                            borderColor: '#4a9eff',
+                            backgroundColor: 'rgba(74, 158, 255, 0.1)',
+                            yAxisID: 'y1',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#eee' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            ticks: { color: '#ffa502' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            ticks: { color: '#4a9eff' },
+                            grid: { drawOnChartArea: false }
+                        },
+                        x: {
+                            ticks: { color: '#888' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 手动刷新数据
+        async function refreshData() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '🔄 刷新中...';
+
+            try {
+                const response = await fetch('/api/panic-wash/refresh', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    await loadLatestData();
+                    await loadHistoryData();
+                    alert('✅ 数据刷新成功！');
+                } else {
+                    alert('❌ 刷新失败: ' + (result.message || result.error));
+                }
+            } catch (error) {
+                alert('❌ 刷新失败: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 手动刷新';
+            }
+        }
+
+        // 初始化
+        async function init() {
+            await loadLatestData();
+            await loadHistoryData();
+
+            // 每30秒自动刷新
+            setInterval(async () => {
+                await loadLatestData();
+                await loadHistoryData();
+            }, 30000);
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
