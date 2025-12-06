@@ -1,0 +1,897 @@
+#!/usr/bin/env python3
+"""
+加密货币数据分析系统 - 完全仿照参考页面风格
+"""
+from flask import Flask, render_template_string, request, jsonify, send_from_directory
+import sqlite3
+from datetime import datetime, timedelta
+import json
+
+app = Flask(__name__)
+
+# 主页面HTML - 完全仿照参考设计
+MAIN_HTML = """
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密货币数据历史回看</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #1e2139;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
+        }
+        
+        /* 顶部导航栏 */
+        .top-nav {
+            background: #2a2d47;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #3b7dff;
+            padding: 6px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .nav-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #fff;
+            margin-left: 10px;
+        }
+        
+        /* 控制栏 */
+        .control-bar {
+            background: #2a2d47;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #3a3d5c;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .control-label {
+            color: #8b92b8;
+            font-size: 13px;
+        }
+        
+        .control-input {
+            background: #1e2139;
+            border: 1px solid #3a3d5c;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+        }
+        
+        .control-input:focus {
+            border-color: #3b7dff;
+        }
+        
+        .control-btn {
+            background: #3b7dff;
+            border: none;
+            color: white;
+            padding: 7px 18px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .control-btn:hover {
+            background: #2563eb;
+        }
+        
+        .control-btn.secondary {
+            background: #4a5178;
+        }
+        
+        .control-btn.secondary:hover {
+            background: #5a6188;
+        }
+        
+        /* 数据统计栏 */
+        .stats-bar {
+            background: #2a2d47;
+            padding: 12px 20px;
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #3a3d5c;
+            font-size: 13px;
+        }
+        
+        .stat-item {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .stat-label {
+            color: #8b92b8;
+        }
+        
+        .stat-value {
+            color: #fff;
+            font-weight: 500;
+        }
+        
+        .stat-value.rise {
+            color: #10b981;
+        }
+        
+        .stat-value.fall {
+            color: #ef4444;
+        }
+        
+        /* 次级统计栏 */
+        .secondary-stats {
+            background: #1e2139;
+            padding: 10px 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 13px;
+        }
+        
+        /* 图表区域 */
+        .chart-section {
+            background: #2a2d47;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .chart-title {
+            color: #8b92b8;
+            font-size: 14px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        #mainChart {
+            width: 100%;
+            height: 350px;
+        }
+        
+        /* 数据列表标题 */
+        .data-list-header {
+            background: #2a2d47;
+            padding: 12px 20px;
+            color: #3b7dff;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* 表格容器 */
+        .table-container {
+            background: #1e2139;
+            overflow-x: auto;
+        }
+        
+        /* 数据表格 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        
+        .data-table thead {
+            background: #ef4444;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .data-table th {
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 500;
+            color: #fff;
+            border-right: 1px solid #dc2626;
+            white-space: nowrap;
+        }
+        
+        .data-table tbody tr {
+            border-bottom: 1px solid #2a2d47;
+        }
+        
+        .data-table tbody tr:hover {
+            background: #2a2d47;
+        }
+        
+        .data-table td {
+            padding: 8px 6px;
+            text-align: center;
+            border-right: 1px solid #2a2d47;
+            white-space: nowrap;
+        }
+        
+        /* 操作列 */
+        .action-btn {
+            background: #4a5178;
+            border: none;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        
+        .action-btn:hover {
+            background: #5a6188;
+        }
+        
+        /* 币种名称 */
+        .coin-symbol {
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        /* 数值颜色 */
+        .value-positive {
+            color: #ef4444;
+        }
+        
+        .value-negative {
+            color: #10b981;
+        }
+        
+        .value-neutral {
+            color: #8b92b8;
+        }
+        
+        /* 状态标签 */
+        .status-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        
+        .status-tag.rise {
+            background: #dc2626;
+            color: white;
+        }
+        
+        .status-tag.fall {
+            background: #10b981;
+            color: white;
+        }
+        
+        /* 优先级颜色 */
+        .priority-1 { color: #ff0000; font-weight: bold; }
+        .priority-2 { color: #ff6600; font-weight: bold; }
+        .priority-3 { color: #ff9900; }
+        .priority-4 { color: #ffcc00; }
+        .priority-5 { color: #99cc00; }
+        .priority-6 { color: #8b92b8; }
+        
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8b92b8;
+            font-size: 14px;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .control-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .data-table {
+                font-size: 11px;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 6px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航 -->
+        <div class="top-nav">
+            <div class="nav-brand">
+                <span>📊</span> 数据回看
+            </div>
+            <div class="nav-title">加密货币数据历史回看</div>
+        </div>
+        
+        <!-- 控制栏 -->
+        <div class="control-bar">
+            <div class="control-group">
+                <span class="control-label">选项日期:</span>
+                <input type="date" id="queryDate" class="control-input">
+            </div>
+            
+            <div class="control-group">
+                <span class="control-label">时间选择:</span>
+                <input type="time" id="queryTime" class="control-input" value="00:00">
+            </div>
+            
+            <div class="control-group">
+                <span class="control-label">至</span>
+                <input type="time" id="endTime" class="control-input" value="23:59">
+            </div>
+            
+            <button class="control-btn" onclick="queryData()">🔍 查询</button>
+            <button class="control-btn secondary" onclick="loadToday()">📊 今天</button>
+            <button class="control-btn secondary" onclick="loadLatest()">📡 立即加载</button>
+        </div>
+        
+        <!-- 主要统计栏 -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">运算时间:</span>
+                <span class="stat-value" id="calcTime">2025-12-04 18:32:00</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">急涨:</span>
+                <span class="stat-value rise" id="rushUp">9</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">急跌:</span>
+                <span class="stat-value fall" id="rushDown">3</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">状态:</span>
+                <span class="stat-value" id="status">震荡无序</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比值比差:</span>
+                <span class="stat-value" id="ratio">3</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">区域:</span>
+                <span class="stat-value" id="diff">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">初始急涨:</span>
+                <span class="stat-value" id="initRise">3</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比价比涨:</span>
+                <span class="stat-value" id="priceRatio">10%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">初始急跌:</span>
+                <span class="stat-value" id="initFall">0</span>
+            </div>
+        </div>
+        
+        <!-- 次级统计栏 -->
+        <div class="secondary-stats">
+            <div class="stat-item">
+                <span class="stat-label">已回调历史: 无</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">回调天数: 168 秒/0次</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">时间偏限: 2025-12-04 10:22:00 ~ 2025-12-04 18:32:00</span>
+            </div>
+        </div>
+        
+        <!-- 图表区域 -->
+        <div class="chart-section">
+            <div class="chart-title">急涨/急跌历史趋势图</div>
+            <div id="mainChart"></div>
+        </div>
+        
+        <!-- 数据列表标题 -->
+        <div class="data-list-header">
+            <span>📋</span> 币列表
+        </div>
+        
+        <!-- 数据表格 -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>🎯操作</th>
+                        <th>序号</th>
+                        <th>币名</th>
+                        <th>涨跌</th>
+                        <th>急涨</th>
+                        <th>急跌</th>
+                        <th>更新时间</th>
+                        <th>历史高点</th>
+                        <th>高点时间</th>
+                        <th>跌幅</th>
+                        <th>24h%</th>
+                        <th>--%</th>
+                        <th>排行</th>
+                        <th>当前价格</th>
+                        <th>最高占比</th>
+                        <th>最低占比</th>
+                        <th>优先级</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                    <tr>
+                        <td colspan="17" class="loading">正在加载数据...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 初始化图表
+        const chart = echarts.init(document.getElementById('mainChart'));
+        
+        // 初始化日期
+        const today = new Date();
+        document.getElementById('queryDate').valueAsDate = today;
+        
+        // 图表配置
+        function updateChart(data) {
+            const option = {
+                backgroundColor: 'transparent',
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '8%',
+                    containLabel: true
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    borderColor: '#3a3d5c',
+                    textStyle: { color: '#fff', fontSize: 12 }
+                },
+                legend: {
+                    data: ['急涨', '急跌', '差值(急涨-急跌)', '计次'],
+                    top: 0,
+                    textStyle: { color: '#8b92b8', fontSize: 12 },
+                    itemWidth: 25,
+                    itemHeight: 12
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.times || [],
+                    axisLine: { lineStyle: { color: '#3a3d5c' } },
+                    axisLabel: { 
+                        color: '#8b92b8',
+                        fontSize: 11,
+                        rotate: 45
+                    },
+                    splitLine: { show: false }
+                },
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: '数量',
+                        nameTextStyle: { color: '#8b92b8', fontSize: 11 },
+                        axisLine: { lineStyle: { color: '#3a3d5c' } },
+                        axisLabel: { color: '#8b92b8', fontSize: 11 },
+                        splitLine: { lineStyle: { color: '#3a3d5c', type: 'dashed' } }
+                    },
+                    {
+                        type: 'value',
+                        name: '计次',
+                        nameTextStyle: { color: '#8b92b8', fontSize: 11 },
+                        axisLine: { lineStyle: { color: '#3a3d5c' } },
+                        axisLabel: { color: '#8b92b8', fontSize: 11 },
+                        splitLine: { show: false }
+                    }
+                ],
+                series: [
+                    {
+                        name: '急涨',
+                        type: 'scatter',
+                        data: data.rush_up || [],
+                        symbolSize: 8,
+                        itemStyle: { 
+                            color: '#ef4444',
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        }
+                    },
+                    {
+                        name: '急跌',
+                        type: 'scatter',
+                        data: data.rush_down || [],
+                        symbolSize: 8,
+                        itemStyle: { 
+                            color: '#10b981',
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        }
+                    },
+                    {
+                        name: '差值(急涨-急跌)',
+                        type: 'scatter',
+                        data: data.diff || [],
+                        symbolSize: 8,
+                        itemStyle: { 
+                            color: '#fbbf24',
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        }
+                    },
+                    {
+                        name: '计次',
+                        type: 'scatter',
+                        yAxisIndex: 1,
+                        data: data.count || [],
+                        symbolSize: 8,
+                        itemStyle: { 
+                            color: '#3b7dff',
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        }
+                    }
+                ]
+            };
+            
+            chart.setOption(option);
+        }
+        
+        // 查询数据
+        function queryData() {
+            const date = document.getElementById('queryDate').value;
+            const time = document.getElementById('queryTime').value;
+            const datetime = date + ' ' + time;
+            
+            fetch('/api/query?time=' + encodeURIComponent(datetime))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('❌ ' + data.error);
+                        return;
+                    }
+                    updateUI(data);
+                    loadChartData(date);
+                })
+                .catch(error => {
+                    alert('查询失败: ' + error);
+                });
+        }
+        
+        // 加载今天
+        function loadToday() {
+            const today = new Date();
+            document.getElementById('queryDate').valueAsDate = today;
+            queryData();
+        }
+        
+        // 加载最新
+        function loadLatest() {
+            fetch('/api/latest')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('❌ ' + data.error);
+                        return;
+                    }
+                    updateUI(data);
+                    const date = data.snapshot_time.split(' ')[0];
+                    loadChartData(date);
+                })
+                .catch(error => {
+                    alert('加载失败: ' + error);
+                });
+        }
+        
+        // 更新UI
+        function updateUI(data) {
+            document.getElementById('calcTime').textContent = data.snapshot_time;
+            document.getElementById('rushUp').textContent = data.rush_up;
+            document.getElementById('rushDown').textContent = data.rush_down;
+            document.getElementById('status').textContent = data.status;
+            document.getElementById('ratio').textContent = data.ratio;
+            document.getElementById('diff').textContent = data.diff;
+            
+            // 更新表格
+            const tbody = document.getElementById('dataTableBody');
+            if (data.coins && data.coins.length > 0) {
+                let html = '';
+                data.coins.forEach((coin, idx) => {
+                    const changeClass = coin.change > 0 ? 'value-positive' : (coin.change < 0 ? 'value-negative' : 'value-neutral');
+                    const change24Class = coin.change_24h > 0 ? 'value-positive' : (coin.change_24h < 0 ? 'value-negative' : 'value-neutral');
+                    const priorityClass = 'priority-' + coin.priority.replace('等级', '');
+                    
+                    const rushUpTag = coin.rush_up > 0 ? '<span class="status-tag rise">' + coin.rush_up + '</span>' : coin.rush_up;
+                    const rushDownTag = coin.rush_down > 0 ? '<span class="status-tag fall">' + coin.rush_down + '</span>' : coin.rush_down;
+                    
+                    html += '<tr>';
+                    html += '<td><button class="action-btn">管理</button></td>';
+                    html += '<td>' + (idx + 1) + '</td>';
+                    html += '<td class="coin-symbol">' + coin.symbol + '</td>';
+                    html += '<td class="' + changeClass + '">' + coin.change.toFixed(2) + '</td>';
+                    html += '<td>' + rushUpTag + '</td>';
+                    html += '<td>' + rushDownTag + '</td>';
+                    html += '<td>' + coin.update_time + '</td>';
+                    html += '<td>' + coin.high_price.toFixed(2) + '</td>';
+                    html += '<td>' + coin.high_time + '</td>';
+                    html += '<td class="value-negative">' + coin.decline.toFixed(2) + '</td>';
+                    html += '<td class="' + change24Class + '">' + coin.change_24h.toFixed(2) + '</td>';
+                    html += '<td>--</td>';
+                    html += '<td>' + coin.rank + '</td>';
+                    html += '<td>' + coin.current_price.toFixed(4) + '</td>';
+                    html += '<td>' + coin.ratio1 + '</td>';
+                    html += '<td>' + coin.ratio2 + '</td>';
+                    html += '<td class="' + priorityClass + '">' + coin.priority + '</td>';
+                    html += '</tr>';
+                });
+                tbody.innerHTML = html;
+            } else {
+                tbody.innerHTML = '<tr><td colspan="17" class="loading">暂无数据</td></tr>';
+            }
+        }
+        
+        // 加载图表数据
+        function loadChartData(date) {
+            fetch('/api/chart?date=' + encodeURIComponent(date))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error(data.error);
+                        return;
+                    }
+                    updateChart(data);
+                })
+                .catch(error => {
+                    console.error('图表加载失败:', error);
+                });
+        }
+        
+        // 页面加载时自动加载最新数据
+        window.onload = function() {
+            loadLatest();
+        };
+        
+        // 响应式调整
+        window.addEventListener('resize', function() {
+            chart.resize();
+        });
+    </script>
+</body>
+</html>
+"""
+
+# API路由保持不变，使用之前的代码
+@app.route('/')
+def index():
+    """主页面"""
+    return render_template_string(MAIN_HTML)
+
+@app.route('/api/query')
+def api_query():
+    """查询API"""
+    query_time = request.args.get('time', '')
+    if not query_time:
+        return jsonify({'error': '请提供查询时间'})
+    
+    try:
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                snapshot_time, rush_up, rush_down, diff, count, ratio, status
+            FROM crypto_snapshots
+            WHERE snapshot_time LIKE ?
+            ORDER BY snapshot_time DESC
+            LIMIT 1
+        """, (f"{query_time}%",))
+        
+        snapshot = cursor.fetchone()
+        
+        if not snapshot:
+            conn.close()
+            return jsonify({'error': f'未找到 {query_time} 的数据'})
+        
+        snapshot_time, rush_up, rush_down, diff, count, ratio, status = snapshot
+        
+        cursor.execute("""
+            SELECT 
+                symbol, change, rush_up, rush_down, update_time,
+                high_price, high_time, decline, change_24h, rank,
+                current_price, ratio1, ratio2, priority_level
+            FROM crypto_coin_data
+            WHERE snapshot_time = ?
+            ORDER BY index_order ASC
+        """, (snapshot_time,))
+        
+        coins = []
+        for row in cursor.fetchall():
+            coins.append({
+                'symbol': row[0],
+                'change': row[1],
+                'rush_up': row[2],
+                'rush_down': row[3],
+                'update_time': row[4],
+                'high_price': row[5],
+                'high_time': row[6],
+                'decline': row[7],
+                'change_24h': row[8],
+                'rank': row[9],
+                'current_price': row[10],
+                'ratio1': row[11],
+                'ratio2': row[12],
+                'priority': row[13]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'snapshot_time': snapshot_time,
+            'rush_up': rush_up,
+            'rush_down': rush_down,
+            'diff': diff,
+            'count': count,
+            'ratio': ratio,
+            'status': status,
+            'coins': coins
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/api/latest')
+def api_latest():
+    """获取最新数据API"""
+    try:
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                snapshot_time, rush_up, rush_down, diff, count, ratio, status
+            FROM crypto_snapshots
+            ORDER BY snapshot_time DESC
+            LIMIT 1
+        """)
+        
+        snapshot = cursor.fetchone()
+        
+        if not snapshot:
+            conn.close()
+            return jsonify({'error': '数据库中暂无数据'})
+        
+        snapshot_time, rush_up, rush_down, diff, count, ratio, status = snapshot
+        
+        cursor.execute("""
+            SELECT 
+                symbol, change, rush_up, rush_down, update_time,
+                high_price, high_time, decline, change_24h, rank,
+                current_price, ratio1, ratio2, priority_level
+            FROM crypto_coin_data
+            WHERE snapshot_time = ?
+            ORDER BY index_order ASC
+        """, (snapshot_time,))
+        
+        coins = []
+        for row in cursor.fetchall():
+            coins.append({
+                'symbol': row[0],
+                'change': row[1],
+                'rush_up': row[2],
+                'rush_down': row[3],
+                'update_time': row[4],
+                'high_price': row[5],
+                'high_time': row[6],
+                'decline': row[7],
+                'change_24h': row[8],
+                'rank': row[9],
+                'current_price': row[10],
+                'ratio1': row[11],
+                'ratio2': row[12],
+                'priority': row[13]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'snapshot_time': snapshot_time,
+            'rush_up': rush_up,
+            'rush_down': rush_down,
+            'diff': diff,
+            'count': count,
+            'ratio': ratio,
+            'status': status,
+            'coins': coins
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/api/chart')
+def api_chart():
+    """图表数据API"""
+    date = request.args.get('date', '')
+    if not date:
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT snapshot_time FROM crypto_snapshots ORDER BY snapshot_time DESC LIMIT 1")
+        result = cursor.fetchone()
+        conn.close()
+        if result:
+            date = result[0].split(' ')[0]
+        else:
+            return jsonify({'error': '无数据'})
+    
+    try:
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                snapshot_time, rush_up, rush_down, diff, count
+            FROM crypto_snapshots
+            WHERE snapshot_time LIKE ?
+            ORDER BY snapshot_time ASC
+        """, (f"{date}%",))
+        
+        data = cursor.fetchall()
+        conn.close()
+        
+        times = [row[0].split(' ')[1][:5] for row in data]
+        rush_up = [row[1] for row in data]
+        rush_down = [row[2] for row in data]
+        diff = [row[3] for row in data]
+        count = [row[4] for row in data]
+        
+        return jsonify({
+            'times': times,
+            'rush_up': rush_up,
+            'rush_down': rush_down,
+            'diff': diff,
+            'count': count
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=False)
