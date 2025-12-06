@@ -748,7 +748,7 @@ MAIN_HTML = """
                         type: 'line',
                         data: data.rush_up || [],
                         smooth: true,
-                        connectNulls: false,  // 不连接null值点，形成断续线
+                        connectNulls: true,  // 连接所有数据点，形成连续线段
                         lineStyle: {
                             width: 3,
                             color: '#ef4444'
@@ -769,7 +769,7 @@ MAIN_HTML = """
                         type: 'line',
                         data: data.rush_down || [],
                         smooth: true,
-                        connectNulls: false,  // 不连接null值点，形成断续线
+                        connectNulls: true,  // 连接所有数据点，形成连续线段
                         lineStyle: {
                             width: 3,
                             color: '#10b981'
@@ -790,7 +790,7 @@ MAIN_HTML = """
                         type: 'line',
                         data: data.diff || [],
                         smooth: true,
-                        connectNulls: false,  // 不连接null值点，形成断续线
+                        connectNulls: true,  // 连接所有数据点，形成连续线段
                         lineStyle: {
                             width: 3,
                             color: '#fbbf24'
@@ -812,7 +812,7 @@ MAIN_HTML = """
                         yAxisIndex: 1,
                         data: data.count || [],
                         smooth: true,
-                        connectNulls: false,  // 不连接null值点，形成断续线
+                        connectNulls: true,  // 连接所有数据点，形成连续线段
                         lineStyle: {
                             width: 3,
                             color: '#3b7dff'
