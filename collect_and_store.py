@@ -321,8 +321,32 @@ def parse_and_store_data(content, filename, current_hour):
     if last_record:
         last_rush_up, last_rush_down, last_time = last_record
         
-        # 验证规则：急涨和急跌只能增大或保持不变，不能减小
-        if new_rush_up < last_rush_up or new_rush_down < last_rush_down:
+        # 解析时间，检查是否跨天重置
+        last_dt = datetime.strptime(last_time, '%Y-%m-%d %H:%M:%S')
+        current_dt = datetime.strptime(snapshot_time, '%Y-%m-%d %H:%M:%S')
+        
+        # 判断是否跨越了新一天的00:10重置点
+        # 规则：如果上一条记录是昨天的，且当前时间是今天00:10之后的第一条，允许重置
+        last_date = last_dt.date()
+        current_date = current_dt.date()
+        is_new_day_reset = False
+        
+        if current_date > last_date:
+            # 跨天了，检查当前时间是否在00:10之后
+            if current_dt.hour == 0 and current_dt.minute >= 10:
+                is_new_day_reset = True
+                print(f"\n🔄 检测到跨天重置点 (北京时间 {current_date} 00:10)")
+                print(f"   上一天 ({last_date}): 急涨={last_rush_up}, 急跌={last_rush_down}")
+                print(f"   新一天开始: 急涨={new_rush_up}, 急跌={new_rush_down}")
+            elif current_dt.hour > 0 or (current_dt.hour == 0 and current_dt.minute >= 10):
+                # 当前时间已经过了00:10，这是新一天的数据
+                is_new_day_reset = True
+                print(f"\n🔄 检测到新一天的数据 (重置计数)")
+                print(f"   上一天最终值 ({last_date}): 急涨={last_rush_up}, 急跌={last_rush_down}")
+                print(f"   新一天初始值 ({current_date}): 急涨={new_rush_up}, 急跌={new_rush_down}")
+        
+        # 验证规则：急涨和急跌只能增大或保持不变，不能减小（除非是跨天重置）
+        if not is_new_day_reset and (new_rush_up < last_rush_up or new_rush_down < last_rush_down):
             print(f"\n⚠️  数据异常检测！")
             print(f"   上一条记录 ({last_time}): 急涨={last_rush_up}, 急跌={last_rush_down}")
             print(f"   当前数据: 急涨={new_rush_up}, 急跌={new_rush_down}")
