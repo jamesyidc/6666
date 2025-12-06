@@ -220,6 +220,16 @@
                 <div class="stat-sublabel" id="currentLevel">--</div>
             </div>
             <div class="stat-item">
+                <div class="stat-label">1小时爆仓金额</div>
+                <div class="stat-value" id="hour1Amount">--</div>
+                <div class="stat-sublabel">亿美元</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">24小时爆仓金额</div>
+                <div class="stat-value" id="hour24Amount">--</div>
+                <div class="stat-sublabel">亿美元</div>
+            </div>
+            <div class="stat-item">
                 <div class="stat-label">24小时爆仓人数</div>
                 <div class="stat-value" id="currentPeople">--</div>
                 <div class="stat-sublabel">万人</div>
@@ -404,8 +414,10 @@
                     indexEl.className = 'stat-value ' + (data.level_color || 'green');
                     
                     document.getElementById('currentLevel').textContent = data.panic_level || '--';
+                    document.getElementById('hour1Amount').textContent = '$' + data.hour_1_amount.toFixed(2);
+                    document.getElementById('hour24Amount').textContent = '$' + data.hour_24_amount.toFixed(2);
                     document.getElementById('currentPeople').textContent = data.hour_24_people.toFixed(2);
-                    document.getElementById('currentPosition').textContent = data.total_position.toFixed(2);
+                    document.getElementById('currentPosition').textContent = '$' + data.total_position.toFixed(2);
                     document.getElementById('updateTime').textContent = data.record_time.split(' ')[1];
                 }
             } catch (error) {

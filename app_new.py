@@ -1182,7 +1182,8 @@ def api_panic_latest():
         
         # 使用新的 panic_wash_index 表
         cursor.execute('''
-            SELECT record_time, panic_index, hour_24_people, total_position
+            SELECT record_time, panic_index, hour_24_people, total_position, 
+                   hour_1_amount, hour_24_amount
             FROM panic_wash_index 
             ORDER BY record_time DESC 
             LIMIT 1
@@ -1195,6 +1196,8 @@ def api_panic_latest():
             panic_index = row[1]  # 百分比
             people_wan = round(row[2] / 10000, 2)  # 万人
             position_yi = round(row[3] / 100000000, 2)  # 亿美元
+            hour_1_amount_yi = round(row[4] / 100000000, 2)  # 1小时爆仓金额（亿美元）
+            hour_24_amount_yi = round(row[5] / 100000000, 2)  # 24小时爆仓金额（亿美元）
             
             # 根据恐慌指数确定等级
             if panic_index < 2:
@@ -1216,6 +1219,8 @@ def api_panic_latest():
                     'level_color': level_color,
                     'hour_24_people': people_wan,
                     'total_position': position_yi,
+                    'hour_1_amount': hour_1_amount_yi,
+                    'hour_24_amount': hour_24_amount_yi,
                     'market_zone': f'{people_wan}万人/{position_yi}亿美元'
                 }
             })
