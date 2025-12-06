@@ -371,39 +371,55 @@ MAIN_HTML = """
         <div class="stats-bar">
             <div class="stat-item">
                 <span class="stat-label">运算时间:</span>
-                <span class="stat-value" id="calcTime">2025-12-04 18:32:00</span>
+                <span class="stat-value" id="calcTime">2025-12-06 13:42:42</span>
             </div>
             <div class="stat-item">
                 <span class="stat-label">急涨:</span>
-                <span class="stat-value rise" id="rushUp">9</span>
+                <span class="stat-value rise" id="rushUp">1</span>
             </div>
             <div class="stat-item">
                 <span class="stat-label">急跌:</span>
-                <span class="stat-value fall" id="rushDown">3</span>
+                <span class="stat-value fall" id="rushDown">22</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">本轮急涨:</span>
+                <span class="stat-value" id="roundRushUp">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">本轮急跌:</span>
+                <span class="stat-value" id="roundRushDown">22</span>
             </div>
             <div class="stat-item">
                 <span class="stat-label">状态:</span>
                 <span class="stat-value" id="status">震荡无序</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label">比值比差:</span>
-                <span class="stat-value" id="ratio">3</span>
+                <span class="stat-label">比值:</span>
+                <span class="stat-value" id="ratio">10%</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label">区域:</span>
-                <span class="stat-value" id="diff">0</span>
+                <span class="stat-label">差值:</span>
+                <span class="stat-value" id="diff">-21</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比价最低:</span>
+                <span class="stat-value" id="priceLowest">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比价创新高:</span>
+                <span class="stat-value" id="priceNewhigh">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比值比差:</span>
+                <span class="stat-value" id="ratioDiff">10</span>
             </div>
             <div class="stat-item">
                 <span class="stat-label">初始急涨:</span>
-                <span class="stat-value" id="initRise">3</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">比价比涨:</span>
-                <span class="stat-value" id="priceRatio">10%</span>
+                <span class="stat-value" id="initRushUp">3</span>
             </div>
             <div class="stat-item">
                 <span class="stat-label">初始急跌:</span>
-                <span class="stat-value" id="initFall">0</span>
+                <span class="stat-value" id="initRushDown">0</span>
             </div>
         </div>
         
@@ -628,9 +644,16 @@ MAIN_HTML = """
             document.getElementById('calcTime').textContent = data.snapshot_time;
             document.getElementById('rushUp').textContent = data.rush_up;
             document.getElementById('rushDown').textContent = data.rush_down;
+            document.getElementById('roundRushUp').textContent = data.round_rush_up || data.rush_up;
+            document.getElementById('roundRushDown').textContent = data.round_rush_down || data.rush_down;
             document.getElementById('status').textContent = data.status;
-            document.getElementById('ratio').textContent = data.ratio;
+            document.getElementById('ratio').textContent = data.ratio + '%';
             document.getElementById('diff').textContent = data.diff;
+            document.getElementById('priceLowest').textContent = data.price_lowest || 0;
+            document.getElementById('priceNewhigh').textContent = data.price_newhigh || 0;
+            document.getElementById('ratioDiff').textContent = data.ratio_diff || data.ratio;
+            document.getElementById('initRushUp').textContent = data.init_rush_up || 0;
+            document.getElementById('initRushDown').textContent = data.init_rush_down || 0;
             
             // 更新表格
             const tbody = document.getElementById('dataTableBody');
@@ -719,7 +742,9 @@ def api_query():
         
         cursor.execute("""
             SELECT 
-                snapshot_time, rush_up, rush_down, diff, count, ratio, status
+                snapshot_time, rush_up, rush_down, diff, count, ratio, status,
+                round_rush_up, round_rush_down, price_lowest, price_newhigh,
+                ratio_diff, init_rush_up, init_rush_down
             FROM crypto_snapshots
             WHERE snapshot_time LIKE ?
             ORDER BY snapshot_time DESC
@@ -732,7 +757,9 @@ def api_query():
             conn.close()
             return jsonify({'error': f'未找到 {query_time} 的数据'})
         
-        snapshot_time, rush_up, rush_down, diff, count, ratio, status = snapshot
+        (snapshot_time, rush_up, rush_down, diff, count, ratio, status,
+         round_rush_up, round_rush_down, price_lowest, price_newhigh,
+         ratio_diff, init_rush_up, init_rush_down) = snapshot
         
         cursor.execute("""
             SELECT 
@@ -773,6 +800,13 @@ def api_query():
             'count': count,
             'ratio': ratio,
             'status': status,
+            'round_rush_up': round_rush_up,
+            'round_rush_down': round_rush_down,
+            'price_lowest': price_lowest,
+            'price_newhigh': price_newhigh,
+            'ratio_diff': ratio_diff,
+            'init_rush_up': init_rush_up,
+            'init_rush_down': init_rush_down,
             'coins': coins
         })
     
@@ -788,7 +822,9 @@ def api_latest():
         
         cursor.execute("""
             SELECT 
-                snapshot_time, rush_up, rush_down, diff, count, ratio, status
+                snapshot_time, rush_up, rush_down, diff, count, ratio, status,
+                round_rush_up, round_rush_down, price_lowest, price_newhigh,
+                ratio_diff, init_rush_up, init_rush_down
             FROM crypto_snapshots
             ORDER BY snapshot_time DESC
             LIMIT 1
@@ -800,7 +836,9 @@ def api_latest():
             conn.close()
             return jsonify({'error': '数据库中暂无数据'})
         
-        snapshot_time, rush_up, rush_down, diff, count, ratio, status = snapshot
+        (snapshot_time, rush_up, rush_down, diff, count, ratio, status,
+         round_rush_up, round_rush_down, price_lowest, price_newhigh,
+         ratio_diff, init_rush_up, init_rush_down) = snapshot
         
         cursor.execute("""
             SELECT 
@@ -841,6 +879,13 @@ def api_latest():
             'count': count,
             'ratio': ratio,
             'status': status,
+            'round_rush_up': round_rush_up,
+            'round_rush_down': round_rush_down,
+            'price_lowest': price_lowest,
+            'price_newhigh': price_newhigh,
+            'ratio_diff': ratio_diff,
+            'init_rush_up': init_rush_up,
+            'init_rush_down': init_rush_down,
             'coins': coins
         })
     
