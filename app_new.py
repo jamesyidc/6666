@@ -1125,6 +1125,11 @@ def timeline_page():
     """时间轴页面"""
     return render_template_string(MAIN_HTML)
 
+@app.route('/status')
+def status_page():
+    """系统状态页面"""
+    return render_template('status.html')
+
 @app.route('/api/stats')
 def api_stats():
     """统计数据API"""
