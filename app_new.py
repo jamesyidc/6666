@@ -581,7 +581,19 @@ MAIN_HTML = """
         
         <!-- 图表区域 -->
         <div class="chart-section">
-            <div class="chart-title">急涨/急跌历史趋势图</div>
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div class="chart-title">急涨/急跌历史趋势图</div>
+                <div class="chart-pagination" style="display: flex; gap: 10px; align-items: center;">
+                    <span id="chartTimeRange" style="color: #8b92b8; font-size: 12px;"></span>
+                    <button id="btnPrevPage" class="page-btn" style="padding: 5px 12px; background: #3a3d5c; color: #8b92b8; border: 1px solid #4a4d6c; border-radius: 4px; cursor: pointer;" disabled>
+                        ◀ 上一页
+                    </button>
+                    <span id="chartPageInfo" style="color: #8b92b8; font-size: 12px;">第1页</span>
+                    <button id="btnNextPage" class="page-btn" style="padding: 5px 12px; background: #3a3d5c; color: #8b92b8; border: 1px solid #4a4d6c; border-radius: 4px; cursor: pointer;" disabled>
+                        下一页 ▶
+                    </button>
+                </div>
+            </div>
             <div id="mainChart"></div>
         </div>
         
@@ -935,9 +947,13 @@ MAIN_HTML = """
         }
         
         // 加载图表数据
-        function loadChartData() {
-            // 加载所有历史数据点用于趋势图
-            fetch('/api/chart')
+        // 当前页码（全局变量）
+        let currentPage = 0;
+        
+        function loadChartData(page = 0) {
+            // 加载指定页的历史数据点（12小时/页，显示所有数据点）
+            currentPage = page;
+            fetch(`/api/chart?page=${page}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
@@ -945,11 +961,32 @@ MAIN_HTML = """
                         return;
                     }
                     updateChart(data);
+                    
+                    // 更新分页信息
+                    document.getElementById('chartPageInfo').textContent = 
+                        `第${page + 1}/${data.total_pages}页`;
+                    document.getElementById('chartTimeRange').textContent = 
+                        `${data.time_range.start} - ${data.time_range.end}`;
+                    
+                    // 更新按钮状态
+                    document.getElementById('btnPrevPage').disabled = !data.has_prev;
+                    document.getElementById('btnNextPage').disabled = !data.has_next;
                 })
                 .catch(error => {
                     console.error('图表加载失败:', error);
                 });
         }
+        
+        // 翻页按钮事件
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('btnPrevPage').addEventListener('click', function() {
+                loadChartData(currentPage + 1);  // 上一页（更早的数据）
+            });
+            
+            document.getElementById('btnNextPage').addEventListener('click', function() {
+                loadChartData(currentPage - 1);  // 下一页（更新的数据）
+            });
+        });
         
         // 页面加载时自动加载最新数据
         // 加载时间轴数据 - 竖直布局
@@ -1238,9 +1275,13 @@ def api_latest():
 
 @app.route('/api/chart')
 def api_chart():
-    """图表数据API - 返回24小时完整时间轴的趋势图数据"""
+    """图表数据API - 支持分页的12小时趋势图数据（显示所有数据点）"""
     try:
         from datetime import datetime, timedelta
+        
+        # 获取分页参数
+        page = request.args.get('page', '0')  # 默认第0页（最新）
+        page = int(page)
         
         conn = sqlite3.connect('crypto_data.db')
         cursor = conn.cursor()
@@ -1253,89 +1294,88 @@ def api_chart():
             ORDER BY snapshot_time ASC
         """)
         
-        data = cursor.fetchall()
+        all_data = cursor.fetchall()
         conn.close()
         
-        if not data:
+        if not all_data:
             return jsonify({'error': '无数据'})
         
-        # 将数据库中的数据转换为datetime对象
-        data_points = []
-        for row in data:
+        # 转换为datetime对象
+        all_points = []
+        for row in all_data:
             dt = datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S')
-            data_points.append({
+            all_points.append({
                 'time': dt,
+                'formatted_time': dt.strftime('%m-%d %H:%M'),
                 'rush_up': row[1],
                 'rush_down': row[2],
                 'diff': row[3],
                 'count': row[4]
             })
         
-        # 找到最早和最晚的数据点
-        earliest = min(dp['time'] for dp in data_points)
-        latest = max(dp['time'] for dp in data_points)
+        # 计算总页数（每页12小时）
+        earliest = all_points[0]['time']
+        latest = all_points[-1]['time']
+        total_hours = (latest - earliest).total_seconds() / 3600
+        total_pages = max(1, int(total_hours / 12) + 1)
         
-        # 生成24小时完整时间轴（从最早数据点往前1小时开始，到最晚数据点往后1小时结束，确保至少24小时）
-        start_time = earliest.replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
-        end_time = latest.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+        # 确保page在有效范围内
+        if page < 0:
+            page = 0
+        if page >= total_pages:
+            page = total_pages - 1
         
-        # 确保至少跨越24小时
-        if (end_time - start_time).total_seconds() < 24 * 3600:
-            # 如果数据范围小于24小时，以最晚数据点为基准，向前扩展24小时
-            end_time = latest.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-            start_time = end_time - timedelta(hours=24)
+        # 计算当前页的时间范围（从最新往前推）
+        # page=0 是最新的12小时，page=1 是之前的12小时，以此类推
+        page_end_time = latest - timedelta(hours=12 * page)
+        page_start_time = page_end_time - timedelta(hours=12)
         
-        # 生成每小时的时间点
-        time_slots = []
-        current = start_time
-        while current <= end_time:
-            time_slots.append(current)
-            current += timedelta(hours=1)
+        # 筛选当前页的数据点
+        page_points = [
+            p for p in all_points 
+            if page_start_time <= p['time'] <= page_end_time
+        ]
         
-        # 准备数据映射：将实际数据映射到最近的时间槽
-        times = []
-        rush_up = []
-        rush_down = []
-        diff = []
-        count = []
+        # 如果当前页没有数据，返回空数组
+        if not page_points:
+            return jsonify({
+                'times': [],
+                'rush_up': [],
+                'rush_down': [],
+                'diff': [],
+                'count': [],
+                'page': page,
+                'total_pages': total_pages,
+                'has_prev': page < total_pages - 1,
+                'has_next': page > 0,
+                'time_range': {
+                    'start': page_start_time.strftime('%Y-%m-%d %H:%M'),
+                    'end': page_end_time.strftime('%Y-%m-%d %H:%M')
+                }
+            })
         
-        # 对于每个时间槽，找到最近的数据点
-        for slot_time in time_slots:
-            # 格式化时间标签
-            formatted_time = slot_time.strftime('%m-%d %H:00')
-            times.append(formatted_time)
-            
-            # 查找该时间槽内的数据点（容差：±30分钟）
-            found_data = None
-            min_diff = float('inf')
-            
-            for dp in data_points:
-                time_diff = abs((dp['time'] - slot_time).total_seconds())
-                # 如果在该小时内（±30分钟范围），选择最近的数据点
-                if time_diff < 1800:  # 30分钟 = 1800秒
-                    if time_diff < min_diff:
-                        min_diff = time_diff
-                        found_data = dp
-            
-            # 如果找到数据，使用实际值；否则使用null（前端会跳过连线）
-            if found_data:
-                rush_up.append(found_data['rush_up'])
-                rush_down.append(found_data['rush_down'])
-                diff.append(found_data['diff'])
-                count.append(found_data['count'])
-            else:
-                # 使用null而不是0，让图表不连线
-                rush_up.append(None)
-                rush_down.append(None)
-                diff.append(None)
-                count.append(None)
+        # 提取数据
+        times = [p['formatted_time'] for p in page_points]
+        rush_up = [p['rush_up'] for p in page_points]
+        rush_down = [p['rush_down'] for p in page_points]
+        diff = [p['diff'] for p in page_points]
+        count = [p['count'] for p in page_points]
         
         return jsonify({
             'times': times,
             'rush_up': rush_up,
             'rush_down': rush_down,
             'diff': diff,
-            'count': count
+            'count': count,
+            'page': page,
+            'total_pages': total_pages,
+            'has_prev': page < total_pages - 1,  # 有上一页（更早的数据）
+            'has_next': page > 0,  # 有下一页（更新的数据）
+            'time_range': {
+                'start': page_start_time.strftime('%Y-%m-%d %H:%M'),
+                'end': page_end_time.strftime('%Y-%m-%d %H:%M')
+            },
+            'data_count': len(page_points)
         })
     
     except Exception as e:
