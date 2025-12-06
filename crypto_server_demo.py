@@ -397,8 +397,15 @@ def proxy_signal_monitor_test():
 @app.route('/live-data')
 def live_data_page():
     """实时监控数据页面"""
-    response = send_from_directory('.', 'live_monitor.html')
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    # 读取文件内容并直接返回，避免浏览器缓存
+    import os
+    file_path = os.path.join(os.path.dirname(__file__), 'live_monitor.html')
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    response = app.make_response(content)
+    response.headers['Content-Type'] = 'text/html; charset=utf-8'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
