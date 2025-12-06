@@ -47,6 +47,15 @@ class PanicWashReaderV5:
                 # 等待页面加载
                 await asyncio.sleep(3)
                 
+                # 滚动页面以加载更多文件（多次滚动）
+                print("正在滚动页面加载更多文件...")
+                for i in range(10):  # 滚动10次
+                    await page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
+                    await asyncio.sleep(0.5)
+                
+                # 再等待一下确保内容加载
+                await asyncio.sleep(2)
+                
                 # 获取页面内容
                 content = await page.content()
                 
@@ -60,6 +69,12 @@ class PanicWashReaderV5:
                 # 获取最新文件
                 txt_files_unique = list(dict.fromkeys(txt_files))
                 txt_files_sorted = sorted(txt_files_unique)
+                
+                # 调试信息
+                print(f"找到 {len(txt_files_sorted)} 个txt文件")
+                if len(txt_files_sorted) >= 5:
+                    print(f"最新5个: {txt_files_sorted[-5:]}")
+                
                 latest_time = txt_files_sorted[-1]
                 
                 # 构造日期部分
