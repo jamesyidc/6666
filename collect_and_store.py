@@ -4,7 +4,7 @@
 包含计次得分和优先级计算功能
 """
 from playwright.sync_api import sync_playwright
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import re
 import sqlite3
@@ -123,8 +123,13 @@ def get_latest_file_data():
     # 生成候选文件名
     candidates = []
     for i in range(0, 4):
+        # 使用timedelta来正确处理时间减法，避免分钟数为负
         check_time = now.replace(second=0, microsecond=0)
-        check_time = check_time.replace(minute=(check_time.minute // 10) * 10 - i * 10)
+        # 先对齐到10分钟整点
+        aligned_minute = (check_time.minute // 10) * 10
+        check_time = check_time.replace(minute=aligned_minute)
+        # 然后减去i*10分钟
+        check_time = check_time - timedelta(minutes=i * 10)
         filename = check_time.strftime('%Y-%m-%d_%H%M.txt')
         candidates.append(filename)
     
