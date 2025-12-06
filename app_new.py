@@ -1587,5 +1587,162 @@ def api_timeline():
     except Exception as e:
         return jsonify({'error': str(e)})
 
+# ==================== 交易信号监控 API ====================
+
+@app.route('/signals')
+def signals_page():
+    """交易信号监控页面"""
+    return render_template('signals.html')
+
+@app.route('/api/signals/stats')
+def api_signals_stats():
+    """获取信号统计数据"""
+    try:
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        # 获取最新记录
+        cursor.execute('''
+            SELECT record_time, long_signals, short_signals, 
+                   total_signals, long_ratio, short_ratio
+            FROM trading_signals
+            ORDER BY record_time DESC
+            LIMIT 1
+        ''')
+        latest = cursor.fetchone()
+        
+        # 获取总记录数
+        cursor.execute('SELECT COUNT(*) FROM trading_signals')
+        total_records = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        if latest:
+            return jsonify({
+                'success': True,
+                'data': {
+                    'latest_time': latest[0],
+                    'latest_long': latest[1],
+                    'latest_short': latest[2],
+                    'latest_total': latest[3],
+                    'long_ratio': latest[4],
+                    'short_ratio': latest[5],
+                    'total_records': total_records
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': '暂无数据'
+            })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/signals/chart')
+def api_signals_chart():
+    """获取图表数据（支持分页和时间范围）"""
+    try:
+        page = int(request.args.get('page', 0))
+        time_range = request.args.get('range', '12h')
+        
+        # 计算时间范围对应的数据点数量（每3分钟一个点）
+        range_minutes = {
+            '1h': 60,
+            '6h': 360,
+            '12h': 720,
+            '24h': 1440
+        }
+        
+        minutes = range_minutes.get(time_range, 720)
+        points_per_page = minutes // 3  # 每3分钟一个数据点
+        offset = page * points_per_page
+        
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        # 获取总记录数
+        cursor.execute('SELECT COUNT(*) FROM trading_signals')
+        total = cursor.fetchone()[0]
+        total_pages = (total + points_per_page - 1) // points_per_page
+        
+        # 获取分页数据
+        cursor.execute('''
+            SELECT record_time, long_signals, short_signals, total_signals
+            FROM trading_signals
+            ORDER BY record_time DESC
+            LIMIT ? OFFSET ?
+        ''', (points_per_page, offset))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        # 反转顺序，使时间从早到晚
+        rows.reverse()
+        
+        data = [{
+            'time': row[0].split(' ')[1][:5],  # 只取时分
+            'long_signals': row[1],
+            'short_signals': row[2],
+            'total_signals': row[3]
+        } for row in rows]
+        
+        return jsonify({
+            'success': True,
+            'data': data,
+            'page': page,
+            'total_pages': total_pages,
+            'range': time_range
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/signals/history')
+def api_signals_history():
+    """获取历史记录列表"""
+    try:
+        limit = int(request.args.get('limit', 50))
+        
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT record_time, long_signals, short_signals,
+                   total_signals, long_ratio, short_ratio
+            FROM trading_signals
+            ORDER BY record_time DESC
+            LIMIT ?
+        ''', (limit,))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        data = [{
+            'record_time': row[0],
+            'long_signals': row[1],
+            'short_signals': row[2],
+            'total_signals': row[3],
+            'long_ratio': row[4],
+            'short_ratio': row[5]
+        } for row in rows]
+        
+        return jsonify({
+            'success': True,
+            'data': data
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
