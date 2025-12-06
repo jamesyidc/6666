@@ -1252,10 +1252,10 @@ def api_stats():
                 # 本轮急跌 = 当前急跌 - 上一轮急跌
                 current_round_rush_down = current_rush_down - prev_rush_down
         
-        # 获取恐慌清洗指数（最新的）
+        # 获取恐慌清洗指数（从新的独立采集表）
         cursor.execute("""
-            SELECT panic_indicator, panic_color, trend_rating, market_zone
-            FROM panic_wash_history
+            SELECT panic_index, hour_24_people, total_position, record_time
+            FROM panic_wash_index
             ORDER BY record_time DESC
             LIMIT 1
         """)
@@ -1265,12 +1265,24 @@ def api_stats():
         panic_color = 'gray'
         panic_trend_rating = 0
         panic_market_zone = '-'
+        panic_people_wan = 0
+        panic_position_yi = 0
         
         if panic_data:
-            panic_indicator = panic_data[0]
-            panic_color = panic_data[1] if panic_data[1] else 'gray'
-            panic_trend_rating = panic_data[2] if panic_data[2] else 0
-            panic_market_zone = panic_data[3] if panic_data[3] else '-'
+            panic_indicator = panic_data[0]  # 恐慌指数（百分比）
+            panic_people_wan = round(panic_data[1] / 10000, 2)  # 爆仓人数（万人）
+            panic_position_yi = round(panic_data[2] / 100000000, 2)  # 持仓量（亿美元）
+            
+            # 根据恐慌指数设置颜色
+            if panic_indicator < 2:
+                panic_color = '绿'  # 低恐慌
+            elif panic_indicator < 5:
+                panic_color = '黄'  # 中恐慌
+            else:
+                panic_color = '红'  # 高恐慌
+            
+            # 市场区间描述
+            panic_market_zone = f"{panic_people_wan}万人/{panic_position_yi}亿美元"
         
         conn.close()
         
