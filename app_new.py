@@ -323,7 +323,7 @@ MAIN_HTML = """
         
         #mainChart {
             width: 100%;
-            height: 350px;
+            height: 450px;  /* 增加高度，让图表更清晰 */
         }
         
         /* 数据列表标题 */
@@ -648,33 +648,53 @@ MAIN_HTML = """
             const option = {
                 backgroundColor: 'transparent',
                 grid: {
-                    left: '3%',
-                    right: '4%',
-                    bottom: '3%',
-                    top: '8%',
+                    left: '50px',
+                    right: '50px',
+                    bottom: '60px',  // 增加底部空间给横轴标签
+                    top: '50px',
                     containLabel: true
                 },
                 tooltip: {
-                    trigger: 'axis',
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    trigger: 'item',  // 改为item触发，显示单个数据点
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
                     borderColor: '#3a3d5c',
-                    textStyle: { color: '#fff', fontSize: 12 }
+                    borderWidth: 1,
+                    textStyle: { color: '#fff', fontSize: 12 },
+                    formatter: function(params) {
+                        const seriesName = params.seriesName;
+                        const time = data.times[params.dataIndex];
+                        const value = params.value;
+                        return `<div style="padding: 5px;">
+                            <div style="font-weight: bold; margin-bottom: 5px;">${time}</div>
+                            <div>${seriesName}: <span style="color: ${params.color}; font-weight: bold;">${value}</span></div>
+                        </div>`;
+                    }
                 },
                 legend: {
                     data: ['急涨', '急跌', '差值(急涨-急跌)', '计次'],
-                    top: 0,
-                    textStyle: { color: '#8b92b8', fontSize: 12 },
-                    itemWidth: 25,
-                    itemHeight: 12
+                    top: 10,
+                    left: 'center',
+                    textStyle: { color: '#8b92b8', fontSize: 13 },
+                    itemWidth: 30,
+                    itemHeight: 14,
+                    itemGap: 20
                 },
                 xAxis: {
                     type: 'category',
                     data: data.times || [],
-                    axisLine: { lineStyle: { color: '#3a3d5c' } },
+                    axisLine: { 
+                        lineStyle: { color: '#3a3d5c', width: 1 }
+                    },
                     axisLabel: { 
                         color: '#8b92b8',
                         fontSize: 11,
-                        rotate: 45
+                        rotate: 0,  // 不旋转，水平显示
+                        interval: 0,  // 显示所有标签
+                        margin: 10
+                    },
+                    axisTick: {
+                        show: true,
+                        lineStyle: { color: '#3a3d5c' }
                     },
                     splitLine: { show: false }
                 },
@@ -682,17 +702,43 @@ MAIN_HTML = """
                     {
                         type: 'value',
                         name: '数量',
-                        nameTextStyle: { color: '#8b92b8', fontSize: 11 },
-                        axisLine: { lineStyle: { color: '#3a3d5c' } },
-                        axisLabel: { color: '#8b92b8', fontSize: 11 },
-                        splitLine: { lineStyle: { color: '#3a3d5c', type: 'dashed' } }
+                        nameTextStyle: { 
+                            color: '#8b92b8', 
+                            fontSize: 12,
+                            padding: [0, 0, 0, 10]
+                        },
+                        axisLine: { 
+                            show: true,
+                            lineStyle: { color: '#3a3d5c' } 
+                        },
+                        axisLabel: { 
+                            color: '#8b92b8', 
+                            fontSize: 11 
+                        },
+                        splitLine: { 
+                            lineStyle: { 
+                                color: '#3a3d5c', 
+                                type: 'dashed',
+                                opacity: 0.5
+                            } 
+                        }
                     },
                     {
                         type: 'value',
                         name: '计次',
-                        nameTextStyle: { color: '#8b92b8', fontSize: 11 },
-                        axisLine: { lineStyle: { color: '#3a3d5c' } },
-                        axisLabel: { color: '#8b92b8', fontSize: 11 },
+                        nameTextStyle: { 
+                            color: '#3b7dff', 
+                            fontSize: 12,
+                            padding: [0, 10, 0, 0]
+                        },
+                        axisLine: { 
+                            show: true,
+                            lineStyle: { color: '#3a3d5c' } 
+                        },
+                        axisLabel: { 
+                            color: '#3b7dff', 
+                            fontSize: 11 
+                        },
                         splitLine: { show: false }
                     }
                 ],
@@ -701,33 +747,54 @@ MAIN_HTML = """
                         name: '急涨',
                         type: 'scatter',
                         data: data.rush_up || [],
-                        symbolSize: 8,
+                        symbolSize: 10,  // 增大散点
                         itemStyle: { 
                             color: '#ef4444',
                             borderColor: '#fff',
-                            borderWidth: 1
+                            borderWidth: 2,
+                            opacity: 0.9
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowColor: '#ef4444'
+                            }
                         }
                     },
                     {
                         name: '急跌',
                         type: 'scatter',
                         data: data.rush_down || [],
-                        symbolSize: 8,
+                        symbolSize: 10,
                         itemStyle: { 
                             color: '#10b981',
                             borderColor: '#fff',
-                            borderWidth: 1
+                            borderWidth: 2,
+                            opacity: 0.9
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowColor: '#10b981'
+                            }
                         }
                     },
                     {
                         name: '差值(急涨-急跌)',
                         type: 'scatter',
                         data: data.diff || [],
-                        symbolSize: 8,
+                        symbolSize: 10,
                         itemStyle: { 
                             color: '#fbbf24',
                             borderColor: '#fff',
-                            borderWidth: 1
+                            borderWidth: 2,
+                            opacity: 0.9
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowColor: '#fbbf24'
+                            }
                         }
                     },
                     {
@@ -735,11 +802,18 @@ MAIN_HTML = """
                         type: 'scatter',
                         yAxisIndex: 1,
                         data: data.count || [],
-                        symbolSize: 8,
+                        symbolSize: 10,
                         itemStyle: { 
                             color: '#3b7dff',
                             borderColor: '#fff',
-                            borderWidth: 1
+                            borderWidth: 2,
+                            opacity: 0.9
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowColor: '#3b7dff'
+                            }
                         }
                     }
                 ]
