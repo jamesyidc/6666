@@ -1168,6 +1168,43 @@ def status_page():
     """系统状态页面"""
     return render_template('status.html')
 
+@app.route('/panic')
+def panic_page():
+    """恐慌贪婪指数页面"""
+    return render_template('panic.html')
+
+@app.route('/api/panic/latest')
+def api_panic_latest():
+    """恐慌指数最新数据API"""
+    try:
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT * FROM panic_wash_new 
+            ORDER BY record_time DESC 
+            LIMIT 1
+        ''')
+        
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            return jsonify({
+                'success': True,
+                'data': {
+                    'record_time': row[1],
+                    'panic_index': row[2],
+                    'panic_level': row[3],
+                    'wash_score': row[4],
+                    'wash_level': row[5]
+                }
+            })
+        else:
+            return jsonify({'success': False, 'error': '暂无数据'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/stats')
 def api_stats():
     """统计数据API"""
