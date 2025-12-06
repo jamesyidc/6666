@@ -516,6 +516,14 @@ MAIN_HTML = """
                 <span class="stat-label">比价创新高:</span>
                 <span class="stat-value" id="priceNewhigh">0</span>
             </div>
+            <div class="stat-item">
+                <span class="stat-label">24h涨≥10%:</span>
+                <span class="stat-value rise" id="rise24hCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">24h跌≤-10%:</span>
+                <span class="stat-value fall" id="fall24hCount">0</span>
+            </div>
         </div>
         
         <!-- 次级统计栏 -->
@@ -748,6 +756,8 @@ MAIN_HTML = """
             document.getElementById('diff').textContent = data.diff;
             document.getElementById('priceLowest').textContent = data.price_lowest || 0;
             document.getElementById('priceNewhigh').textContent = data.price_newhigh || 0;
+            document.getElementById('rise24hCount').textContent = data.rise_24h_count || 0;
+            document.getElementById('fall24hCount').textContent = data.fall_24h_count || 0;
             
             // 更新表格
             const tbody = document.getElementById('dataTableBody');
@@ -900,7 +910,7 @@ def api_query():
             SELECT 
                 snapshot_time, rush_up, rush_down, diff, count, ratio, status,
                 round_rush_up, round_rush_down, price_lowest, price_newhigh,
-                count_score_display, count_score_type
+                count_score_display, count_score_type, rise_24h_count, fall_24h_count
             FROM crypto_snapshots
             WHERE snapshot_time LIKE ?
             ORDER BY snapshot_time DESC
@@ -915,7 +925,7 @@ def api_query():
         
         (snapshot_time, rush_up, rush_down, diff, count, ratio, status,
          round_rush_up, round_rush_down, price_lowest, price_newhigh,
-         count_score_display, count_score_type) = snapshot
+         count_score_display, count_score_type, rise_24h_count, fall_24h_count) = snapshot
         
         cursor.execute("""
             SELECT 
@@ -962,6 +972,8 @@ def api_query():
             'price_newhigh': price_newhigh,
             'count_score_display': count_score_display,
             'count_score_type': count_score_type,
+            'rise_24h_count': rise_24h_count,
+            'fall_24h_count': fall_24h_count,
             'coins': coins
         })
     
@@ -979,7 +991,7 @@ def api_latest():
             SELECT 
                 snapshot_time, rush_up, rush_down, diff, count, ratio, status,
                 round_rush_up, round_rush_down, price_lowest, price_newhigh,
-                count_score_display, count_score_type
+                count_score_display, count_score_type, rise_24h_count, fall_24h_count
             FROM crypto_snapshots
             ORDER BY snapshot_time DESC
             LIMIT 1
@@ -993,7 +1005,7 @@ def api_latest():
         
         (snapshot_time, rush_up, rush_down, diff, count, ratio, status,
          round_rush_up, round_rush_down, price_lowest, price_newhigh,
-         count_score_display, count_score_type) = snapshot
+         count_score_display, count_score_type, rise_24h_count, fall_24h_count) = snapshot
         
         cursor.execute("""
             SELECT 
@@ -1040,6 +1052,8 @@ def api_latest():
             'price_newhigh': price_newhigh,
             'count_score_display': count_score_display,
             'count_score_type': count_score_type,
+            'rise_24h_count': rise_24h_count,
+            'fall_24h_count': fall_24h_count,
             'coins': coins
         })
     
