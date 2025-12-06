@@ -244,7 +244,7 @@
         
         <!-- 历史数据表格 -->
         <div class="history-container">
-            <div class="history-title">📋 历史数据记录</div>
+            <div class="history-title">📋 恐慌指数历史记录</div>
             <div id="loadingHistory" class="loading">正在加载历史数据...</div>
             <table class="history-table" id="historyTable" style="display: none;">
                 <thead>
@@ -259,6 +259,25 @@
                 <tbody id="historyTableBody">
                 </tbody>
             </table>
+        </div>
+        
+        <!-- 30日爆仓数据日历 -->
+        <div class="history-container">
+            <div class="history-title">📅 30日爆仓数据日历</div>
+            <div id="loading30Days" class="loading">正在加载30日爆仓数据...</div>
+            <table class="history-table" id="liquidation30Table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>多单爆仓</th>
+                        <th>空单爆仓</th>
+                        <th>总爆仓</th>
+                    </tr>
+                </thead>
+                <tbody id="liquidation30Body">
+                </tbody>
+            </table>
+            <div class="stat-sublabel" id="liquidation30UpdateTime" style="margin-top: 10px; text-align: right;"></div>
         </div>
     </div>
     
@@ -451,13 +470,54 @@
             }
         }
         
+        // 加载30日爆仓数据
+        async function load30DaysLiquidation() {
+            try {
+                const response = await fetch('/api/liquidation/30days');
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    const tbody = document.getElementById('liquidation30Body');
+                    tbody.innerHTML = '';
+                    
+                    result.data.forEach(item => {
+                        const tr = document.createElement('tr');
+                        
+                        tr.innerHTML = `
+                            <td>${item.date}</td>
+                            <td style="color: #10b981;">$${item.long_amount}亿</td>
+                            <td style="color: #ef4444;">$${item.short_amount}亿</td>
+                            <td style="font-weight: 600;">$${item.total_amount}亿</td>
+                        `;
+                        
+                        tbody.appendChild(tr);
+                    });
+                    
+                    // 显示更新时间
+                    if (result.data[0].updated_at) {
+                        document.getElementById('liquidation30UpdateTime').textContent = 
+                            '最后更新: ' + result.data[0].updated_at + ' (每1小时更新)';
+                    }
+                    
+                    document.getElementById('loading30Days').style.display = 'none';
+                    document.getElementById('liquidation30Table').style.display = 'table';
+                } else {
+                    document.getElementById('loading30Days').textContent = '❌ 暂无30日爆仓数据';
+                }
+            } catch (error) {
+                console.error('加载30日爆仓数据失败:', error);
+                document.getElementById('loading30Days').textContent = '❌ 加载失败: ' + error.message;
+            }
+        }
+        
         // 页面加载完成后执行
         window.onload = function() {
             initChart();
             loadCurrentData();
             loadHistoryData();
+            load30DaysLiquidation();
             
-            // 每30秒刷新一次
+            // 每30秒刷新当前数据
             setInterval(loadCurrentData, 30000);
         };
     </script>

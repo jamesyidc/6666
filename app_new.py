@@ -1829,6 +1829,45 @@ def api_signals_history():
             'error': str(e)
         })
 
+@app.route('/api/liquidation/30days')
+def api_liquidation_30days():
+    """30日爆仓数据API"""
+    try:
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT date, long_amount, short_amount, total_amount, updated_at
+            FROM liquidation_30days
+            ORDER BY date DESC
+            LIMIT 30
+        ''')
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        data = []
+        for row in rows:
+            data.append({
+                'date': row[0],
+                'long_amount': round(row[1] / 100000000, 2),  # 转换为亿
+                'short_amount': round(row[2] / 100000000, 2),
+                'total_amount': round(row[3] / 100000000, 2),
+                'updated_at': row[4]
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': data,
+            'count': len(data)
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 @app.route('/api/panic/history')
 def api_panic_history():
     """恐慌清洗指数历史数据API"""
