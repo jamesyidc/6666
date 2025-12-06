@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密货币数据分析系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            color: #fff;
+            margin-bottom: 15px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.9);
+            font-weight: 300;
+        }
+        
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            animation: fadeInUp 0.8s ease 0.2s both;
+        }
+        
+        .module-card {
+            background: rgba(42, 45, 71, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #00d4ff, #0099ff);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .module-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .module-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .module-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        
+        .module-card:hover .module-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        .module-card h2 {
+            font-size: 1.8rem;
+            color: #ffffff;
+            margin-bottom: 15px;
+        }
+        
+        .module-card p {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .module-stats {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .module-stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+        
+        .module-stats-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .stats-label {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .stats-value {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+        
+        .module-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .module-btn:hover {
+            background: linear-gradient(135deg, #0099ff 0%, #00d4ff 100%);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .stats-bar {
+            background: rgba(42, 45, 71, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            animation: fadeInUp 0.8s ease 0.4s both;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value.positive {
+            color: #10b981;
+        }
+        
+        .stat-value.negative {
+            color: #ef4444;
+        }
+        
+        .stat-value.panic-green {
+            color: #10b981;
+        }
+        
+        .stat-value.panic-red {
+            color: #ef4444;
+        }
+        
+        .stat-value.panic-yellow {
+            color: #fbbf24;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-sublabel {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 5px;
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stat-value {
+                font-size: 1.8rem;
+            }
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+            animation: fadeInUp 0.8s ease 0.6s both;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 加密货币数据分析系统</h1>
+            <p>实时监控 · 历史回看 · 趋势分析</p>
+        </div>
+        
+        <div class="modules-grid">
+            <div class="module-card" onclick="location.href='/query'">
+                <div class="module-icon">🔍</div>
+                <h2>历史数据查询</h2>
+                <p>按时间查询历史快照数据，支持精确到分钟的数据检索</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">总记录数:</span>
+                        <span class="stats-value" id="query-total">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">数据天数:</span>
+                        <span class="stats-value" id="query-days">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后更新:</span>
+                        <span class="stats-value" id="query-time">-</span>
+                    </div>
+                </div>
+                <a href="/query" class="module-btn">进入查询</a>
+            </div>
+            
+            <div class="module-card" onclick="location.href='/signals'">
+                <div class="module-icon">📊</div>
+                <h2>交易信号监控</h2>
+                <p>每3分钟自动抓取做多做空信号，记录历史趋势</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">总记录数:</span>
+                        <span class="stats-value" id="signal-total">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">数据天数:</span>
+                        <span class="stats-value" id="signal-days">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后更新:</span>
+                        <span class="stats-value" id="signal-time">-</span>
+                    </div>
+                </div>
+                <a href="/signals" class="module-btn">查看监控</a>
+            </div>
+            
+            <div class="module-card" onclick="location.href='/panic'">
+                <div class="module-icon">⚡</div>
+                <h2>恐慌清洗指数</h2>
+                <p>实时计算 = 24小时爆仓人数 / 全网持仓量，每3分钟更新</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">总记录数:</span>
+                        <span class="stats-value" id="panic-total">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">数据天数:</span>
+                        <span class="stats-value" id="panic-days">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后更新:</span>
+                        <span class="stats-value" id="panic-time">-</span>
+                    </div>
+                </div>
+                <a href="/panic" class="module-btn">查看详情</a>
+            </div>
+        </div>
+        
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="roundRushUp">-</div>
+                <div class="stat-label">本轮急涨</div>
+                <div class="stat-sublabel">当前 - 上轮</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="roundRushDown">-</div>
+                <div class="stat-label">本轮急跌</div>
+                <div class="stat-sublabel">当前 - 上轮</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="panicIndicator">-</div>
+                <div class="stat-label">恐慌清洗指数</div>
+                <div class="stat-sublabel" id="panicZone">-</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="todayRecords">-</div>
+                <div class="stat-label">今日采集</div>
+                <div class="stat-sublabel" id="updateTime">更新: -</div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>💡 数据每10分钟自动采集 · 每天00:10自动重置计数器</p>
+            <p>Powered by GenSpark AI Developer · 2025</p>
+        </div>
+    </div>
+    
+    <script>
+        // 加载模块统计数据
+        fetch('/api/modules/stats')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // 历史数据查询模块
+                    document.getElementById('query-total').textContent = data.query_module.total_records;
+                    document.getElementById('query-days').textContent = data.query_module.data_days + ' 天';
+                    document.getElementById('query-time').textContent = data.query_module.last_update;
+                    
+                    // 交易信号监控模块
+                    document.getElementById('signal-total').textContent = data.signal_module.total_records;
+                    document.getElementById('signal-days').textContent = data.signal_module.data_days + ' 天';
+                    document.getElementById('signal-time').textContent = data.signal_module.last_update;
+                    
+                    // 恐慌清洗指数模块
+                    document.getElementById('panic-total').textContent = data.panic_module.total_records;
+                    document.getElementById('panic-days').textContent = data.panic_module.data_days + ' 天';
+                    document.getElementById('panic-time').textContent = data.panic_module.last_update;
+                }
+            })
+            .catch(err => {
+                console.error('获取模块统计数据失败:', err);
+            });
+        
+        // 加载统计栏数据
+        fetch('/api/stats')
+            .then(res => res.json())
+            .then(data => {
+                // 本轮急涨
+                const roundRushUpEl = document.getElementById('roundRushUp');
+                const roundRushUp = data.current_round_rush_up || 0;
+                roundRushUpEl.textContent = roundRushUp >= 0 ? `+${roundRushUp}` : roundRushUp;
+                roundRushUpEl.className = 'stat-value ' + (roundRushUp > 0 ? 'positive' : roundRushUp < 0 ? 'negative' : '');
+                
+                // 本轮急跌
+                const roundRushDownEl = document.getElementById('roundRushDown');
+                const roundRushDown = data.current_round_rush_down || 0;
+                roundRushDownEl.textContent = roundRushDown >= 0 ? `+${roundRushDown}` : roundRushDown;
+                roundRushDownEl.className = 'stat-value ' + (roundRushDown > 0 ? 'negative' : roundRushDown < 0 ? 'positive' : '');
+                
+                // 恐慌清洗指数
+                const panicEl = document.getElementById('panicIndicator');
+                const panicColor = (data.panic_color || 'gray').toLowerCase();
+                panicEl.textContent = data.panic_indicator || '-';
+                panicEl.className = 'stat-value panic-' + (panicColor === '绿' ? 'green' : panicColor === '红' ? 'red' : panicColor === '黄' ? 'yellow' : panicColor);
+                
+                // 恐慌市场区间
+                document.getElementById('panicZone').textContent = data.panic_market_zone || '-';
+                
+                // 今日采集
+                document.getElementById('todayRecords').textContent = data.today_records || '0';
+                
+                // 最后更新时间
+                document.getElementById('updateTime').textContent = '更新: ' + (data.last_update_time || '-');
+            })
+            .catch(err => {
+                console.error('获取统计数据失败:', err);
+            });
+        
+        // 每30秒刷新一次
+        setInterval(() => {
+            // 刷新模块统计数据
+            fetch('/api/modules/stats')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('query-total').textContent = data.query_module.total_records;
+                        document.getElementById('query-days').textContent = data.query_module.data_days + ' 天';
+                        document.getElementById('query-time').textContent = data.query_module.last_update;
+                        
+                        document.getElementById('signal-total').textContent = data.signal_module.total_records;
+                        document.getElementById('signal-days').textContent = data.signal_module.data_days + ' 天';
+                        document.getElementById('signal-time').textContent = data.signal_module.last_update;
+                        
+                        document.getElementById('panic-total').textContent = data.panic_module.total_records;
+                        document.getElementById('panic-days').textContent = data.panic_module.data_days + ' 天';
+                        document.getElementById('panic-time').textContent = data.panic_module.last_update;
+                    }
+                })
+                .catch(err => console.error('刷新模块统计数据失败:', err));
+            
+            // 刷新统计栏数据
+            fetch('/api/stats')
+                .then(res => res.json())
+                .then(data => {
+                    const roundRushUpEl = document.getElementById('roundRushUp');
+                    const roundRushUp = data.current_round_rush_up || 0;
+                    roundRushUpEl.textContent = roundRushUp >= 0 ? `+${roundRushUp}` : roundRushUp;
+                    roundRushUpEl.className = 'stat-value ' + (roundRushUp > 0 ? 'positive' : roundRushUp < 0 ? 'negative' : '');
+                    
+                    const roundRushDownEl = document.getElementById('roundRushDown');
+                    const roundRushDown = data.current_round_rush_down || 0;
+                    roundRushDownEl.textContent = roundRushDown >= 0 ? `+${roundRushDown}` : roundRushDown;
+                    roundRushDownEl.className = 'stat-value ' + (roundRushDown > 0 ? 'negative' : roundRushDown < 0 ? 'positive' : '');
+                    
+                    const panicEl = document.getElementById('panicIndicator');
+                    const panicColor = (data.panic_color || 'gray').toLowerCase();
+                    panicEl.textContent = data.panic_indicator || '-';
+                    panicEl.className = 'stat-value panic-' + (panicColor === '绿' ? 'green' : panicColor === '红' ? 'red' : panicColor === '黄' ? 'yellow' : panicColor);
+                    
+                    document.getElementById('panicZone').textContent = data.panic_market_zone || '-';
+                    document.getElementById('todayRecords').textContent = data.today_records || '0';
+                    document.getElementById('updateTime').textContent = '更新: ' + (data.last_update_time || '-');
+                })
+                .catch(err => console.error('刷新统计数据失败:', err));
+        }, 30000);
+    </script>
+</body>
+</html>

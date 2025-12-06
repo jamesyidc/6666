@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>恐慌清洗指数 - 加密货币数据分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #1e2139;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
+        }
+        
+        /* 顶部导航栏 */
+        .top-nav {
+            background: #2a2d47;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            justify-content: space-between;
+        }
+        
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .home-btn {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+        
+        .home-btn:hover {
+            background: linear-gradient(135deg, #0099ff 0%, #00d4ff 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
+        }
+        
+        .nav-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #fff;
+        }
+        
+        /* 当前数据统计栏 */
+        .stats-bar {
+            background: #2a2d47;
+            padding: 15px 20px;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #3a3d5c;
+            font-size: 13px;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .stat-label {
+            color: #8b92b8;
+            font-size: 12px;
+        }
+        
+        .stat-value {
+            color: #fff;
+            font-weight: 600;
+            font-size: 20px;
+        }
+        
+        .stat-value.green {
+            color: #10b981;
+        }
+        
+        .stat-value.yellow {
+            color: #fbbf24;
+        }
+        
+        .stat-value.red {
+            color: #ef4444;
+        }
+        
+        .stat-sublabel {
+            color: #6b7280;
+            font-size: 11px;
+        }
+        
+        /* 图表容器 */
+        .chart-container {
+            background: #2a2d47;
+            padding: 20px;
+            margin: 0;
+            border-bottom: 1px solid #3a3d5c;
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+        
+        #panicChart {
+            width: 100%;
+            height: 400px;
+        }
+        
+        /* 历史数据表格 */
+        .history-container {
+            background: #2a2d47;
+            padding: 20px;
+            border-bottom: 1px solid #3a3d5c;
+        }
+        
+        .history-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .history-table thead {
+            background: #1e2139;
+        }
+        
+        .history-table th {
+            padding: 10px;
+            text-align: left;
+            color: #8b92b8;
+            font-weight: 500;
+            border-bottom: 1px solid #3a3d5c;
+        }
+        
+        .history-table td {
+            padding: 10px;
+            border-bottom: 1px solid #3a3d5c;
+        }
+        
+        .history-table tbody tr:hover {
+            background: #1e2139;
+        }
+        
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8b92b8;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .stats-bar {
+                gap: 15px;
+            }
+            
+            .stat-value {
+                font-size: 16px;
+            }
+            
+            #panicChart {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航 -->
+        <div class="top-nav">
+            <div class="nav-left">
+                <a href="/" class="home-btn">
+                    <span>🏠</span>
+                    <span>返回首页</span>
+                </a>
+                <div class="nav-title">⚡ 恐慌清洗指数</div>
+            </div>
+        </div>
+        
+        <!-- 当前数据统计栏 -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-label">恐慌清洗指数</div>
+                <div class="stat-value" id="currentIndex">--</div>
+                <div class="stat-sublabel" id="currentLevel">--</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">1小时爆仓金额</div>
+                <div class="stat-value" id="hour1Amount">--</div>
+                <div class="stat-sublabel">亿美元</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">24小时爆仓金额</div>
+                <div class="stat-value" id="hour24Amount">--</div>
+                <div class="stat-sublabel">亿美元</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">24小时爆仓人数</div>
+                <div class="stat-value" id="currentPeople">--</div>
+                <div class="stat-sublabel">万人</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">全网持仓量</div>
+                <div class="stat-value" id="currentPosition">--</div>
+                <div class="stat-sublabel">亿美元</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">最后更新</div>
+                <div class="stat-value" id="updateTime" style="font-size: 16px;">--</div>
+                <div class="stat-sublabel">每3分钟更新</div>
+            </div>
+        </div>
+        
+        <!-- 曲线图 -->
+        <div class="chart-container">
+            <div class="chart-title">📈 恐慌清洗指数趋势</div>
+            <div id="panicChart"></div>
+        </div>
+        
+        <!-- 历史数据表格 -->
+        <div class="history-container">
+            <div class="history-title">📋 恐慌指数历史记录</div>
+            <div id="loadingHistory" class="loading">正在加载历史数据...</div>
+            <table class="history-table" id="historyTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>记录时间</th>
+                        <th>恐慌指数</th>
+                        <th>等级</th>
+                        <th>爆仓人数</th>
+                        <th>全网持仓</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 30日爆仓数据日历 -->
+        <div class="history-container">
+            <div class="history-title">📅 30日爆仓数据日历</div>
+            <div id="loading30Days" class="loading">正在加载30日爆仓数据...</div>
+            <table class="history-table" id="liquidation30Table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>多单爆仓</th>
+                        <th>空单爆仓</th>
+                        <th>总爆仓</th>
+                    </tr>
+                </thead>
+                <tbody id="liquidation30Body">
+                </tbody>
+            </table>
+            <div class="stat-sublabel" id="liquidation30UpdateTime" style="margin-top: 10px; text-align: right;"></div>
+        </div>
+    </div>
+    
+    <script>
+        let chart = null;
+        
+        // 初始化图表
+        function initChart() {
+            const chartDom = document.getElementById('panicChart');
+            chart = echarts.init(chartDom);
+            
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: '#2a2d47',
+                    borderColor: '#3a3d5c',
+                    textStyle: {
+                        color: '#fff'
+                    },
+                    formatter: function(params) {
+                        let html = params[0].axisValue + '<br/>';
+                        params.forEach(param => {
+                            html += param.marker + param.seriesName + ': ' + param.value + '%<br/>';
+                        });
+                        return html;
+                    }
+                },
+                legend: {
+                    data: ['恐慌清洗指数'],
+                    textStyle: {
+                        color: '#8b92b8'
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: [],
+                    axisLine: {
+                        lineStyle: {
+                            color: '#3a3d5c'
+                        }
+                    },
+                    axisLabel: {
+                        color: '#8b92b8'
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '指数 (%)',
+                    axisLine: {
+                        lineStyle: {
+                            color: '#3a3d5c'
+                        }
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: '#3a3d5c'
+                        }
+                    },
+                    axisLabel: {
+                        color: '#8b92b8',
+                        formatter: '{value}%'
+                    }
+                },
+                series: [
+                    {
+                        name: '恐慌清洗指数',
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        data: [],
+                        lineStyle: {
+                            width: 2,
+                            color: '#3b7dff'
+                        },
+                        areaStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0,
+                                y: 0,
+                                x2: 0,
+                                y2: 1,
+                                colorStops: [
+                                    {
+                                        offset: 0,
+                                        color: 'rgba(59, 125, 255, 0.3)'
+                                    },
+                                    {
+                                        offset: 1,
+                                        color: 'rgba(59, 125, 255, 0.05)'
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]
+            };
+            
+            chart.setOption(option);
+        }
+        
+        // 加载当前数据
+        async function loadCurrentData() {
+            try {
+                const response = await fetch('/api/panic/latest');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const data = result.data;
+                    
+                    // 更新统计栏
+                    const indexEl = document.getElementById('currentIndex');
+                    indexEl.textContent = data.panic_index.toFixed(2) + '%';
+                    
+                    // 设置颜色
+                    indexEl.className = 'stat-value ' + (data.level_color || 'green');
+                    
+                    document.getElementById('currentLevel').textContent = data.panic_level || '--';
+                    document.getElementById('hour1Amount').textContent = '$' + data.hour_1_amount.toFixed(2);
+                    document.getElementById('hour24Amount').textContent = '$' + data.hour_24_amount.toFixed(2);
+                    document.getElementById('currentPeople').textContent = data.hour_24_people.toFixed(2);
+                    document.getElementById('currentPosition').textContent = '$' + data.total_position.toFixed(2);
+                    document.getElementById('updateTime').textContent = data.record_time.split(' ')[1];
+                }
+            } catch (error) {
+                console.error('加载当前数据失败:', error);
+            }
+        }
+        
+        // 加载历史数据并更新图表
+        async function loadHistoryData() {
+            try {
+                const conn = await fetch('/api/panic/history?limit=50');
+                const result = await conn.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    const data = result.data.reverse(); // 时间正序
+                    
+                    // 更新图表
+                    const times = data.map(item => item.record_time.split(' ')[1].substring(0, 5));
+                    const values = data.map(item => item.panic_index.toFixed(2));
+                    
+                    chart.setOption({
+                        xAxis: {
+                            data: times
+                        },
+                        series: [{
+                            data: values
+                        }]
+                    });
+                    
+                    // 更新表格
+                    const tbody = document.getElementById('historyTableBody');
+                    tbody.innerHTML = '';
+                    
+                    result.data.forEach(item => {
+                        const tr = document.createElement('tr');
+                        
+                        let levelColor = 'green';
+                        if (item.panic_index >= 5) levelColor = 'red';
+                        else if (item.panic_index >= 2) levelColor = 'yellow';
+                        
+                        let levelText = '低恐慌';
+                        if (item.panic_index >= 5) levelText = '高度恐慌';
+                        else if (item.panic_index >= 2) levelText = '中度恐慌';
+                        
+                        tr.innerHTML = `
+                            <td>${item.record_time}</td>
+                            <td><span class="${levelColor}" style="font-weight: 600;">${item.panic_index.toFixed(2)}%</span></td>
+                            <td><span class="${levelColor}">${levelText}</span></td>
+                            <td>${item.hour_24_people.toFixed(2)}万人</td>
+                            <td>${item.total_position.toFixed(2)}亿美元</td>
+                        `;
+                        
+                        tbody.appendChild(tr);
+                    });
+                    
+                    document.getElementById('loadingHistory').style.display = 'none';
+                    document.getElementById('historyTable').style.display = 'table';
+                }
+            } catch (error) {
+                console.error('加载历史数据失败:', error);
+                document.getElementById('loadingHistory').textContent = '❌ 加载失败: ' + error.message;
+            }
+        }
+        
+        // 加载30日爆仓数据
+        async function load30DaysLiquidation() {
+            try {
+                const response = await fetch('/api/liquidation/30days');
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    const tbody = document.getElementById('liquidation30Body');
+                    tbody.innerHTML = '';
+                    
+                    result.data.forEach(item => {
+                        const tr = document.createElement('tr');
+                        
+                        tr.innerHTML = `
+                            <td>${item.date}</td>
+                            <td style="color: #10b981;">$${item.long_amount}亿</td>
+                            <td style="color: #ef4444;">$${item.short_amount}亿</td>
+                            <td style="font-weight: 600;">$${item.total_amount}亿</td>
+                        `;
+                        
+                        tbody.appendChild(tr);
+                    });
+                    
+                    // 显示更新时间
+                    if (result.data[0].updated_at) {
+                        document.getElementById('liquidation30UpdateTime').textContent = 
+                            '最后更新: ' + result.data[0].updated_at + ' (每1小时更新)';
+                    }
+                    
+                    document.getElementById('loading30Days').style.display = 'none';
+                    document.getElementById('liquidation30Table').style.display = 'table';
+                } else {
+                    document.getElementById('loading30Days').textContent = '❌ 暂无30日爆仓数据';
+                }
+            } catch (error) {
+                console.error('加载30日爆仓数据失败:', error);
+                document.getElementById('loading30Days').textContent = '❌ 加载失败: ' + error.message;
+            }
+        }
+        
+        // 页面加载完成后执行
+        window.onload = function() {
+            initChart();
+            loadCurrentData();
+            loadHistoryData();
+            load30DaysLiquidation();
+            
+            // 每30秒刷新当前数据
+            setInterval(loadCurrentData, 30000);
+        };
+    </script>
+</body>
+</html>
