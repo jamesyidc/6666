@@ -23,68 +23,62 @@ def calculate_count_score(count_times, current_hour):
     """
     # 确定时间段
     if current_hour < 6:
-        period = "00-06点"
+        # 截止6点前
         if count_times <= 1:
             return (3, "实心", "★★★")
         elif 1 < count_times <= 2:
-            return (2, "实心", "★★☆")
+            return (2, "实心", "★★")
         elif 2 < count_times <= 3:
-            return (1, "实心", "★☆☆")
+            return (1, "实心", "★")
         elif 3 < count_times <= 4:
-            return (1, "空心", "☆--")
+            return (1, "空心", "☆")
         elif 4 < count_times <= 5:
-            return (2, "空心", "☆☆-")
+            return (2, "空心", "☆☆")
         else:  # count_times > 5
             return (3, "空心", "☆☆☆")
             
     elif 6 <= current_hour < 12:
-        period = "06-12点"
+        # 截止12点前
         if count_times <= 2:
             return (3, "实心", "★★★")
         elif 2 < count_times <= 3:
-            return (2, "实心", "★★☆")
+            return (2, "实心", "★★")
         elif 3 < count_times <= 4:
-            return (1, "实心", "★☆☆")
-        elif 4 < count_times <= 5:
-            return (0, "中性", "---")
+            return (1, "实心", "★")
         elif 5 < count_times <= 6:
-            return (1, "空心", "☆--")
+            return (1, "空心", "☆")
         elif 6 < count_times <= 7:
-            return (2, "空心", "☆☆-")
+            return (2, "空心", "☆☆")
         else:  # count_times > 7
             return (3, "空心", "☆☆☆")
             
     elif 12 <= current_hour < 18:
-        period = "12-18点"
+        # 截止18点前
         if count_times <= 3:
             return (3, "实心", "★★★")
         elif 3 < count_times <= 4:
-            return (2, "实心", "★★☆")
+            return (2, "实心", "★★")
         elif 4 < count_times <= 5:
-            return (1, "实心", "★☆☆")
-        elif 5 < count_times <= 7:
-            return (0, "中性", "---")
+            return (1, "实心", "★")
         elif 7 < count_times <= 8:
-            return (1, "空心", "☆--")
+            return (1, "空心", "☆")
         elif 8 < count_times <= 9:
-            return (2, "空心", "☆☆-")
+            return (2, "空心", "☆☆")
         else:  # count_times > 9
             return (3, "空心", "☆☆☆")
             
     else:  # 18 <= current_hour < 24
-        period = "18-22点"
+        # 截止22点前
         if count_times <= 4:
             return (3, "实心", "★★★")
         elif 4 < count_times <= 5:
-            return (2, "实心", "★★☆")
+            return (2, "实心", "★★")
         elif 5 < count_times <= 6:
-            return (1, "实心", "★☆☆")
-        elif 6 < count_times <= 9:
-            return (0, "中性", "---")
+            return (1, "实心", "★")
         elif 9 < count_times <= 10:
-            return (1, "空心", "☆--")
+            return (1, "空心", "☆")
         elif 10 < count_times <= 11:
-            return (2, "空心", "☆☆-")
+            return (2, "空心", "☆☆")
         else:  # count_times > 11
             return (3, "空心", "☆☆☆")
 
