@@ -48,6 +48,39 @@ MAIN_HTML = """
             align-items: center;
             gap: 15px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            justify-content: space-between;
+        }
+        
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .nav-right {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .home-btn {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .home-btn:hover {
+            background: linear-gradient(135deg, #0099ff 0%, #00d4ff 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
         }
         
         .nav-brand {
@@ -480,10 +513,17 @@ MAIN_HTML = """
     <div class="container">
         <!-- 顶部导航 -->
         <div class="top-nav">
-            <div class="nav-brand">
-                <span>📊</span> 数据回看
+            <div class="nav-left">
+                <div class="nav-brand">
+                    <span>📊</span> 数据回看
+                </div>
+                <div class="nav-title">加密货币数据历史回看</div>
             </div>
-            <div class="nav-title">加密货币数据历史回看</div>
+            <div class="nav-right">
+                <button class="home-btn" onclick="window.location.href='/'">
+                    <span>🏠</span> 返回首页
+                </button>
+            </div>
         </div>
         
         <!-- 控制栏 -->
