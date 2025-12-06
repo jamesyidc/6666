@@ -1810,5 +1810,75 @@ def api_signals_history():
             'error': str(e)
         })
 
+@app.route('/api/modules/stats')
+def api_modules_stats():
+    """获取所有模块的统计信息"""
+    try:
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        # 1. 历史数据查询模块统计
+        cursor.execute("SELECT COUNT(*) FROM crypto_snapshots")
+        query_total = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(DISTINCT snapshot_date) FROM crypto_snapshots")
+        query_days = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT MAX(snapshot_time) FROM crypto_snapshots")
+        query_last_time = cursor.fetchone()[0] or '-'
+        if query_last_time != '-':
+            query_last_time = query_last_time.split(' ')[1][:5]  # 只取HH:MM
+        
+        # 2. 交易信号监控模块统计
+        cursor.execute("SELECT COUNT(*) FROM trading_signals")
+        signal_total = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(DISTINCT record_date) FROM trading_signals")
+        signal_days = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT MAX(record_time) FROM trading_signals")
+        signal_last_time = cursor.fetchone()[0] or '-'
+        if signal_last_time != '-':
+            signal_last_time = signal_last_time.split(' ')[1][:5]  # 只取HH:MM
+        
+        # 3. 恐慌清洗指数模块统计
+        cursor.execute("SELECT COUNT(*) FROM panic_wash_index")
+        panic_total = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(DISTINCT DATE(record_time)) FROM panic_wash_index")
+        panic_days = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT MAX(record_time) FROM panic_wash_index")
+        panic_last_time = cursor.fetchone()[0] or '-'
+        if panic_last_time != '-':
+            panic_last_time = panic_last_time.split(' ')[1][:5]  # 只取HH:MM
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'query_module': {
+                'total_records': query_total,
+                'data_days': query_days,
+                'last_update': query_last_time
+            },
+            'signal_module': {
+                'total_records': signal_total,
+                'data_days': signal_days,
+                'last_update': signal_last_time
+            },
+            'panic_module': {
+                'total_records': panic_total,
+                'data_days': panic_days,
+                'last_update': panic_last_time
+            }
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

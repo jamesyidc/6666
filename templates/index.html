@@ -107,7 +107,35 @@
             font-size: 1rem;
             color: rgba(255, 255, 255, 0.7);
             line-height: 1.6;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
+        }
+        
+        .module-stats {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .module-stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+        
+        .module-stats-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .stats-label {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .stats-value {
+            color: #00d4ff;
+            font-weight: 600;
         }
         
         .module-btn {
@@ -240,14 +268,63 @@
             <div class="module-card" onclick="location.href='/query'">
                 <div class="module-icon">🔍</div>
                 <h2>历史数据查询</h2>
-                <p>按时间查询历史快照数据，支持精确到分钟的数据检索，查看任意时间点的市场状态</p>
+                <p>按时间查询历史快照数据，支持精确到分钟的数据检索</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">总记录数:</span>
+                        <span class="stats-value" id="query-total">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">数据天数:</span>
+                        <span class="stats-value" id="query-days">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后更新:</span>
+                        <span class="stats-value" id="query-time">-</span>
+                    </div>
+                </div>
                 <a href="/query" class="module-btn">进入查询</a>
+            </div>
+            
+            <div class="module-card" onclick="location.href='/signals'">
+                <div class="module-icon">📊</div>
+                <h2>交易信号监控</h2>
+                <p>每3分钟自动抓取做多做空信号，记录历史趋势</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">总记录数:</span>
+                        <span class="stats-value" id="signal-total">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">数据天数:</span>
+                        <span class="stats-value" id="signal-days">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后更新:</span>
+                        <span class="stats-value" id="signal-time">-</span>
+                    </div>
+                </div>
+                <a href="/signals" class="module-btn">查看监控</a>
             </div>
             
             <div class="module-card" onclick="location.href='/panic'">
                 <div class="module-icon">⚡</div>
                 <h2>恐慌清洗指数</h2>
-                <p>实时计算恐慌清洗指数 = 24小时爆仓人数(万人) / 全网持仓量(亿美元)，每3分钟更新一次</p>
+                <p>实时计算 = 24小时爆仓人数 / 全网持仓量，每3分钟更新</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">总记录数:</span>
+                        <span class="stats-value" id="panic-total">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">数据天数:</span>
+                        <span class="stats-value" id="panic-days">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后更新:</span>
+                        <span class="stats-value" id="panic-time">-</span>
+                    </div>
+                </div>
                 <a href="/panic" class="module-btn">查看详情</a>
             </div>
         </div>
@@ -282,7 +359,32 @@
     </div>
     
     <script>
-        // 加载统计数据
+        // 加载模块统计数据
+        fetch('/api/modules/stats')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // 历史数据查询模块
+                    document.getElementById('query-total').textContent = data.query_module.total_records;
+                    document.getElementById('query-days').textContent = data.query_module.data_days + ' 天';
+                    document.getElementById('query-time').textContent = data.query_module.last_update;
+                    
+                    // 交易信号监控模块
+                    document.getElementById('signal-total').textContent = data.signal_module.total_records;
+                    document.getElementById('signal-days').textContent = data.signal_module.data_days + ' 天';
+                    document.getElementById('signal-time').textContent = data.signal_module.last_update;
+                    
+                    // 恐慌清洗指数模块
+                    document.getElementById('panic-total').textContent = data.panic_module.total_records;
+                    document.getElementById('panic-days').textContent = data.panic_module.data_days + ' 天';
+                    document.getElementById('panic-time').textContent = data.panic_module.last_update;
+                }
+            })
+            .catch(err => {
+                console.error('获取模块统计数据失败:', err);
+            });
+        
+        // 加载统计栏数据
         fetch('/api/stats')
             .then(res => res.json())
             .then(data => {
@@ -319,6 +421,27 @@
         
         // 每30秒刷新一次
         setInterval(() => {
+            // 刷新模块统计数据
+            fetch('/api/modules/stats')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('query-total').textContent = data.query_module.total_records;
+                        document.getElementById('query-days').textContent = data.query_module.data_days + ' 天';
+                        document.getElementById('query-time').textContent = data.query_module.last_update;
+                        
+                        document.getElementById('signal-total').textContent = data.signal_module.total_records;
+                        document.getElementById('signal-days').textContent = data.signal_module.data_days + ' 天';
+                        document.getElementById('signal-time').textContent = data.signal_module.last_update;
+                        
+                        document.getElementById('panic-total').textContent = data.panic_module.total_records;
+                        document.getElementById('panic-days').textContent = data.panic_module.data_days + ' 天';
+                        document.getElementById('panic-time').textContent = data.panic_module.last_update;
+                    }
+                })
+                .catch(err => console.error('刷新模块统计数据失败:', err));
+            
+            // 刷新统计栏数据
             fetch('/api/stats')
                 .then(res => res.json())
                 .then(data => {
