@@ -245,17 +245,18 @@ MAIN_HTML = """
         
         /* 操作列 */
         .action-btn {
-            background: #4a5178;
+            background: #ef4444;
             border: none;
             color: white;
             padding: 4px 10px;
             border-radius: 3px;
             font-size: 11px;
             cursor: pointer;
+            font-weight: 500;
         }
         
         .action-btn:hover {
-            background: #5a6188;
+            background: #dc2626;
         }
         
         /* 币种名称 */
