@@ -2,12 +2,14 @@
 """
 加密货币数据分析系统 - 完全仿照参考页面风格
 """
-from flask import Flask, render_template_string, request, jsonify, send_from_directory
+from flask import Flask, render_template_string, render_template, request, jsonify, send_from_directory
 import sqlite3
 from datetime import datetime, timedelta
 import json
+import pytz
 
 app = Flask(__name__)
+BEIJING_TZ = pytz.timezone('Asia/Shanghai')
 
 # 主页面HTML - 完全仿照参考设计
 MAIN_HTML = """
@@ -1105,8 +1107,65 @@ MAIN_HTML = """
 # API路由保持不变，使用之前的代码
 @app.route('/')
 def index():
-    """主页面"""
+    """首页 - 功能导航"""
+    return render_template('index.html')
+
+@app.route('/query')
+def query_page():
+    """历史数据查询页面"""
     return render_template_string(MAIN_HTML)
+
+@app.route('/chart')
+def chart_page():
+    """趋势图表页面"""
+    return render_template_string(MAIN_HTML)
+
+@app.route('/timeline')
+def timeline_page():
+    """时间轴页面"""
+    return render_template_string(MAIN_HTML)
+
+@app.route('/api/stats')
+def api_stats():
+    """统计数据API"""
+    try:
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        # 总记录数
+        cursor.execute("SELECT COUNT(*) FROM crypto_snapshots")
+        total_records = cursor.fetchone()[0]
+        
+        # 今日记录数
+        today = datetime.now(BEIJING_TZ).date().strftime('%Y-%m-%d')
+        cursor.execute("SELECT COUNT(*) FROM crypto_snapshots WHERE snapshot_date = ?", (today,))
+        today_records = cursor.fetchone()[0]
+        
+        # 数据天数
+        cursor.execute("SELECT COUNT(DISTINCT snapshot_date) FROM crypto_snapshots")
+        data_days = cursor.fetchone()[0]
+        
+        # 最后更新时间
+        cursor.execute("SELECT snapshot_time FROM crypto_snapshots ORDER BY snapshot_time DESC LIMIT 1")
+        last_record = cursor.fetchone()
+        last_update_time = last_record[0].split(' ')[1][:5] if last_record else '-'
+        
+        conn.close()
+        
+        return jsonify({
+            'total_records': total_records,
+            'today_records': today_records,
+            'data_days': data_days,
+            'last_update_time': last_update_time
+        })
+    except Exception as e:
+        return jsonify({
+            'total_records': 0,
+            'today_records': 0,
+            'data_days': 0,
+            'last_update_time': '-',
+            'error': str(e)
+        })
 
 @app.route('/api/query')
 def api_query():

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密货币数据分析系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            color: #fff;
+            margin-bottom: 15px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.9);
+            font-weight: 300;
+        }
+        
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            animation: fadeInUp 0.8s ease 0.2s both;
+        }
+        
+        .module-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .module-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .module-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .module-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        
+        .module-card:hover .module-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        .module-card h2 {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .module-card p {
+            font-size: 1rem;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        
+        .module-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .module-btn:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .stats-bar {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            animation: fadeInUp 0.8s ease 0.4s both;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stat-value {
+                font-size: 1.8rem;
+            }
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+            animation: fadeInUp 0.8s ease 0.6s both;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 加密货币数据分析系统</h1>
+            <p>实时监控 · 历史回看 · 趋势分析</p>
+        </div>
+        
+        <div class="modules-grid">
+            <div class="module-card" onclick="location.href='/query'">
+                <div class="module-icon">🔍</div>
+                <h2>历史数据查询</h2>
+                <p>按时间查询历史快照数据，支持精确到分钟的数据检索，查看任意时间点的市场状态</p>
+                <a href="/query" class="module-btn">进入查询</a>
+            </div>
+            
+            <div class="module-card" onclick="location.href='/chart'">
+                <div class="module-icon">📊</div>
+                <h2>趋势图表</h2>
+                <p>12小时分页趋势图，完整展示急涨急跌数据点，支持左右翻页查看不同时段</p>
+                <a href="/chart" class="module-btn">查看图表</a>
+            </div>
+            
+            <div class="module-card" onclick="location.href='/timeline'">
+                <div class="module-icon">📅</div>
+                <h2>时间轴</h2>
+                <p>垂直时间轴展示所有历史数据点，从最早到最新，一目了然查看数据采集记录</p>
+                <a href="/timeline" class="module-btn">浏览时间轴</a>
+            </div>
+            
+            <div class="module-card" onclick="location.href='/api/latest'">
+                <div class="module-icon">⚡</div>
+                <h2>最新数据API</h2>
+                <p>实时获取最新的市场数据快照，包含急涨急跌、计次、状态等14个统计字段</p>
+                <a href="/api/latest" class="module-btn" target="_blank">查看API</a>
+            </div>
+        </div>
+        
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="totalRecords">-</div>
+                <div class="stat-label">总数据记录</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="todayRecords">-</div>
+                <div class="stat-label">今日采集</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="dataSpan">-</div>
+                <div class="stat-label">数据天数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="updateTime">-</div>
+                <div class="stat-label">最后更新</div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>💡 数据每10分钟自动采集 · 每天00:10自动重置计数器</p>
+            <p>Powered by GenSpark AI Developer · 2025</p>
+        </div>
+    </div>
+    
+    <script>
+        // 加载统计数据
+        fetch('/api/stats')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('totalRecords').textContent = data.total_records || '0';
+                document.getElementById('todayRecords').textContent = data.today_records || '0';
+                document.getElementById('dataSpan').textContent = data.data_days || '0';
+                document.getElementById('updateTime').textContent = data.last_update_time || '-';
+            })
+            .catch(err => {
+                console.error('获取统计数据失败:', err);
+            });
+    </script>
+</body>
+</html>
