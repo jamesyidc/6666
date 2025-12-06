@@ -762,7 +762,7 @@ MAIN_HTML = """
                         return;
                     }
                     updateUI(data);
-                    loadChartData(date);
+                    loadChartData();  // 加载所有历史数据趋势图
                 })
                 .catch(error => {
                     alert('查询失败: ' + error);
@@ -786,8 +786,7 @@ MAIN_HTML = """
                         return;
                     }
                     updateUI(data);
-                    const date = data.snapshot_time.split(' ')[0];
-                    loadChartData(date);
+                    loadChartData();  // 加载所有历史数据趋势图
                 })
                 .catch(error => {
                     alert('加载失败: ' + error);
@@ -850,8 +849,9 @@ MAIN_HTML = """
         }
         
         // 加载图表数据
-        function loadChartData(date) {
-            fetch('/api/chart?date=' + encodeURIComponent(date))
+        function loadChartData() {
+            // 加载所有历史数据点用于趋势图
+            fetch('/api/chart')
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
@@ -1152,35 +1152,36 @@ def api_latest():
 
 @app.route('/api/chart')
 def api_chart():
-    """图表数据API"""
-    date = request.args.get('date', '')
-    if not date:
-        conn = sqlite3.connect('crypto_data.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT snapshot_time FROM crypto_snapshots ORDER BY snapshot_time DESC LIMIT 1")
-        result = cursor.fetchone()
-        conn.close()
-        if result:
-            date = result[0].split(' ')[0]
-        else:
-            return jsonify({'error': '无数据'})
-    
+    """图表数据API - 返回所有历史数据点用于趋势图"""
     try:
         conn = sqlite3.connect('crypto_data.db')
         cursor = conn.cursor()
         
+        # 获取所有历史数据点，按时间升序排列
         cursor.execute("""
             SELECT 
                 snapshot_time, rush_up, rush_down, diff, count
             FROM crypto_snapshots
-            WHERE snapshot_time LIKE ?
             ORDER BY snapshot_time ASC
-        """, (f"{date}%",))
+        """)
         
         data = cursor.fetchall()
         conn.close()
         
-        times = [row[0].split(' ')[1][:5] for row in data]
+        if not data:
+            return jsonify({'error': '无数据'})
+        
+        # 格式化时间标签：短格式（月-日 时:分）
+        times = []
+        for row in data:
+            dt_str = row[0]  # 例如：'2025-12-05 14:27:33'
+            # 提取月-日 时:分
+            parts = dt_str.split(' ')
+            date_parts = parts[0].split('-')  # ['2025', '12', '05']
+            time_parts = parts[1].split(':')  # ['14', '27', '33']
+            formatted_time = f"{date_parts[1]}-{date_parts[2]} {time_parts[0]}:{time_parts[1]}"
+            times.append(formatted_time)
+        
         rush_up = [row[1] for row in data]
         rush_down = [row[2] for row in data]
         diff = [row[3] for row in data]
