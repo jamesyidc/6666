@@ -1287,7 +1287,7 @@ def api_timeline():
         conn = sqlite3.connect('crypto_data.db')
         cursor = conn.cursor()
         
-        # 查询所有字段
+        # 查询所有字段 - 倒序排列（时间晚的在上，时间早的在下）
         cursor.execute("""
             SELECT 
                 id, snapshot_time, snapshot_date,
@@ -1299,7 +1299,7 @@ def api_timeline():
                 rise_24h_count, fall_24h_count,
                 green_count, percentage, filename
             FROM crypto_snapshots
-            ORDER BY snapshot_time ASC
+            ORDER BY snapshot_time DESC
         """)
         
         snapshots = []
