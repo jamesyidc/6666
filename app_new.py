@@ -745,75 +745,83 @@ MAIN_HTML = """
                 series: [
                     {
                         name: '急涨',
-                        type: 'scatter',
+                        type: 'line',
                         data: data.rush_up || [],
-                        symbolSize: 10,  // 增大散点
+                        smooth: true,
+                        lineStyle: {
+                            width: 3,
+                            color: '#ef4444'
+                        },
                         itemStyle: { 
                             color: '#ef4444',
                             borderColor: '#fff',
-                            borderWidth: 2,
-                            opacity: 0.9
+                            borderWidth: 2
                         },
+                        symbolSize: 8,
                         emphasis: {
-                            itemStyle: {
-                                shadowBlur: 10,
-                                shadowColor: '#ef4444'
-                            }
+                            scale: true,
+                            scaleSize: 12
                         }
                     },
                     {
                         name: '急跌',
-                        type: 'scatter',
+                        type: 'line',
                         data: data.rush_down || [],
-                        symbolSize: 10,
+                        smooth: true,
+                        lineStyle: {
+                            width: 3,
+                            color: '#10b981'
+                        },
                         itemStyle: { 
                             color: '#10b981',
                             borderColor: '#fff',
-                            borderWidth: 2,
-                            opacity: 0.9
+                            borderWidth: 2
                         },
+                        symbolSize: 8,
                         emphasis: {
-                            itemStyle: {
-                                shadowBlur: 10,
-                                shadowColor: '#10b981'
-                            }
+                            scale: true,
+                            scaleSize: 12
                         }
                     },
                     {
                         name: '差值(急涨-急跌)',
-                        type: 'scatter',
+                        type: 'line',
                         data: data.diff || [],
-                        symbolSize: 10,
+                        smooth: true,
+                        lineStyle: {
+                            width: 3,
+                            color: '#fbbf24'
+                        },
                         itemStyle: { 
                             color: '#fbbf24',
                             borderColor: '#fff',
-                            borderWidth: 2,
-                            opacity: 0.9
+                            borderWidth: 2
                         },
+                        symbolSize: 8,
                         emphasis: {
-                            itemStyle: {
-                                shadowBlur: 10,
-                                shadowColor: '#fbbf24'
-                            }
+                            scale: true,
+                            scaleSize: 12
                         }
                     },
                     {
                         name: '计次',
-                        type: 'scatter',
+                        type: 'line',
                         yAxisIndex: 1,
                         data: data.count || [],
-                        symbolSize: 10,
+                        smooth: true,
+                        lineStyle: {
+                            width: 3,
+                            color: '#3b7dff'
+                        },
                         itemStyle: { 
                             color: '#3b7dff',
                             borderColor: '#fff',
-                            borderWidth: 2,
-                            opacity: 0.9
+                            borderWidth: 2
                         },
+                        symbolSize: 8,
                         emphasis: {
-                            itemStyle: {
-                                shadowBlur: 10,
-                                shadowColor: '#3b7dff'
-                            }
+                            scale: true,
+                            scaleSize: 12
                         }
                     }
                 ]
