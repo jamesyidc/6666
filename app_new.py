@@ -1170,8 +1170,8 @@ def status_page():
 
 @app.route('/panic')
 def panic_page():
-    """恐慌贪婪指数页面"""
-    return render_template('panic.html')
+    """恐慌清洗指数页面"""
+    return render_template('panic_new.html')
 
 @app.route('/api/panic/latest')
 def api_panic_latest():
@@ -1817,6 +1817,45 @@ def api_signals_history():
             'long_ratio': row[4],
             'short_ratio': row[5]
         } for row in rows]
+        
+        return jsonify({
+            'success': True,
+            'data': data
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/panic/history')
+def api_panic_history():
+    """恐慌清洗指数历史数据API"""
+    try:
+        limit = int(request.args.get('limit', 50))
+        
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT record_time, panic_index, hour_24_people, total_position
+            FROM panic_wash_index
+            ORDER BY record_time DESC
+            LIMIT ?
+        ''', (limit,))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        data = []
+        for row in rows:
+            data.append({
+                'record_time': row[0],
+                'panic_index': row[1],
+                'hour_24_people': round(row[2] / 10000, 2),
+                'total_position': round(row[3] / 100000000, 2)
+            })
         
         return jsonify({
             'success': True,
