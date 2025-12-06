@@ -168,18 +168,25 @@ MAIN_HTML = """
             font-size: 13px;
         }
         
-        /* 时间轴容器 */
+        /* 时间轴容器 - 竖直布局 */
         .timeline-container {
             background: #2a2d47;
             padding: 15px 20px;
-            border-bottom: 1px solid #3a3d5c;
+            border-top: 1px solid #3a3d5c;
+            max-height: 400px;
+            overflow-y: auto;
         }
         
         .timeline-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
+            position: sticky;
+            top: 0;
+            background: #2a2d47;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #3a3d5c;
         }
         
         .timeline-title {
@@ -193,66 +200,101 @@ MAIN_HTML = """
             font-size: 12px;
         }
         
+        /* 竖直时间轴轨道 */
         .timeline-track {
             position: relative;
-            height: 40px;
-            margin: 10px 0;
+            padding-left: 30px;
+            margin-top: 10px;
         }
         
+        /* 竖直线 */
         .timeline-line {
             position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 2px;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
             background: #3a3d5c;
-            transform: translateY(-50%);
         }
         
+        /* 竖直排列的时间点容器 */
         .timeline-points {
-            position: relative;
-            height: 100%;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 15px;
         }
         
+        /* 时间点项 */
         .timeline-point {
             position: relative;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .timeline-point:hover {
+            background: rgba(59, 125, 255, 0.1);
+        }
+        
+        /* 时间点圆圈 */
+        .timeline-point::before {
+            content: '';
+            position: absolute;
+            left: -22px;
             width: 12px;
             height: 12px;
             background: #3b7dff;
+            border: 2px solid #2a2d47;
             border-radius: 50%;
-            cursor: pointer;
             transition: all 0.3s;
             z-index: 2;
         }
         
-        .timeline-point:hover {
+        .timeline-point:hover::before {
             width: 16px;
             height: 16px;
+            left: -24px;
             background: #2563eb;
             box-shadow: 0 0 10px rgba(59, 125, 255, 0.5);
         }
         
-        .timeline-point.active {
+        .timeline-point.active::before {
             background: #10b981;
             width: 16px;
             height: 16px;
+            left: -24px;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
         }
         
+        /* 时间标签 */
         .timeline-label {
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            transform: translateX(-50%);
             color: #8b92b8;
-            font-size: 10px;
-            white-space: nowrap;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
         
         .timeline-point:hover .timeline-label {
             color: #fff;
+        }
+        
+        .timeline-point.active .timeline-label {
+            color: #10b981;
+            font-weight: 500;
+        }
+        
+        .timeline-label-time {
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .timeline-label-stats {
+            font-size: 11px;
+            opacity: 0.8;
         }
         
         /* 图表区域 */
@@ -454,18 +496,6 @@ MAIN_HTML = """
             <button class="control-btn secondary" onclick="loadLatest()">📡 立即加载</button>
         </div>
         
-        <!-- 时间轴 -->
-        <div class="timeline-container">
-            <div class="timeline-header">
-                <span class="timeline-title">历史数据时间轴</span>
-                <span class="timeline-info" id="timelineInfo">加载中...</span>
-            </div>
-            <div class="timeline-track">
-                <div class="timeline-line"></div>
-                <div id="timelinePoints" class="timeline-points"></div>
-            </div>
-        </div>
-        
         <!-- 主要统计栏 -->
         <div class="stats-bar">
             <div class="stat-item">
@@ -543,6 +573,18 @@ MAIN_HTML = """
         <div class="chart-section">
             <div class="chart-title">急涨/急跌历史趋势图</div>
             <div id="mainChart"></div>
+        </div>
+        
+        <!-- 时间轴 - 放在图表下方 -->
+        <div class="timeline-container">
+            <div class="timeline-header">
+                <span class="timeline-title">历史数据时间轴</span>
+                <span class="timeline-info" id="timelineInfo">加载中...</span>
+            </div>
+            <div class="timeline-track">
+                <div class="timeline-line"></div>
+                <div id="timelinePoints" class="timeline-points"></div>
+            </div>
         </div>
         
         <!-- 数据列表标题 -->
@@ -814,7 +856,7 @@ MAIN_HTML = """
         }
         
         // 页面加载时自动加载最新数据
-        // 加载时间轴数据
+        // 加载时间轴数据 - 竖直布局
         function loadTimeline() {
             fetch('/api/timeline')
                 .then(response => response.json())
@@ -830,20 +872,44 @@ MAIN_HTML = """
                     const pointsContainer = document.getElementById('timelinePoints');
                     pointsContainer.innerHTML = '';
                     
+                    // 时间从上到下：最早的在上面，最新的在下面
                     data.snapshots.forEach((snapshot, index) => {
                         const point = document.createElement('div');
                         point.className = 'timeline-point';
+                        point.setAttribute('data-time', snapshot.snapshot_time);
+                        
+                        // 最后一个（最新的）标记为激活
                         if (index === data.snapshots.length - 1) {
                             point.classList.add('active');
                         }
                         
                         const label = document.createElement('div');
                         label.className = 'timeline-label';
-                        const time = snapshot.snapshot_time.split(' ')[1].substring(0, 5);
-                        label.textContent = time;
                         
+                        // 时间显示
+                        const timeSpan = document.createElement('div');
+                        timeSpan.className = 'timeline-label-time';
+                        timeSpan.textContent = snapshot.snapshot_time;
+                        
+                        // 统计信息显示
+                        const statsSpan = document.createElement('div');
+                        statsSpan.className = 'timeline-label-stats';
+                        statsSpan.textContent = `急涨:${snapshot.rush_up} 急跌:${snapshot.rush_down} 计次:${snapshot.count}`;
+                        
+                        label.appendChild(timeSpan);
+                        label.appendChild(statsSpan);
                         point.appendChild(label);
-                        point.onclick = () => loadSnapshotData(snapshot.snapshot_time);
+                        
+                        point.onclick = function() {
+                            // 移除所有激活状态
+                            document.querySelectorAll('.timeline-point').forEach(p => {
+                                p.classList.remove('active');
+                            });
+                            // 激活当前点
+                            this.classList.add('active');
+                            // 加载数据
+                            loadSnapshotData(snapshot.snapshot_time);
+                        };
                         
                         pointsContainer.appendChild(point);
                     });
