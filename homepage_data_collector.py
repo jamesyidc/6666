@@ -500,3 +500,104 @@ if __name__ == '__main__':
     else:
         # 持续运行
         run_collector()
+
+def parse_txt_content(content):
+    """
+    解析TXT文件内容
+    返回: (summary_data, coin_data_list)
+    """
+    lines = content.split('\n')
+    
+    # 解析汇总数据
+    summary_data = {}
+    
+    for line in lines:
+        if '透明标签_急涨总和' in line:
+            match = re.search(r'急涨：(\d+)', line)
+            if match:
+                summary_data['rise_total'] = int(match.group(1))
+        
+        elif '透明标签_急跌总和' in line:
+            match = re.search(r'急跌：(\d+)', line)
+            if match:
+                summary_data['fall_total'] = int(match.group(1))
+        
+        elif '透明标签_五种状态' in line:
+            match = re.search(r'状态：([^\s]+)', line)
+            if match:
+                summary_data['five_states'] = match.group(1)
+        
+        elif '透明标签_急涨急跌比值' in line:
+            match = re.search(r'比值：([\d.]+)', line)
+            if match:
+                try:
+                    summary_data['rise_fall_ratio'] = float(match.group(1))
+                except:
+                    summary_data['rise_fall_ratio'] = 0.0
+        
+        elif '透明标签_绿色数量' in line:
+            match = re.search(r'=(\d+)', line)
+            if match:
+                summary_data['green_count'] = int(match.group(1))
+        
+        elif '透明标签_百分比' in line:
+            match = re.search(r'=(\d+)%', line)
+            if match:
+                summary_data['green_percent'] = float(match.group(1))
+        
+        elif '透明标签_计次' in line:
+            match = re.search(r'=(\d+)', line)
+            if match:
+                summary_data['count_times'] = int(match.group(1))
+        
+        elif '透明标签_差值结果' in line:
+            match = re.search(r'差值：([-\d.]+)', line)
+            if match:
+                try:
+                    summary_data['diff_result'] = float(match.group(1))
+                except:
+                    summary_data['diff_result'] = 0.0
+    
+    # 设置记录时间为当前时间
+    beijing_tz = pytz.timezone('Asia/Shanghai')
+    beijing_time = datetime.now(beijing_tz)
+    summary_data['record_time'] = beijing_time.strftime('%Y-%m-%d %H:%M:%S')
+    
+    # 解析币种数据
+    coin_data_list = []
+    in_coin_section = False
+    
+    for line in lines:
+        if '[超级列表框_首页开始]' in line:
+            in_coin_section = True
+            continue
+        elif '[超级列表框_首页结束]' in line:
+            break
+        
+        if in_coin_section and '|' in line:
+            parts = line.strip().split('|')
+            if len(parts) >= 14:
+                try:
+                    coin_data = {
+                        'seq_num': int(parts[0]),
+                        'coin_name': parts[1],
+                        'rise_speed': float(parts[2]) if parts[2] else 0.0,
+                        'rise_signal': int(parts[3]) if parts[3] else 0,
+                        'fall_signal': int(parts[4]) if parts[4] else 0,
+                        'record_time': parts[5],
+                        'history_high': float(parts[6]) if parts[6] else 0.0,
+                        'high_time': parts[7],
+                        'drop_from_high': float(parts[8]) if parts[8] else 0.0,
+                        'change_24h': float(parts[9]) if parts[9] else 0.0,
+                        'ranking': int(parts[12]) if parts[12] else 0,
+                        'current_price': float(parts[13]) if parts[13] else 0.0,
+                        'low_ratio': float(parts[14].strip('%')) if len(parts) > 14 and parts[14] else 0.0,
+                        'high_ratio': float(parts[15].strip('%')) if len(parts) > 15 and parts[15] else 0.0,
+                    }
+                    coin_data_list.append(coin_data)
+                except Exception as e:
+                    print(f"解析币种数据失败: {line}, 错误: {e}")
+                    continue
+    
+    return summary_data, coin_data_list
+

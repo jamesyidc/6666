@@ -137,6 +137,58 @@ def panic_monitor():
     response.headers['Expires'] = '0'
     return response
 
+@app.route('/upload')
+def upload_page():
+    """数据上传页面"""
+    response = send_from_directory('.', 'upload_data.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@app.route('/api/upload-data', methods=['POST'])
+def upload_data():
+    """处理上传的txt文件并更新数据库"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'message': '没有上传文件'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': '文件名为空'}), 400
+        
+        if not file.filename.endswith('.txt'):
+            return jsonify({'success': False, 'message': '只支持 .txt 文件'}), 400
+        
+        # 读取文件内容（GBK编码）
+        content = file.read().decode('gbk')
+        
+        # 解析数据
+        from homepage_data_collector import parse_txt_content, save_to_database
+        
+        summary_data, coin_data_list = parse_txt_content(content)
+        
+        if not summary_data:
+            return jsonify({'success': False, 'message': '文件格式错误，无法解析数据'}), 400
+        
+        # 保存到数据库
+        save_to_database(summary_data, coin_data_list)
+        
+        return jsonify({
+            'success': True,
+            'message': f'数据更新成功！急涨: {summary_data["rise_total"]}, 急跌: {summary_data["fall_total"]}',
+            'data': {
+                'rise_total': summary_data['rise_total'],
+                'fall_total': summary_data['fall_total'],
+                'ratio': summary_data['rise_fall_ratio'],
+                'diff': summary_data['diff_result'],
+                'record_time': summary_data['record_time']
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'处理失败: {str(e)}'}), 500
+
 @app.route('/panic-chart')
 def panic_chart():
     """恐慌清洗指标页面（重定向到新版本）"""
