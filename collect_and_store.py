@@ -305,6 +305,37 @@ def parse_and_store_data(content, filename, current_hour):
     conn = sqlite3.connect('crypto_data.db')
     cursor = conn.cursor()
     
+    # ===== 数据验证：检查急涨/急跌是否合理 =====
+    new_rush_up = int(data.get('急涨', 0))
+    new_rush_down = int(data.get('急跌', 0))
+    
+    # 获取最近一条记录
+    cursor.execute("""
+        SELECT rush_up, rush_down, snapshot_time 
+        FROM crypto_snapshots 
+        ORDER BY snapshot_time DESC 
+        LIMIT 1
+    """)
+    last_record = cursor.fetchone()
+    
+    if last_record:
+        last_rush_up, last_rush_down, last_time = last_record
+        
+        # 验证规则：急涨和急跌只能增大或保持不变，不能减小
+        if new_rush_up < last_rush_up or new_rush_down < last_rush_down:
+            print(f"\n⚠️  数据异常检测！")
+            print(f"   上一条记录 ({last_time}): 急涨={last_rush_up}, 急跌={last_rush_down}")
+            print(f"   当前数据: 急涨={new_rush_up}, 急跌={new_rush_down}")
+            
+            if new_rush_up < last_rush_up:
+                print(f"   ❌ 急涨数值减小: {last_rush_up} → {new_rush_up}")
+            if new_rush_down < last_rush_down:
+                print(f"   ❌ 急跌数值减小: {last_rush_down} → {new_rush_down}")
+            
+            print(f"\n🚫 拒绝存储异常数据！")
+            conn.close()
+            return None  # 返回None表示数据被拒绝
+    
     # 插入快照数据
     cursor.execute("""
         INSERT INTO crypto_snapshots (
