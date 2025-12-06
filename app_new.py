@@ -1207,7 +1207,7 @@ def api_panic_latest():
 
 @app.route('/api/stats')
 def api_stats():
-    """统计数据API"""
+    """统计数据API - 包含本轮急涨急跌和恐慌清洗指数"""
     try:
         conn = sqlite3.connect('crypto_data.db')
         cursor = conn.cursor()
@@ -1225,10 +1225,52 @@ def api_stats():
         cursor.execute("SELECT COUNT(DISTINCT snapshot_date) FROM crypto_snapshots")
         data_days = cursor.fetchone()[0]
         
-        # 最后更新时间
-        cursor.execute("SELECT snapshot_time FROM crypto_snapshots ORDER BY snapshot_time DESC LIMIT 1")
-        last_record = cursor.fetchone()
-        last_update_time = last_record[0].split(' ')[1][:5] if last_record else '-'
+        # 获取最新两条记录用于计算本轮差值
+        cursor.execute("""
+            SELECT snapshot_time, rush_up, rush_down, round_rush_up, round_rush_down
+            FROM crypto_snapshots
+            ORDER BY snapshot_time DESC
+            LIMIT 2
+        """)
+        latest_records = cursor.fetchall()
+        
+        last_update_time = '-'
+        current_round_rush_up = 0
+        current_round_rush_down = 0
+        
+        if latest_records and len(latest_records) >= 1:
+            last_update_time = latest_records[0][0].split(' ')[1][:5]
+            current_rush_up = latest_records[0][1]
+            current_rush_down = latest_records[0][2]
+            
+            if len(latest_records) >= 2:
+                prev_rush_up = latest_records[1][1]
+                prev_rush_down = latest_records[1][2]
+                
+                # 本轮急涨 = 当前急涨 - 上一轮急涨
+                current_round_rush_up = current_rush_up - prev_rush_up
+                # 本轮急跌 = 当前急跌 - 上一轮急跌
+                current_round_rush_down = current_rush_down - prev_rush_down
+        
+        # 获取恐慌清洗指数（最新的）
+        cursor.execute("""
+            SELECT panic_indicator, panic_color, trend_rating, market_zone
+            FROM panic_wash_history
+            ORDER BY record_time DESC
+            LIMIT 1
+        """)
+        panic_data = cursor.fetchone()
+        
+        panic_indicator = '-'
+        panic_color = 'gray'
+        panic_trend_rating = 0
+        panic_market_zone = '-'
+        
+        if panic_data:
+            panic_indicator = panic_data[0]
+            panic_color = panic_data[1] if panic_data[1] else 'gray'
+            panic_trend_rating = panic_data[2] if panic_data[2] else 0
+            panic_market_zone = panic_data[3] if panic_data[3] else '-'
         
         conn.close()
         
@@ -1236,7 +1278,13 @@ def api_stats():
             'total_records': total_records,
             'today_records': today_records,
             'data_days': data_days,
-            'last_update_time': last_update_time
+            'last_update_time': last_update_time,
+            'current_round_rush_up': current_round_rush_up,
+            'current_round_rush_down': current_round_rush_down,
+            'panic_indicator': panic_indicator,
+            'panic_color': panic_color,
+            'panic_trend_rating': panic_trend_rating,
+            'panic_market_zone': panic_market_zone
         })
     except Exception as e:
         return jsonify({
@@ -1244,6 +1292,12 @@ def api_stats():
             'today_records': 0,
             'data_days': 0,
             'last_update_time': '-',
+            'current_round_rush_up': 0,
+            'current_round_rush_down': 0,
+            'panic_indicator': '-',
+            'panic_color': 'gray',
+            'panic_trend_rating': 0,
+            'panic_market_zone': '-',
             'error': str(e)
         })
 

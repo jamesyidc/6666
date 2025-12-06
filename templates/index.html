@@ -151,11 +151,37 @@
             margin-bottom: 5px;
         }
         
+        .stat-value.positive {
+            color: #10b981;
+        }
+        
+        .stat-value.negative {
+            color: #ef4444;
+        }
+        
+        .stat-value.panic-green {
+            color: #10b981;
+        }
+        
+        .stat-value.panic-red {
+            color: #ef4444;
+        }
+        
+        .stat-value.panic-yellow {
+            color: #fbbf24;
+        }
+        
         .stat-label {
             font-size: 0.9rem;
             color: rgba(255, 255, 255, 0.6);
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+        
+        .stat-sublabel {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 5px;
         }
         
         @keyframes fadeInDown {
@@ -228,20 +254,24 @@
         
         <div class="stats-bar">
             <div class="stat-item">
-                <div class="stat-value" id="totalRecords">-</div>
-                <div class="stat-label">总数据记录</div>
+                <div class="stat-value" id="roundRushUp">-</div>
+                <div class="stat-label">本轮急涨</div>
+                <div class="stat-sublabel">当前 - 上轮</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="roundRushDown">-</div>
+                <div class="stat-label">本轮急跌</div>
+                <div class="stat-sublabel">当前 - 上轮</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="panicIndicator">-</div>
+                <div class="stat-label">恐慌清洗指数</div>
+                <div class="stat-sublabel" id="panicZone">-</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value" id="todayRecords">-</div>
                 <div class="stat-label">今日采集</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="dataSpan">-</div>
-                <div class="stat-label">数据天数</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="updateTime">-</div>
-                <div class="stat-label">最后更新</div>
+                <div class="stat-sublabel" id="updateTime">更新: -</div>
             </div>
         </div>
         
@@ -256,14 +286,63 @@
         fetch('/api/stats')
             .then(res => res.json())
             .then(data => {
-                document.getElementById('totalRecords').textContent = data.total_records || '0';
+                // 本轮急涨
+                const roundRushUpEl = document.getElementById('roundRushUp');
+                const roundRushUp = data.current_round_rush_up || 0;
+                roundRushUpEl.textContent = roundRushUp >= 0 ? `+${roundRushUp}` : roundRushUp;
+                roundRushUpEl.className = 'stat-value ' + (roundRushUp > 0 ? 'positive' : roundRushUp < 0 ? 'negative' : '');
+                
+                // 本轮急跌
+                const roundRushDownEl = document.getElementById('roundRushDown');
+                const roundRushDown = data.current_round_rush_down || 0;
+                roundRushDownEl.textContent = roundRushDown >= 0 ? `+${roundRushDown}` : roundRushDown;
+                roundRushDownEl.className = 'stat-value ' + (roundRushDown > 0 ? 'negative' : roundRushDown < 0 ? 'positive' : '');
+                
+                // 恐慌清洗指数
+                const panicEl = document.getElementById('panicIndicator');
+                const panicColor = (data.panic_color || 'gray').toLowerCase();
+                panicEl.textContent = data.panic_indicator || '-';
+                panicEl.className = 'stat-value panic-' + (panicColor === '绿' ? 'green' : panicColor === '红' ? 'red' : panicColor === '黄' ? 'yellow' : panicColor);
+                
+                // 恐慌市场区间
+                document.getElementById('panicZone').textContent = data.panic_market_zone || '-';
+                
+                // 今日采集
                 document.getElementById('todayRecords').textContent = data.today_records || '0';
-                document.getElementById('dataSpan').textContent = data.data_days || '0';
-                document.getElementById('updateTime').textContent = data.last_update_time || '-';
+                
+                // 最后更新时间
+                document.getElementById('updateTime').textContent = '更新: ' + (data.last_update_time || '-');
             })
             .catch(err => {
                 console.error('获取统计数据失败:', err);
             });
+        
+        // 每30秒刷新一次
+        setInterval(() => {
+            fetch('/api/stats')
+                .then(res => res.json())
+                .then(data => {
+                    const roundRushUpEl = document.getElementById('roundRushUp');
+                    const roundRushUp = data.current_round_rush_up || 0;
+                    roundRushUpEl.textContent = roundRushUp >= 0 ? `+${roundRushUp}` : roundRushUp;
+                    roundRushUpEl.className = 'stat-value ' + (roundRushUp > 0 ? 'positive' : roundRushUp < 0 ? 'negative' : '');
+                    
+                    const roundRushDownEl = document.getElementById('roundRushDown');
+                    const roundRushDown = data.current_round_rush_down || 0;
+                    roundRushDownEl.textContent = roundRushDown >= 0 ? `+${roundRushDown}` : roundRushDown;
+                    roundRushDownEl.className = 'stat-value ' + (roundRushDown > 0 ? 'negative' : roundRushDown < 0 ? 'positive' : '');
+                    
+                    const panicEl = document.getElementById('panicIndicator');
+                    const panicColor = (data.panic_color || 'gray').toLowerCase();
+                    panicEl.textContent = data.panic_indicator || '-';
+                    panicEl.className = 'stat-value panic-' + (panicColor === '绿' ? 'green' : panicColor === '红' ? 'red' : panicColor === '黄' ? 'yellow' : panicColor);
+                    
+                    document.getElementById('panicZone').textContent = data.panic_market_zone || '-';
+                    document.getElementById('todayRecords').textContent = data.today_records || '0';
+                    document.getElementById('updateTime').textContent = '更新: ' + (data.last_update_time || '-');
+                })
+                .catch(err => console.error('刷新统计数据失败:', err));
+        }, 30000);
     </script>
 </body>
 </html>
