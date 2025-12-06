@@ -748,6 +748,7 @@ MAIN_HTML = """
                         type: 'line',
                         data: data.rush_up || [],
                         smooth: true,
+                        connectNulls: false,  // 不连接null值点，形成断续线
                         lineStyle: {
                             width: 3,
                             color: '#ef4444'
@@ -768,6 +769,7 @@ MAIN_HTML = """
                         type: 'line',
                         data: data.rush_down || [],
                         smooth: true,
+                        connectNulls: false,  // 不连接null值点，形成断续线
                         lineStyle: {
                             width: 3,
                             color: '#10b981'
@@ -788,6 +790,7 @@ MAIN_HTML = """
                         type: 'line',
                         data: data.diff || [],
                         smooth: true,
+                        connectNulls: false,  // 不连接null值点，形成断续线
                         lineStyle: {
                             width: 3,
                             color: '#fbbf24'
@@ -809,6 +812,7 @@ MAIN_HTML = """
                         yAxisIndex: 1,
                         data: data.count || [],
                         smooth: true,
+                        connectNulls: false,  // 不连接null值点，形成断续线
                         lineStyle: {
                             width: 3,
                             color: '#3b7dff'
@@ -1234,8 +1238,10 @@ def api_latest():
 
 @app.route('/api/chart')
 def api_chart():
-    """图表数据API - 返回所有历史数据点用于趋势图"""
+    """图表数据API - 返回24小时完整时间轴的趋势图数据"""
     try:
+        from datetime import datetime, timedelta
+        
         conn = sqlite3.connect('crypto_data.db')
         cursor = conn.cursor()
         
@@ -1253,21 +1259,76 @@ def api_chart():
         if not data:
             return jsonify({'error': '无数据'})
         
-        # 格式化时间标签：短格式（月-日 时:分）
-        times = []
+        # 将数据库中的数据转换为datetime对象
+        data_points = []
         for row in data:
-            dt_str = row[0]  # 例如：'2025-12-05 14:27:33'
-            # 提取月-日 时:分
-            parts = dt_str.split(' ')
-            date_parts = parts[0].split('-')  # ['2025', '12', '05']
-            time_parts = parts[1].split(':')  # ['14', '27', '33']
-            formatted_time = f"{date_parts[1]}-{date_parts[2]} {time_parts[0]}:{time_parts[1]}"
-            times.append(formatted_time)
+            dt = datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S')
+            data_points.append({
+                'time': dt,
+                'rush_up': row[1],
+                'rush_down': row[2],
+                'diff': row[3],
+                'count': row[4]
+            })
         
-        rush_up = [row[1] for row in data]
-        rush_down = [row[2] for row in data]
-        diff = [row[3] for row in data]
-        count = [row[4] for row in data]
+        # 找到最早和最晚的数据点
+        earliest = min(dp['time'] for dp in data_points)
+        latest = max(dp['time'] for dp in data_points)
+        
+        # 生成24小时完整时间轴（从最早数据点往前1小时开始，到最晚数据点往后1小时结束，确保至少24小时）
+        start_time = earliest.replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
+        end_time = latest.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+        
+        # 确保至少跨越24小时
+        if (end_time - start_time).total_seconds() < 24 * 3600:
+            # 如果数据范围小于24小时，以最晚数据点为基准，向前扩展24小时
+            end_time = latest.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            start_time = end_time - timedelta(hours=24)
+        
+        # 生成每小时的时间点
+        time_slots = []
+        current = start_time
+        while current <= end_time:
+            time_slots.append(current)
+            current += timedelta(hours=1)
+        
+        # 准备数据映射：将实际数据映射到最近的时间槽
+        times = []
+        rush_up = []
+        rush_down = []
+        diff = []
+        count = []
+        
+        # 对于每个时间槽，找到最近的数据点
+        for slot_time in time_slots:
+            # 格式化时间标签
+            formatted_time = slot_time.strftime('%m-%d %H:00')
+            times.append(formatted_time)
+            
+            # 查找该时间槽内的数据点（容差：±30分钟）
+            found_data = None
+            min_diff = float('inf')
+            
+            for dp in data_points:
+                time_diff = abs((dp['time'] - slot_time).total_seconds())
+                # 如果在该小时内（±30分钟范围），选择最近的数据点
+                if time_diff < 1800:  # 30分钟 = 1800秒
+                    if time_diff < min_diff:
+                        min_diff = time_diff
+                        found_data = dp
+            
+            # 如果找到数据，使用实际值；否则使用null（前端会跳过连线）
+            if found_data:
+                rush_up.append(found_data['rush_up'])
+                rush_down.append(found_data['rush_down'])
+                diff.append(found_data['diff'])
+                count.append(found_data['count'])
+            else:
+                # 使用null而不是0，让图表不连线
+                rush_up.append(None)
+                rush_down.append(None)
+                diff.append(None)
+                count.append(None)
         
         return jsonify({
             'times': times,
