@@ -168,6 +168,93 @@ MAIN_HTML = """
             font-size: 13px;
         }
         
+        /* 时间轴容器 */
+        .timeline-container {
+            background: #2a2d47;
+            padding: 15px 20px;
+            border-bottom: 1px solid #3a3d5c;
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .timeline-title {
+            color: #8b92b8;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .timeline-info {
+            color: #3b7dff;
+            font-size: 12px;
+        }
+        
+        .timeline-track {
+            position: relative;
+            height: 40px;
+            margin: 10px 0;
+        }
+        
+        .timeline-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #3a3d5c;
+            transform: translateY(-50%);
+        }
+        
+        .timeline-points {
+            position: relative;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .timeline-point {
+            position: relative;
+            width: 12px;
+            height: 12px;
+            background: #3b7dff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 2;
+        }
+        
+        .timeline-point:hover {
+            width: 16px;
+            height: 16px;
+            background: #2563eb;
+            box-shadow: 0 0 10px rgba(59, 125, 255, 0.5);
+        }
+        
+        .timeline-point.active {
+            background: #10b981;
+            width: 16px;
+            height: 16px;
+        }
+        
+        .timeline-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #8b92b8;
+            font-size: 10px;
+            white-space: nowrap;
+        }
+        
+        .timeline-point:hover .timeline-label {
+            color: #fff;
+        }
+        
         /* 图表区域 */
         .chart-section {
             background: #2a2d47;
@@ -365,6 +452,18 @@ MAIN_HTML = """
             <button class="control-btn" onclick="queryData()">🔍 查询</button>
             <button class="control-btn secondary" onclick="loadToday()">📊 今天</button>
             <button class="control-btn secondary" onclick="loadLatest()">📡 立即加载</button>
+        </div>
+        
+        <!-- 时间轴 -->
+        <div class="timeline-container">
+            <div class="timeline-header">
+                <span class="timeline-title">历史数据时间轴</span>
+                <span class="timeline-info" id="timelineInfo">加载中...</span>
+            </div>
+            <div class="timeline-track">
+                <div class="timeline-line"></div>
+                <div id="timelinePoints" class="timeline-points"></div>
+            </div>
         </div>
         
         <!-- 主要统计栏 -->
@@ -710,8 +809,70 @@ MAIN_HTML = """
         }
         
         // 页面加载时自动加载最新数据
+        // 加载时间轴数据
+        function loadTimeline() {
+            fetch('/api/timeline')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('timelineInfo').textContent = data.error;
+                        return;
+                    }
+                    
+                    document.getElementById('timelineInfo').textContent = 
+                        `共 ${data.snapshots.length} 个数据点`;
+                    
+                    const pointsContainer = document.getElementById('timelinePoints');
+                    pointsContainer.innerHTML = '';
+                    
+                    data.snapshots.forEach((snapshot, index) => {
+                        const point = document.createElement('div');
+                        point.className = 'timeline-point';
+                        if (index === data.snapshots.length - 1) {
+                            point.classList.add('active');
+                        }
+                        
+                        const label = document.createElement('div');
+                        label.className = 'timeline-label';
+                        const time = snapshot.snapshot_time.split(' ')[1].substring(0, 5);
+                        label.textContent = time;
+                        
+                        point.appendChild(label);
+                        point.onclick = () => loadSnapshotData(snapshot.snapshot_time);
+                        
+                        pointsContainer.appendChild(point);
+                    });
+                })
+                .catch(error => {
+                    console.error('加载时间轴失败:', error);
+                    document.getElementById('timelineInfo').textContent = '加载失败';
+                });
+        }
+        
+        // 加载指定快照的数据
+        function loadSnapshotData(snapshotTime) {
+            fetch('/api/query?time=' + encodeURIComponent(snapshotTime))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    updateUI(data);
+                    updateChart(data);
+                    
+                    // 更新时间轴激活状态
+                    document.querySelectorAll('.timeline-point').forEach(point => {
+                        point.classList.remove('active');
+                    });
+                    event.target.classList.add('active');
+                })
+                .catch(error => console.error('加载数据失败:', error));
+        }
+        
         window.onload = function() {
             loadLatest();
+            loadTimeline();
         };
         
         // 响应式调整
@@ -934,6 +1095,41 @@ def api_chart():
             'rush_down': rush_down,
             'diff': diff,
             'count': count
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/api/timeline')
+def api_timeline():
+    """获取所有历史数据点API"""
+    try:
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, snapshot_time, rush_up, rush_down, diff, count, status
+            FROM crypto_snapshots
+            ORDER BY snapshot_time ASC
+        """)
+        
+        snapshots = []
+        for row in cursor.fetchall():
+            snapshots.append({
+                'id': row[0],
+                'snapshot_time': row[1],
+                'rush_up': row[2],
+                'rush_down': row[3],
+                'diff': row[4],
+                'count': row[5],
+                'status': row[6]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'snapshots': snapshots,
+            'total': len(snapshots)
         })
     
     except Exception as e:
