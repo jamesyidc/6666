@@ -621,7 +621,7 @@ MAIN_HTML = """
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>🎯操作</th>
+                        <th>优先级</th>
                         <th>序号</th>
                         <th>币名</th>
                         <th>涨跌</th>
@@ -637,12 +637,11 @@ MAIN_HTML = """
                         <th>当前价格</th>
                         <th>最高占比</th>
                         <th>最低占比</th>
-                        <th>优先级</th>
                     </tr>
                 </thead>
                 <tbody id="dataTableBody">
                     <tr>
-                        <td colspan="17" class="loading">正在加载数据...</td>
+                        <td colspan="16" class="loading">正在加载数据...</td>
                     </tr>
                 </tbody>
             </table>
@@ -923,7 +922,7 @@ MAIN_HTML = """
                     const rushDownTag = coin.rush_down > 0 ? '<span class="status-tag fall">' + coin.rush_down + '</span>' : coin.rush_down;
                     
                     html += '<tr>';
-                    html += '<td><button class="action-btn">管理</button></td>';
+                    html += '<td class="' + priorityClass + '">' + coin.priority + '</td>';
                     html += '<td>' + (idx + 1) + '</td>';
                     html += '<td class="coin-symbol">' + coin.symbol + '</td>';
                     html += '<td class="' + changeClass + '">' + coin.change.toFixed(2) + '</td>';
@@ -939,12 +938,11 @@ MAIN_HTML = """
                     html += '<td>' + coin.current_price.toFixed(4) + '</td>';
                     html += '<td>' + coin.ratio1 + '</td>';
                     html += '<td>' + coin.ratio2 + '</td>';
-                    html += '<td class="' + priorityClass + '">' + coin.priority + '</td>';
                     html += '</tr>';
                 });
                 tbody.innerHTML = html;
             } else {
-                tbody.innerHTML = '<tr><td colspan="17" class="loading">暂无数据</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="16" class="loading">暂无数据</td></tr>';
             }
         }
         
