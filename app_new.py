@@ -173,7 +173,7 @@ MAIN_HTML = """
             background: #2a2d47;
             padding: 15px 20px;
             border-top: 1px solid #3a3d5c;
-            max-height: 400px;
+            max-height: 500px;  /* 增加高度以显示更多信息 */
             overflow-y: auto;
         }
         
@@ -221,18 +221,19 @@ MAIN_HTML = """
         .timeline-points {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;  /* 增加间距以容纳更多信息 */
         }
         
         /* 时间点项 */
         .timeline-point {
             position: relative;
             display: flex;
-            align-items: center;
+            align-items: flex-start;  /* 改为顶部对齐，适应多行内容 */
             cursor: pointer;
-            padding: 8px 12px;
+            padding: 10px 12px;  /* 增加padding */
             border-radius: 4px;
             transition: all 0.3s;
+            min-height: 80px;  /* 最小高度确保显示多行信息 */
         }
         
         .timeline-point:hover {
@@ -294,7 +295,16 @@ MAIN_HTML = """
         
         .timeline-label-stats {
             font-size: 11px;
-            opacity: 0.8;
+            opacity: 0.85;
+            line-height: 1.5;
+            color: #a0aec0;
+            max-width: 600px;  /* 限制最大宽度 */
+        }
+        
+        .timeline-label-stats div {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         /* 图表区域 */
@@ -891,10 +901,24 @@ MAIN_HTML = """
                         timeSpan.className = 'timeline-label-time';
                         timeSpan.textContent = snapshot.snapshot_time;
                         
-                        // 统计信息显示
+                        // 统计信息显示 - 显示所有关键字段
                         const statsSpan = document.createElement('div');
                         statsSpan.className = 'timeline-label-stats';
-                        statsSpan.textContent = `急涨:${snapshot.rush_up} 急跌:${snapshot.rush_down} 计次:${snapshot.count}`;
+                        
+                        // 第一行：急涨、急跌、计次、得分
+                        const line1 = `急涨:${snapshot.rush_up} 急跌:${snapshot.rush_down} 计次:${snapshot.count} ${snapshot.count_score_display || ''}`;
+                        
+                        // 第二行：状态、比值、差值
+                        const line2 = `状态:${snapshot.status || ''} 比值:${snapshot.ratio || 0} 差值:${snapshot.diff}`;
+                        
+                        // 第三行：本轮、比价、24h
+                        const line3 = `本轮急涨:${snapshot.round_rush_up || 0} 本轮急跌:${snapshot.round_rush_down || 0} 24h涨≥10%:${snapshot.rise_24h_count || 0} 24h跌≤-10%:${snapshot.fall_24h_count || 0}`;
+                        
+                        statsSpan.innerHTML = `
+                            <div style="margin-bottom: 2px;">${line1}</div>
+                            <div style="margin-bottom: 2px;">${line2}</div>
+                            <div>${line3}</div>
+                        `;
                         
                         label.appendChild(timeSpan);
                         label.appendChild(statsSpan);
@@ -1175,13 +1199,22 @@ def api_chart():
 
 @app.route('/api/timeline')
 def api_timeline():
-    """获取所有历史数据点API"""
+    """获取所有历史数据点API - 返回完整的统计数据"""
     try:
         conn = sqlite3.connect('crypto_data.db')
         cursor = conn.cursor()
         
+        # 查询所有字段
         cursor.execute("""
-            SELECT id, snapshot_time, rush_up, rush_down, diff, count, status
+            SELECT 
+                id, snapshot_time, snapshot_date,
+                rush_up, rush_down, diff, count, ratio, status,
+                round_rush_up, round_rush_down,
+                price_lowest, price_newhigh, ratio_diff,
+                init_rush_up, init_rush_down,
+                count_score_display, count_score_type,
+                rise_24h_count, fall_24h_count,
+                green_count, percentage, filename
             FROM crypto_snapshots
             ORDER BY snapshot_time ASC
         """)
@@ -1191,11 +1224,34 @@ def api_timeline():
             snapshots.append({
                 'id': row[0],
                 'snapshot_time': row[1],
-                'rush_up': row[2],
-                'rush_down': row[3],
-                'diff': row[4],
-                'count': row[5],
-                'status': row[6]
+                'snapshot_date': row[2],
+                # 主要统计
+                'rush_up': row[3],
+                'rush_down': row[4],
+                'diff': row[5],
+                'count': row[6],
+                'ratio': row[7],
+                'status': row[8],
+                # 本轮数据
+                'round_rush_up': row[9],
+                'round_rush_down': row[10],
+                # 比价数据
+                'price_lowest': row[11],
+                'price_newhigh': row[12],
+                'ratio_diff': row[13],
+                # 初始数据
+                'init_rush_up': row[14],
+                'init_rush_down': row[15],
+                # 计次得分
+                'count_score_display': row[16],
+                'count_score_type': row[17],
+                # 24小时涨跌
+                'rise_24h_count': row[18],
+                'fall_24h_count': row[19],
+                # 其他
+                'green_count': row[20],
+                'percentage': row[21],
+                'filename': row[22]
             })
         
         conn.close()
