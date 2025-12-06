@@ -12,6 +12,7 @@ import time
 import json
 from datetime import datetime, timedelta
 import logging
+import pytz
 
 # 配置日志
 logging.basicConfig(
@@ -96,11 +97,17 @@ class SignalCollector:
             signals_resp = requests.get(signals_url, params=params, timeout=30)
             signals_data = signals_resp.json()
             
-            # 3. 统计做多做空信号
+            # 3. 统计做多做空信号（优先使用summary数据）
             long_signals = 0
             short_signals = 0
             
-            if signals_data.get('data'):
+            if signals_data.get('summary'):
+                # 直接从summary获取统计数据
+                summary = signals_data['summary']
+                long_signals = summary.get('long', 0)
+                short_signals = summary.get('short', 0)
+            elif signals_data.get('data'):
+                # 如果没有summary，则遍历data数组统计
                 for signal in signals_data['data']:
                     signal_type = signal.get('signal_type', '').lower()
                     if 'long' in signal_type or '做多' in signal_type:
@@ -131,12 +138,14 @@ class SignalCollector:
             return None
     
     def save_signal(self, signal_data):
-        """保存信号数据到数据库"""
+        """保存信号数据到数据库（使用北京时间）"""
         if not signal_data:
             return False
         
         try:
-            now = datetime.now()
+            # 使用北京时间
+            beijing_tz = pytz.timezone('Asia/Shanghai')
+            now = datetime.now(beijing_tz)
             record_time = now.strftime('%Y-%m-%d %H:%M:%S')
             record_date = now.strftime('%Y-%m-%d')
             
