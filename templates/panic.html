@@ -221,19 +221,19 @@
                     document.getElementById('loadingState').style.display = 'none';
                     document.getElementById('dataContent').style.display = 'grid';
                     
-                    // 更新恐慌指数
-                    document.getElementById('panicValue').textContent = data.panic_index || '--';
+                    // 更新恐慌清洗指数
+                    document.getElementById('panicValue').textContent = data.panic_index ? data.panic_index.toFixed(2) + '%' : '--';
                     document.getElementById('panicLevel').textContent = data.panic_level || '未知';
                     document.getElementById('panicTime').textContent = '更新时间: ' + (data.record_time || '--');
                     
-                    // 更新清洗指数
-                    document.getElementById('washValue').textContent = data.wash_score || '--';
-                    document.getElementById('washLevel').textContent = data.wash_level || '未知';
+                    // 更新市场数据
+                    document.getElementById('washValue').textContent = data.market_zone || '--';
+                    document.getElementById('washLevel').textContent = `24h爆仓: ${data.hour_24_people}万人 | 全网持仓: ${data.total_position}亿美元`;
                     document.getElementById('washTime').textContent = '更新时间: ' + (data.record_time || '--');
                     
                     // 设置颜色
-                    setLevelColor('panic', data.panic_level);
-                    setLevelColor('wash', data.wash_level);
+                    setLevelColor('panic', data.level_color || 'gray');
+                    setLevelColor('wash', data.level_color || 'gray');
                 } else {
                     showError('暂无数据');
                 }
@@ -244,9 +244,11 @@
         }
         
         // 设置等级颜色
-        function setLevelColor(type, level) {
+        function setLevelColor(type, color) {
             const valueEl = document.getElementById(type + 'Value');
             const levelEl = document.getElementById(type + 'Level');
+            
+            if (!valueEl || !levelEl) return;
             
             // 移除所有颜色类
             const colorClasses = ['color-extreme-fear', 'color-fear', 'color-neutral', 'color-greed', 'color-extreme-greed'];
@@ -255,22 +257,16 @@
             valueEl.classList.remove(...colorClasses);
             levelEl.classList.remove(...levelClasses);
             
-            // 根据等级添加颜色
-            if (level && level.includes('极度恐慌')) {
-                valueEl.classList.add('color-extreme-fear');
-                levelEl.classList.add('level-extreme-fear');
-            } else if (level && level.includes('恐慌')) {
-                valueEl.classList.add('color-fear');
-                levelEl.classList.add('level-fear');
-            } else if (level && level.includes('中性')) {
-                valueEl.classList.add('color-neutral');
-                levelEl.classList.add('level-neutral');
-            } else if (level && level.includes('贪婪') && !level.includes('极度')) {
+            // 根据颜色添加样式
+            if (color === 'green') {
                 valueEl.classList.add('color-greed');
                 levelEl.classList.add('level-greed');
-            } else if (level && level.includes('极度贪婪')) {
-                valueEl.classList.add('color-extreme-greed');
-                levelEl.classList.add('level-extreme-greed');
+            } else if (color === 'yellow') {
+                valueEl.classList.add('color-neutral');
+                levelEl.classList.add('level-neutral');
+            } else if (color === 'red') {
+                valueEl.classList.add('color-extreme-fear');
+                levelEl.classList.add('level-extreme-fear');
             }
         }
         

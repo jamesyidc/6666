@@ -1175,13 +1175,15 @@ def panic_page():
 
 @app.route('/api/panic/latest')
 def api_panic_latest():
-    """恐慌指数最新数据API"""
+    """恐慌清洗指数最新数据API"""
     try:
         conn = sqlite3.connect('crypto_data.db')
         cursor = conn.cursor()
         
+        # 使用新的 panic_wash_index 表
         cursor.execute('''
-            SELECT * FROM panic_wash_new 
+            SELECT record_time, panic_index, hour_24_people, total_position
+            FROM panic_wash_index 
             ORDER BY record_time DESC 
             LIMIT 1
         ''')
@@ -1190,14 +1192,31 @@ def api_panic_latest():
         conn.close()
         
         if row:
+            panic_index = row[1]  # 百分比
+            people_wan = round(row[2] / 10000, 2)  # 万人
+            position_yi = round(row[3] / 100000000, 2)  # 亿美元
+            
+            # 根据恐慌指数确定等级
+            if panic_index < 2:
+                panic_level = '低恐慌'
+                level_color = 'green'
+            elif panic_index < 5:
+                panic_level = '中度恐慌'
+                level_color = 'yellow'
+            else:
+                panic_level = '高度恐慌'
+                level_color = 'red'
+            
             return jsonify({
                 'success': True,
                 'data': {
-                    'record_time': row[1],
-                    'panic_index': row[2],
-                    'panic_level': row[3],
-                    'wash_score': row[4],
-                    'wash_level': row[5]
+                    'record_time': row[0],
+                    'panic_index': panic_index,
+                    'panic_level': panic_level,
+                    'level_color': level_color,
+                    'hour_24_people': people_wan,
+                    'total_position': position_yi,
+                    'market_zone': f'{people_wan}万人/{position_yi}亿美元'
                 }
             })
         else:
