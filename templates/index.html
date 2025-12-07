@@ -628,6 +628,23 @@
                 console.error('获取星星系统数据失败:', err);
             });
         
+        // 加载价格对比系统数据
+        fetch('/api/price-comparison/breakthrough-stats')
+            .then(res => res.json())
+            .then(response => {
+                if (response.success && response.data) {
+                    const priceHighEl = document.getElementById('price-high');
+                    if (priceHighEl) {
+                        // 显示3天创新高数据
+                        const threeDaysHigh = response.data.three_days.new_high || 0;
+                        priceHighEl.textContent = threeDaysHigh;
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('获取价格对比系统数据失败:', err);
+            });
+        
         // 加载监控状态数据
         fetch('/api/monitor/status')
             .then(res => res.json())
