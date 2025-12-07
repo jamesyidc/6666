@@ -1,324 +1,250 @@
-# 自动采集功能完成总结
+# 🎉 项目完成总结
 
-## ✅ 任务完成
+## 🌐 访问地址（使用路径后缀，非端口号）
 
-根据要求"**把自动从Google Drive获取数据的功能加上去**"，现已完成全部实现。
+### **基础URL：**
+https://5000-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai
 
----
-
-## 📦 交付内容
-
-### 1. 核心程序
-
-#### auto_gdrive_collector_v2.py
-- **功能**: 自动从 Google Drive 采集最新数据
-- **技术**: 使用 Playwright 浏览器自动化
-- **频率**: 每10分钟自动采集一次（可配置）
-- **运行方式**: 后台守护进程
-- **状态**: ✅ 已启动并运行中 (PID: 20775)
-
-### 2. 管理脚本
-
-| 脚本 | 功能 | 状态 |
-|------|------|------|
-| `start_collector.sh` | 启动采集器 | ✅ 测试通过 |
-| `stop_collector.sh` | 停止采集器 | ✅ 测试通过 |
-| `status_collector.sh` | 查看状态 | ✅ 测试通过 |
-
-### 3. 配置文件
-
-- **gdrive-collector.service**: systemd 服务配置
-- **AUTO_COLLECTOR_README.md**: 完整使用文档
+### **各页面访问：**
+- 🏠 **首页：** https://5000-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai/
+- 📊 **数据看板：** https://5000-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai/dashboard
+- 📖 **API文档：** https://5000-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai/api/docs
+- ℹ️ **关于系统：** https://5000-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai/about
 
 ---
 
-## 🎯 功能特性
+## ✅ 已完成的功能
 
-### ✨ 自动采集
-- ✅ **自动获取最新文件** - 从 Google Drive 读取
-- ✅ **定时执行** - 每10分钟一次
-- ✅ **后台运行** - 不影响其他服务
-- ✅ **自动保存** - 直接写入数据库
+### 1. ✅ 按日期+时间查询历史数据
+- 在 `/dashboard` 页面选择日期和时间
+- 无需设置开始/结束时间
+- 支持多种格式
+- 显示完整的币种信息和优先级
 
-### 🔧 技术优势
-- ✅ **Playwright 浏览器自动化** - 绕过 API 限制
-- ✅ **突破50条限制** - 获取所有文件
-- ✅ **实时获取最新数据** - 不受缓存限制
-- ✅ **自动错误恢复** - 失败自动重试
+### 2. ✅ 4指标曲线图
+- **急涨**（红色实线）
+- **急跌**（绿色实线）
+- **差值**（橙色虚线）
+- **计次**（蓝色实线，右Y轴）
 
-### 📊 数据处理
-- ✅ **解析关键指标** - 急涨、急跌、比值、差值
-- ✅ **保存币种详情** - 29个币种的完整数据
-- ✅ **数据库存储** - SQLite 持久化
-- ✅ **时间戳记录** - 精确到秒
-
-### 🛠️ 运维管理
-- ✅ **简单启停** - 一键启动/停止
-- ✅ **状态监控** - 实时查看运行状态
-- ✅ **日志记录** - 完整的操作日志
-- ✅ **优雅退出** - Ctrl+C 安全停止
+### 3. ✅ 优先级自动计算
+按照您的规则完美实现：
+- 等级1: 最高占比>90%, 最低占比>120%
+- 等级2: 最高占比>80%, 最低占比>120%
+- 等级3: 最高占比>90%, 最低占比>110%
+- 等级4: 最高占比>70%, 最低占比>120%
+- 等级5: 最高占比>80%, 最低占比>110%
+- 等级6: 其他情况
 
 ---
 
-## 📈 测试结果
+## 🎨 界面特点
 
-### 启动测试
-```bash
-$ ./start_collector.sh
-🚀 启动 Google Drive 自动采集器...
-✓ 采集器已启动 (PID: 20775)
-```
-
-### 采集测试
-```
-✓ 成功获取最新文件: 2025-12-06_0819.txt
-✓ 正确解析数据: 急涨=0, 急跌=22, 比值=999, 差值=-22
-✓ 成功保存到数据库: ID=75, 29个币种
-✓ 定时任务运行正常: 每10分钟采集一次
-```
-
-### 状态测试
-```bash
-$ ./status_collector.sh
-✓ 采集器正在运行 (PID: 20775)
-总记录数: 73
-今日记录数: 54
-最新记录: ID=75, 急涨=0, 急跌=22, 比值=999.0, 差值=-22.0
-```
+### ✅ 完全仿照您的截图设计
+1. **深色主题** - 专业的暗色背景
+2. **表格布局** - 15列完整数据
+3. **颜色标记** - 红色上涨，绿色下跌
+4. **优先级颜色** - 等级1-6不同颜色
+5. **趋势图表** - ECharts专业图表
+6. **状态栏** - 显示所有关键指标
 
 ---
 
-## 🚀 使用方法
+## 🔗 使用路径后缀的优势
+
+### ❌ 之前（多端口方案）：
+```
+https://5000-xxx.sandbox.ai  - 首页
+https://8080-xxx.sandbox.ai  - 看板
+https://8888-xxx.sandbox.ai  - 查询
+```
+**问题：** 多个URL，易混淆，端口冲突，不安全
+
+### ✅ 现在（路径后缀方案）：
+```
+https://5000-xxx.sandbox.ai/           - 首页
+https://5000-xxx.sandbox.ai/dashboard  - 看板
+https://5000-xxx.sandbox.ai/query      - 查询
+https://5000-xxx.sandbox.ai/about      - 关于
+https://5000-xxx.sandbox.ai/api/docs   - 文档
+```
+**优势：**
+1. ✅ 统一域名，易记忆
+2. ✅ 只用一个端口，无冲突
+3. ✅ 专业的RESTful设计
+4. ✅ 更安全（防火墙友好）
+5. ✅ 易扩展（新功能只需加路径）
+
+---
+
+## 📁 新增文件
+
+### 主应用文件
+- **app.py** - 统一的Web应用
+  - 集成所有页面和API
+  - 使用路径后缀区分功能
+  - 单端口(5000)运行
+
+### 查询和采集脚本
+- **query_history.py** - 命令行历史查询和图表生成
+- **collect_and_store.py** - 数据采集和存储（带优先级）
+- **collect_with_score.py** - 快速查看（带计次得分）
+- **test_count_score.py** - 计次得分测试
+
+### 文档文件
+- **URL_GUIDE.md** - URL访问指南
+- **QUERY_GUIDE.md** - 查询功能使用指南
+- **FEATURE_SUMMARY.md** - 功能实现总结
+- **WEB_GUIDE.md** - Web界面使用指南
+
+---
+
+## 🔗 Git提交记录
+
+**最新提交：** 8eb49c5
+- 标题：feat: unified web app using URL paths instead of ports
+- 说明：创建统一Web应用，使用路径后缀代替多端口
+- 分支：genspark_ai_developer
+- 状态：已推送
+
+**Pull Request：** https://github.com/jamesyidc/6666/pull/1
+- 包含所有功能实现
+- 已更新到最新提交
+
+---
+
+## 📊 数据看板功能清单
+
+### 表格列（15列）
+1. 序号
+2. 币名
+3. 涨跌（红色/绿色标记）
+4. 急涨
+5. 急跌
+6. 更新时间
+7. 历史高点
+8. 高点时间
+9. 跌幅
+10. 24h%
+11. 排行
+12. 当前价格
+13. 最高占比
+14. 最低占比
+15. **优先级**（颜色标记）
+
+### 状态栏指标
+- 运算时间
+- 急涨数量
+- 急跌数量
+- 市场状态
+- 比值
+- 差值
+- 计次
+
+### 交互功能
+- 日期选择器
+- 时间选择器
+- 查询按钮
+- 最新数据按钮
+
+---
+
+## 🎯 API接口
+
+### 可用接口
+1. `GET /api/query?time=YYYY-MM-DD HH:MM` - 查询指定时间
+2. `GET /api/latest` - 获取最新数据
+3. `GET /api/chart?date=YYYY-MM-DD` - 获取图表数据
+
+### 返回数据
+- 快照时间
+- 急涨/急跌/差值/计次
+- 比值和状态
+- 完整币种列表（带优先级）
+
+---
+
+## 📖 使用流程
 
 ### 快速开始
+1. 打开首页：https://5000-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai/
+2. 点击"进入数据看板"
+3. 点击"最新数据"按钮
+4. 查看表格和趋势图
 
-```bash
-# 1. 启动采集器
-./start_collector.sh
+### 查询历史
+1. 在看板页面选择日期
+2. 选择时间
+3. 点击"查询"按钮
+4. 查看该时间点的数据
 
-# 2. 查看状态
-./status_collector.sh
-
-# 3. 查看日志
-tail -f logs/collector.log
-
-# 4. 停止采集器
-./stop_collector.sh
-```
-
-### 高级用法
-
-```bash
-# 测试模式（执行一次）
-python3 auto_gdrive_collector_v2.py --once
-
-# 查看数据库状态
-python3 auto_gdrive_collector_v2.py --status
-
-# 使用 systemd 管理
-sudo cp gdrive-collector.service /etc/systemd/system/
-sudo systemctl start gdrive-collector
-sudo systemctl enable gdrive-collector
-```
+### 查看优先级
+1. 表格最后一列显示优先级
+2. 红色和橙色是高优先级
+3. 自动根据最高占比和最低占比计算
 
 ---
 
-## 📊 当前运行状态
+## 🚀 技术架构
 
-### 采集器状态
-- **运行状态**: ✅ 正在运行
-- **进程 ID**: 20775
-- **运行时间**: 正常
-- **下次采集**: 自动（每10分钟）
+### 后端
+- Python 3 + Flask
+- SQLite数据库
+- RESTful API设计
 
-### 数据库状态
-- **总记录数**: 73条
-- **今日记录数**: 54条
-- **最新数据**: 
-  - ID: 75
-  - 急涨: 0
-  - 急跌: 22
-  - 比值: 999.0
-  - 差值: -22.0
-  - 时间: 2025-12-06 09:40:02
+### 前端
+- HTML5 + CSS3
+- JavaScript (原生)
+- ECharts图表库
+
+### 数据采集
+- Playwright自动化
+- Google Drive数据源
 
 ---
 
-## 🔗 相关链接
+## 📝 文档完整性
 
-### 文档
-- **使用文档**: [AUTO_COLLECTOR_README.md](AUTO_COLLECTOR_README.md)
-- **Playwright读取器**: [panic_wash_reader_v5_README.md](panic_wash_reader_v5_README.md)
-- **项目总结**: [TASK_SUMMARY.md](TASK_SUMMARY.md)
-
-### 访问地址
-- **实时监控页面**: https://5001-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai/live-data
-- **API接口**: https://5001-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai/api/homepage/latest
-- **GitHub仓库**: https://github.com/jamesyidc/6666.git
+✅ 所有功能都有详细文档：
+- URL_GUIDE.md - URL访问说明
+- QUERY_GUIDE.md - 查询功能指南
+- WEB_GUIDE.md - Web使用指南
+- FEATURE_SUMMARY.md - 功能总结
+- FINAL_SUMMARY.md - 最终总结（本文件）
 
 ---
 
-## 📁 项目文件结构
+## 🎉 项目亮点
 
-```
-/home/user/webapp/
-├── auto_gdrive_collector_v2.py    # 自动采集主程序 ⭐
-├── panic_wash_reader_v5.py        # Playwright数据读取器
-├── start_collector.sh             # 启动脚本 ⭐
-├── stop_collector.sh              # 停止脚本 ⭐
-├── status_collector.sh            # 状态查看脚本 ⭐
-├── gdrive-collector.service       # systemd服务配置
-├── AUTO_COLLECTOR_README.md       # 自动采集器文档
-├── panic_wash_reader_v5_README.md # Playwright读取器文档
-├── TASK_SUMMARY.md                # 任务总结
-├── FINAL_SUMMARY.md               # 最终总结（本文件）
-├── logs/
-│   ├── collector.log              # 运行日志
-│   ├── collector_error.log        # 错误日志
-│   └── collector.pid              # 进程ID
-├── homepage_data.db               # 数据库
-└── crypto_server_demo.py          # Flask API服务器
-```
+1. ✅ **完全按需求实现** - 三大核心功能100%完成
+2. ✅ **仿照截图设计** - 界面风格完全一致
+3. ✅ **使用路径后缀** - 更安全、更专业
+4. ✅ **优先级自动计算** - 完全按规则实现
+5. ✅ **文档齐全** - 5份详细文档
+6. ✅ **代码已提交** - 全部推送到GitHub
 
 ---
 
-## ✨ 技术架构
+## 🔗 重要链接汇总
 
-```
-┌─────────────────────────────────────────────────────────┐
-│              自动采集系统架构                            │
-└─────────────────────────────────────────────────────────┘
-
-        ┌──────────────────────┐
-        │  auto_gdrive_        │
-        │  collector_v2.py     │  ← 每10分钟自动执行
-        │  (定时任务)          │
-        └──────────┬───────────┘
-                   │
-                   ↓ 调用
-        ┌──────────────────────┐
-        │ panic_wash_          │
-        │ reader_v5.py         │  ← Playwright浏览器
-        │ (数据读取器)         │
-        └──────────┬───────────┘
-                   │
-                   ↓ 访问
-        ┌──────────────────────┐
-        │   Google Drive       │
-        │   文件夹             │  ← 最新txt文件
-        │ (数据源)             │
-        └──────────┬───────────┘
-                   │
-                   ↓ 解析保存
-        ┌──────────────────────┐
-        │  homepage_data.db    │
-        │  (SQLite数据库)      │  ← 持久化存储
-        │                      │
-        │  • summary_data      │     汇总数据
-        │  • coin_details      │     币种详情
-        └──────────┬───────────┘
-                   │
-                   ↓ 读取
-        ┌──────────────────────┐
-        │ crypto_server_       │
-        │ demo.py              │  ← Flask API
-        │ (Web服务器)          │
-        └──────────┬───────────┘
-                   │
-                   ↓ 提供服务
-        ┌──────────────────────┐
-        │   实时监控页面       │
-        │   /live-data         │  ← 用户访问
-        └──────────────────────┘
-```
+| 资源 | 链接 |
+|------|------|
+| **系统首页** | https://5000-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai/ |
+| **数据看板** | https://5000-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai/dashboard |
+| **API文档** | https://5000-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai/api/docs |
+| **GitHub仓库** | https://github.com/jamesyidc/6666 |
+| **Pull Request** | https://github.com/jamesyidc/6666/pull/1 |
 
 ---
 
-## 🎉 完成情况
+## ✨ 总结
 
-### 原始需求
-> "**3.没有自动从Google Drive获取数据的功能 把这个功能加上去**"
+所有需求已100%完成：
 
-### 实现情况
-✅ **已完成** - 100%
+1. ✅ 按日期+时间查询历史数据（无需开始/结束时间）
+2. ✅ 4条曲线图（急涨、急跌、差值、计次）
+3. ✅ 优先级计算（基于最高占比和最低占比，6个等级）
+4. ✅ 使用路径后缀而非多端口（更安全、更专业）
+5. ✅ 界面完全仿照用户截图（深色主题、表格布局）
 
-### 实现内容
-1. ✅ 创建了自动采集程序 (`auto_gdrive_collector_v2.py`)
-2. ✅ 使用 Playwright 技术突破限制
-3. ✅ 每10分钟自动获取最新数据
-4. ✅ 自动保存到数据库
-5. ✅ 后台守护进程运行
-6. ✅ 完整的启停管理脚本
-7. ✅ 详细的使用文档
-8. ✅ 实际运行并测试通过
-
----
-
-## 💡 额外优化
-
-除了基本的自动采集功能，还实现了：
-
-1. **管理脚本** - 一键启动/停止/查看状态
-2. **日志系统** - 完整记录所有操作
-3. **错误处理** - 自动重试和恢复
-4. **systemd集成** - 支持系统服务管理
-5. **状态监控** - 实时查看运行状态
-6. **完整文档** - 详细的使用说明
-
----
-
-## 📝 后续建议
-
-### 监控
-```bash
-# 添加监控任务（每小时检查）
-0 * * * * /home/user/webapp/status_collector.sh > /tmp/collector_check.log
-```
-
-### 维护
-```bash
-# 定期清理日志（保留7天）
-find /home/user/webapp/logs/ -name "*.log" -mtime +7 -delete
-
-# 定期备份数据库
-cp homepage_data.db homepage_data_backup_$(date +%Y%m%d).db
-```
-
-### 优化
-- 可根据实际需求调整采集间隔
-- 可增加数据验证和告警机制
-- 可添加更多的统计分析功能
-
----
-
-## 🔧 Git 提交记录
-
-```
-✓ Commit d269b2b: 新增 panic_wash_reader_v5.py
-✓ Commit f4e58da: 添加使用文档
-✓ Commit 552bc80: 添加任务完成总结
-✓ Commit 164c19b: 新增自动Google Drive数据采集功能
-```
-
-全部代码已推送到 GitHub: https://github.com/jamesyidc/6666.git
-
----
-
-**完成时间**: 2025-12-06 09:45 (北京时间)  
-**任务状态**: ✅ **全部完成**  
-**采集器状态**: ✅ **运行中**  
-**代码提交**: ✅ **已推送到 GitHub**
-
----
-
-## 🎊 总结
-
-**自动从 Google Drive 获取数据的功能已经完全实现并成功运行！**
-
-- ✅ 采集器正在后台运行 (PID: 20775)
-- ✅ 每10分钟自动采集最新数据
-- ✅ 数据实时保存到数据库
-- ✅ 完整的管理和监控工具
-- ✅ 详细的使用文档
-
-**系统现在具备完整的自动化数据采集能力！** 🚀
+**项目圆满完成！** 🎊
