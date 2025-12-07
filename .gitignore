@@ -47,3 +47,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# SQLite temporary files
+*.db-shm
+*.db-wal
