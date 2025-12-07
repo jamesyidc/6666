@@ -230,15 +230,25 @@ def get_latest_file_data():
                 print(f"✅ 提取到文件ID: {file_id}")
                 
                 if file_id:
-                    # 访问文件
-                    file_url = f"https://drive.google.com/file/d/{file_id}/view"
-                    page.goto(file_url, wait_until="networkidle", timeout=60000)
-                    page.wait_for_timeout(3000)
-                    
-                    content = page.content()
                     browser.close()
                     
-                    return parse_and_store_data(content, latest_filename, current_hour)
+                    # 使用 requests 直接下载文件内容（更可靠）
+                    import requests
+                    download_url = f'https://drive.google.com/uc?export=download&id={file_id}'
+                    print(f"📥 直接下载文件: {download_url}")
+                    
+                    try:
+                        response = requests.get(download_url, timeout=30)
+                        if response.status_code == 200:
+                            content = response.text
+                            print(f"✅ 文件下载成功，内容长度: {len(content)} 字符")
+                            return parse_and_store_data(content, latest_filename, current_hour)
+                        else:
+                            print(f"❌ 文件下载失败: HTTP {response.status_code}")
+                            return None
+                    except Exception as e:
+                        print(f"❌ 下载文件时出错: {str(e)}")
+                        return None
         
         browser.close()
         return None
@@ -266,22 +276,41 @@ def parse_and_store_data(content, filename, current_hour):
         '采集时间': snapshot_time
     }
     
-    # 提取基础数据
+    # 提取基础数据（修复：允许冒号后有空格）
     patterns = {
-        '急涨': r'急涨[：:](\d+)',
-        '急跌': r'急跌[：:](\d+)',
-        '状态': r'状态[：:]([^\s\|★]+)',
-        '比值': r'比值[：:]([\d.]+)',
-        '差值': r'差值[：:]([-\d.]+)',
+        '急涨': r'急涨\s*[：:]\s*(\d+)',
+        '急跌': r'急跌\s*[：:]\s*(\d+)',
+        '状态': r'状态\s*[：:]\s*([^\n\|★]+)',
+        '比值': r'比值\s*[：:]\s*([\d.]+)',
+        '差值': r'差值\s*[：:]\s*([-\d.]+)',
         '比价最低': r'比价最低\s+(\d+)',
         '比价创新高': r'比价创新高\s+(\d+)',
         '计次': r'透明标签_计次=(\d+)',
     }
     
+    # 调试：输出内容片段
+    print("\n🔍 内容片段（前2000字符）:")
+    clean_content = content[:2000]
+    if '急涨' in clean_content:
+        print("   找到'急涨'关键字")
+        # 查找并打印急涨所在行
+        for line in clean_content.split('\n'):
+            if '急涨' in line or '急跌' in line:
+                print(f"   内容: {line[:150]}")
+                break
+    else:
+        print("   未找到'急涨'关键字（可能在后面）")
+        print(f"   内容开头: {clean_content[:200]}")
+    
     for key, pattern in patterns.items():
         match = re.search(pattern, content)
         if match:
-            data[key] = match.group(1)
+            data[key] = match.group(1).strip()  # 去除首尾空格
+    
+    # 调试：输出提取到的数据
+    print("\n📊 提取到的基础数据:")
+    for key in ['急涨', '急跌', '状态', '比值', '差值']:
+        print(f"   {key}: {data.get(key, '未提取到')}")
     
     # 解析币种数据
     lines = content.split('\n')
