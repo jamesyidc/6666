@@ -361,6 +361,7 @@
                     <thead>
                         <tr>
                             <th>币名</th>
+                            <th>现在价格</th>
                             <th>最高价格</th>
                             <th>最高计次</th>
                             <th>最低价格</th>
@@ -374,6 +375,7 @@
                         ${data.map(coin => `
                             <tr>
                                 <td class="coin-name">${coin.coin_name}</td>
+                                <td class="price current">${formatPrice(coin.current_price)}</td>
                                 <td class="price">${formatPrice(coin.highest_price)}</td>
                                 <td><span class="count">${coin.highest_count}</span></td>
                                 <td class="price">${formatPrice(coin.lowest_price)}</td>

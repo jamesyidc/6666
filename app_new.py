@@ -2050,7 +2050,7 @@ def api_price_comparison_list():
         cursor = conn.cursor()
         
         cursor.execute('''
-            SELECT coin_name, highest_price, highest_count, lowest_price, lowest_count,
+            SELECT coin_name, current_price, highest_price, highest_count, lowest_price, lowest_count,
                    highest_ratio, lowest_ratio, last_update_time
             FROM price_comparison
             ORDER BY display_order
@@ -2060,7 +2060,7 @@ def api_price_comparison_list():
         data = []
         for row in rows:
             # 转换时间为北京时间格式
-            update_time = row[7]
+            update_time = row[8]  # 第9个字段是last_update_time
             if update_time:
                 try:
                     # 如果数据库时间是UTC，需要转换
@@ -2076,12 +2076,13 @@ def api_price_comparison_list():
             
             data.append({
                 'coin_name': row[0],
-                'highest_price': row[1],
-                'highest_count': row[2],
-                'lowest_price': row[3],
-                'lowest_count': row[4],
-                'highest_ratio': row[5],
-                'lowest_ratio': row[6],
+                'current_price': row[1],
+                'highest_price': row[2],
+                'highest_count': row[3],
+                'lowest_price': row[4],
+                'lowest_count': row[5],
+                'highest_ratio': row[6],
+                'lowest_ratio': row[7],
                 'last_update_time': beijing_time
             })
         

@@ -170,10 +170,11 @@ class PriceComparisonCollector:
                 highest_ratio = round((current_price / highest_price) * 100, 2) if highest_price > 0 else 0
                 lowest_ratio = round((current_price / lowest_price) * 100, 2) if lowest_price > 0 else 0
                 
-                # 更新数据库
+                # 更新数据库（包括当前价格）
                 cursor.execute("""
                     UPDATE price_comparison
-                    SET highest_price = ?,
+                    SET current_price = ?,
+                        highest_price = ?,
                         highest_count = ?,
                         lowest_price = ?,
                         lowest_count = ?,
@@ -181,7 +182,7 @@ class PriceComparisonCollector:
                         lowest_ratio = ?,
                         last_update_time = ?
                     WHERE coin_name = ?
-                """, (highest_price, highest_count, lowest_price, lowest_count,
+                """, (current_price, highest_price, highest_count, lowest_price, lowest_count,
                       highest_ratio, lowest_ratio, beijing_time, symbol))
             
             conn.commit()
