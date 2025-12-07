@@ -11,6 +11,20 @@ import pytz
 app = Flask(__name__)
 BEIJING_TZ = pytz.timezone('Asia/Shanghai')
 
+# 添加全局响应头处理器 - 禁用API缓存
+@app.after_request
+def add_no_cache_headers(response):
+    """
+    为所有API响应添加禁用缓存的HTTP头
+    这是解决浏览器缓存API响应导致显示旧数据的根本方法
+    """
+    if request.path.startswith('/api/'):
+        # 禁用所有缓存
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
+
 # 主页面HTML - 完全仿照参考设计
 MAIN_HTML = """
 <!DOCTYPE html>
