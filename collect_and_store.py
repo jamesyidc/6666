@@ -386,9 +386,9 @@ def parse_and_store_data(content, filename, current_hour):
     new_rush_up = int(data.get('急涨', 0))
     new_rush_down = int(data.get('急跌', 0))
     
-    # 获取最近一条记录
+    # 获取最近一条记录（包括计次）
     cursor.execute("""
-        SELECT rush_up, rush_down, snapshot_time 
+        SELECT rush_up, rush_down, count, snapshot_time 
         FROM crypto_snapshots 
         ORDER BY snapshot_time DESC 
         LIMIT 1
@@ -396,7 +396,7 @@ def parse_and_store_data(content, filename, current_hour):
     last_record = cursor.fetchone()
     
     if last_record:
-        last_rush_up, last_rush_down, last_time = last_record
+        last_rush_up, last_rush_down, last_count, last_time = last_record
         
         # 解析时间，检查是否跨天重置
         last_dt = datetime.strptime(last_time, '%Y-%m-%d %H:%M:%S')
@@ -442,6 +442,34 @@ def parse_and_store_data(content, filename, current_hour):
             
             print(f"   ✅ 修正后数据: 急涨={new_rush_up}, 急跌={new_rush_down}, 差值={new_diff}")
             print(f"   📝 说明：根据原则'1天内急涨/急跌不能减小'，自动保持为上一时刻的值")
+        
+        # ===== 原则2：检查计次是否合理（相邻两轮最多增加1） =====
+        new_count = int(data.get('计次', 0))
+        
+        if not is_new_day_reset and last_count > 0:
+            count_increase = new_count - last_count
+            
+            if count_increase > 1:
+                print(f"\n⚠️  计次异常检测！")
+                print(f"   上一条记录 ({last_time}): 计次={last_count}")
+                print(f"   当前数据（源文件）: 计次={new_count}")
+                print(f"   ❌ 计次增加了 {count_increase}（超过最大允许值1）")
+                
+                # 自动修正：最多只能增加1
+                corrected_count = last_count + 1
+                print(f"   🔧 自动修正：计次 {new_count} → {corrected_count}（最多增加1）")
+                data['计次'] = str(corrected_count)
+                
+                # 重新计算计次得分
+                if '计次' in data:
+                    count_times = corrected_count
+                    star_count, star_type, star_display = calculate_count_score(count_times, current_hour)
+                    data['计次得分_数量'] = star_count
+                    data['计次得分_类型'] = star_type
+                    data['计次得分_显示'] = star_display
+                
+                print(f"   ✅ 修正后数据: 计次={corrected_count}")
+                print(f"   📝 说明：根据原则'计次相隔两轮最多增加1'，自动修正为 {last_count}+1")
     
     # 检查是否已经存在相同时间的记录（避免重复采集）
     cursor.execute("""
