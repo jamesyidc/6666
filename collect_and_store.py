@@ -217,36 +217,17 @@ def get_latest_file_data():
             latest_filename = f"{current_date}_{latest_time}.txt"
             print(f"找到最新文件: {latest_filename}")
             
-            # 搜索文件获取ID
-            page.goto(folder_url, timeout=30000)
-            page.wait_for_timeout(2000)
+            # 直接从页面HTML中提取文件ID（更可靠的方法）
+            # 已经访问过文件夹，直接获取页面内容
+            folder_html = page.content()
             
-            page.keyboard.press('/')
-            page.wait_for_timeout(1000)
-            page.keyboard.type(latest_filename)
-            page.wait_for_timeout(2000)
-            page.keyboard.press('Enter')
-            page.wait_for_timeout(3000)
+            # 使用正则表达式查找文件名对应的data-id
+            pattern = rf'{re.escape(latest_filename)}.*?data-id="([^"]+)"'
+            match = re.search(pattern, folder_html)
             
-            search_html = page.content()
-            
-            if latest_filename in search_html:
-                # 提取文件ID
-                pos = search_html.find(latest_filename)
-                snippet = search_html[max(0, pos-1000):min(len(search_html), pos+1000)]
-                
-                id_patterns = [
-                    r'data-id="([^"]+)"',
-                    r'"id":"([^"]+)"',
-                    r'/file/d/([A-Za-z0-9_-]+)/',
-                ]
-                
-                file_id = None
-                for pattern in id_patterns:
-                    matches = re.findall(pattern, snippet)
-                    if matches:
-                        file_id = matches[0]
-                        break
+            if match:
+                file_id = match.group(1)
+                print(f"✅ 提取到文件ID: {file_id}")
                 
                 if file_id:
                     # 访问文件
