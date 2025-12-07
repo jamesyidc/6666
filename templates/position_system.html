@@ -522,6 +522,10 @@
                 <h3>48小时平均位置</h3>
                 <div class="value" id="avg48h">--</div>
             </div>
+            <div class="summary-card">
+                <h3>7天平均位置</h3>
+                <div class="value" id="avg7d">--</div>
+            </div>
         </div>
         
         <!-- 低于1%统计区域 -->
@@ -547,6 +551,11 @@
                     <div class="period">48小时周期</div>
                     <div class="count" id="below1_48h">--</div>
                     <div class="ratio" id="ratio_48h">--</div>
+                </div>
+                <div class="stat-item">
+                    <div class="period">7天周期</div>
+                    <div class="count" id="below1_7d">--</div>
+                    <div class="ratio" id="ratio_7d">--</div>
                 </div>
             </div>
         </div>
@@ -574,6 +583,11 @@
                     <div class="period">48小时周期</div>
                     <div class="count" id="above80_48h" style="color: #ff6b6b;">--</div>
                     <div class="ratio" id="ratio_above_48h">--</div>
+                </div>
+                <div class="stat-item">
+                    <div class="period">7天周期</div>
+                    <div class="count" id="above80_7d" style="color: #ff6b6b;">--</div>
+                    <div class="ratio" id="ratio_above_7d">--</div>
                 </div>
             </div>
         </div>
@@ -749,6 +763,7 @@
                         document.getElementById('avg12h').textContent = result.averages['12h'] + '%';
                         document.getElementById('avg24h').textContent = result.averages['24h'] + '%';
                         document.getElementById('avg48h').textContent = result.averages['48h'] + '%';
+                        document.getElementById('avg7d').textContent = result.averages['7d'] + '%';
                     }
                 })
                 .catch(error => {
@@ -764,7 +779,7 @@
                         const stats = result.stats;
                         
                         // 更新各周期的数据
-                        ['4h', '12h', '24h', '48h'].forEach(period => {
+                        ['4h', '12h', '24h', '48h', '7d'].forEach(period => {
                             const below1 = stats[period].below_1;
                             const above80 = stats[period].above_80 || 0;
                             const total = stats[period].total;

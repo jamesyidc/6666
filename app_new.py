@@ -3260,6 +3260,7 @@ def api_position_summary():
                 AVG(position_12h) as avg_12h,
                 AVG(position_24h) as avg_24h,
                 AVG(position_48h) as avg_48h,
+                AVG(position_7d) as avg_7d,
                 COUNT(*) as total_count
             FROM position_system
             WHERE record_time = ?
@@ -3288,9 +3289,10 @@ def api_position_summary():
                 '4h': round(row[0], 2) if row[0] else 0,
                 '12h': round(row[1], 2) if row[1] else 0,
                 '24h': round(row[2], 2) if row[2] else 0,
-                '48h': round(row[3], 2) if row[3] else 0
+                '48h': round(row[3], 2) if row[3] else 0,
+                '7d': round(row[4], 2) if row[4] else 0
             },
-            'total_count': row[4],
+            'total_count': row[5],
             'zone_distribution_24h': {
                 'high': zone_counts[0] or 0,      # 80-100%
                 'mid_high': zone_counts[1] or 0,  # 50-80%
@@ -3360,9 +3362,9 @@ def api_position_stats_latest():
         # 获取最新的统计数据
         cursor.execute('''
             SELECT record_time, count_below_1_4h, count_below_1_12h, 
-                   count_below_1_24h, count_below_1_48h,
+                   count_below_1_24h, count_below_1_48h, count_below_1_7d,
                    count_above_80_4h, count_above_80_12h,
-                   count_above_80_24h, count_above_80_48h,
+                   count_above_80_24h, count_above_80_48h, count_above_80_7d,
                    total_coins
             FROM position_system_stats
             ORDER BY record_time DESC
@@ -3382,10 +3384,11 @@ def api_position_stats_latest():
             'success': True,
             'record_time': row[0],
             'stats': {
-                '4h': {'below_1': row[1], 'above_80': row[5] or 0, 'total': row[9]},
-                '12h': {'below_1': row[2], 'above_80': row[6] or 0, 'total': row[9]},
-                '24h': {'below_1': row[3], 'above_80': row[7] or 0, 'total': row[9]},
-                '48h': {'below_1': row[4], 'above_80': row[8] or 0, 'total': row[9]}
+                '4h': {'below_1': row[1], 'above_80': row[6] or 0, 'total': row[11]},
+                '12h': {'below_1': row[2], 'above_80': row[7] or 0, 'total': row[11]},
+                '24h': {'below_1': row[3], 'above_80': row[8] or 0, 'total': row[11]},
+                '48h': {'below_1': row[4], 'above_80': row[9] or 0, 'total': row[11]},
+                '7d': {'below_1': row[5], 'above_80': row[10] or 0, 'total': row[11]}
             }
         })
         

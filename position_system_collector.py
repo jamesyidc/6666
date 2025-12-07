@@ -45,7 +45,8 @@ TIME_PERIODS = {
     '4h': 4,
     '12h': 12,
     '24h': 24,
-    '48h': 48
+    '48h': 48,
+    '7d': 168  # 7天 = 168小时
 }
 
 class PositionSystemCollector:
@@ -86,6 +87,11 @@ class PositionSystemCollector:
                 low_48h REAL,
                 position_48h REAL,
                 
+                -- 7天数据
+                high_7d REAL,
+                low_7d REAL,
+                position_7d REAL,
+                
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(record_time, symbol)
             )
@@ -111,6 +117,12 @@ class PositionSystemCollector:
                 count_below_1_12h INTEGER DEFAULT 0,
                 count_below_1_24h INTEGER DEFAULT 0,
                 count_below_1_48h INTEGER DEFAULT 0,
+                count_below_1_7d INTEGER DEFAULT 0,
+                count_above_80_4h INTEGER DEFAULT 0,
+                count_above_80_12h INTEGER DEFAULT 0,
+                count_above_80_24h INTEGER DEFAULT 0,
+                count_above_80_48h INTEGER DEFAULT 0,
+                count_above_80_7d INTEGER DEFAULT 0,
                 total_coins INTEGER DEFAULT 27,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -247,14 +259,16 @@ class PositionSystemCollector:
                         high_4h, low_4h, position_4h,
                         high_12h, low_12h, position_12h,
                         high_24h, low_24h, position_24h,
-                        high_48h, low_48h, position_48h
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        high_48h, low_48h, position_48h,
+                        high_7d, low_7d, position_7d
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     data['record_time'], data['symbol'], data['current_price'],
                     data['high_4h'], data['low_4h'], data['position_4h'],
                     data['high_12h'], data['low_12h'], data['position_12h'],
                     data['high_24h'], data['low_24h'], data['position_24h'],
-                    data['high_48h'], data['low_48h'], data['position_48h']
+                    data['high_48h'], data['low_48h'], data['position_48h'],
+                    data['high_7d'], data['low_7d'], data['position_7d']
                 ))
             
             conn.commit()
@@ -278,12 +292,14 @@ class PositionSystemCollector:
             count_below_1_12h = sum(1 for d in position_data_list if d.get('position_12h') is not None and d['position_12h'] < 1)
             count_below_1_24h = sum(1 for d in position_data_list if d.get('position_24h') is not None and d['position_24h'] < 1)
             count_below_1_48h = sum(1 for d in position_data_list if d.get('position_48h') is not None and d['position_48h'] < 1)
+            count_below_1_7d = sum(1 for d in position_data_list if d.get('position_7d') is not None and d['position_7d'] < 1)
             
             # 统计各周期高于80%的币种数量
             count_above_80_4h = sum(1 for d in position_data_list if d.get('position_4h') is not None and d['position_4h'] > 80)
             count_above_80_12h = sum(1 for d in position_data_list if d.get('position_12h') is not None and d['position_12h'] > 80)
             count_above_80_24h = sum(1 for d in position_data_list if d.get('position_24h') is not None and d['position_24h'] > 80)
             count_above_80_48h = sum(1 for d in position_data_list if d.get('position_48h') is not None and d['position_48h'] > 80)
+            count_above_80_7d = sum(1 for d in position_data_list if d.get('position_7d') is not None and d['position_7d'] > 80)
             
             total_coins = len(position_data_list)
             
@@ -294,15 +310,15 @@ class PositionSystemCollector:
             cursor.execute('''
                 INSERT OR REPLACE INTO position_system_stats (
                     record_time, count_below_1_4h, count_below_1_12h, 
-                    count_below_1_24h, count_below_1_48h, 
+                    count_below_1_24h, count_below_1_48h, count_below_1_7d,
                     count_above_80_4h, count_above_80_12h,
-                    count_above_80_24h, count_above_80_48h,
+                    count_above_80_24h, count_above_80_48h, count_above_80_7d,
                     total_coins
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (record_time, count_below_1_4h, count_below_1_12h, 
-                  count_below_1_24h, count_below_1_48h,
+                  count_below_1_24h, count_below_1_48h, count_below_1_7d,
                   count_above_80_4h, count_above_80_12h,
-                  count_above_80_24h, count_above_80_48h,
+                  count_above_80_24h, count_above_80_48h, count_above_80_7d,
                   total_coins))
             
             conn.commit()
@@ -313,6 +329,7 @@ class PositionSystemCollector:
             logging.info(f"   12h: 低于1%={count_below_1_12h}, 高于80%={count_above_80_12h} (总{total_coins})")
             logging.info(f"   24h: 低于1%={count_below_1_24h}, 高于80%={count_above_80_24h} (总{total_coins})")
             logging.info(f"   48h: 低于1%={count_below_1_48h}, 高于80%={count_above_80_48h} (总{total_coins})")
+            logging.info(f"    7d: 低于1%={count_below_1_7d}, 高于80%={count_above_80_7d} (总{total_coins})")
             
         except Exception as e:
             logging.error(f"❌ 统计数据保存失败: {str(e)}")
