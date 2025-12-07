@@ -416,19 +416,32 @@ def parse_and_store_data(content, filename, current_hour):
             print(f"   新一天初始值: 急涨={new_rush_up}, 急跌={new_rush_down}")
         
         # 验证规则：急涨和急跌只能增大或保持不变，不能减小（除非是跨天重置）
+        # 如果数据减小，强制使用上一条记录的值（保持单调递增）
         if not is_new_day_reset and (new_rush_up < last_rush_up or new_rush_down < last_rush_down):
             print(f"\n⚠️  数据异常检测！")
             print(f"   上一条记录 ({last_time}): 急涨={last_rush_up}, 急跌={last_rush_down}")
-            print(f"   当前数据: 急涨={new_rush_up}, 急跌={new_rush_down}")
+            print(f"   当前数据（源文件）: 急涨={new_rush_up}, 急跌={new_rush_down}")
+            
+            # 自动修正：保持单调递增
+            original_rush_up = new_rush_up
+            original_rush_down = new_rush_down
             
             if new_rush_up < last_rush_up:
-                print(f"   ❌ 急涨数值减小: {last_rush_up} → {new_rush_up}")
+                print(f"   🔧 自动修正：急涨 {new_rush_up} → {last_rush_up}（保持不变）")
+                new_rush_up = last_rush_up
+                data['急涨'] = str(last_rush_up)
+                
             if new_rush_down < last_rush_down:
-                print(f"   ❌ 急跌数值减小: {last_rush_down} → {new_rush_down}")
+                print(f"   🔧 自动修正：急跌 {new_rush_down} → {last_rush_down}（保持不变）")
+                new_rush_down = last_rush_down
+                data['急跌'] = str(last_rush_down)
             
-            print(f"\n🚫 拒绝存储异常数据！")
-            conn.close()
-            return None  # 返回None表示数据被拒绝
+            # 重新计算差值
+            new_diff = new_rush_up - new_rush_down
+            data['差值'] = str(new_diff)
+            
+            print(f"   ✅ 修正后数据: 急涨={new_rush_up}, 急跌={new_rush_down}, 差值={new_diff}")
+            print(f"   📝 说明：根据原则'1天内急涨/急跌不能减小'，自动保持为上一时刻的值")
     
     # 检查是否已经存在相同时间的记录（避免重复采集）
     cursor.execute("""
