@@ -107,27 +107,45 @@ def parse_and_store_data(data):
         
         snapshot_id = cursor.lastrowid
         
-        # 插入币种详细数据
+        # 插入币种详细数据 - 保存所有字段
         for coin in coins:
             try:
+                # 解析账户比例
+                ratio1_num = 0.0
+                try:
+                    if coin.get('ratio1'):
+                        ratio1_num = float(str(coin.get('ratio1', '0')).replace('%', ''))
+                except:
+                    pass
+                
                 cursor.execute("""
                     INSERT OR REPLACE INTO coin_details (
                         snapshot_datetime, symbol, rank,
-                        price, change_24h, rush_up, rush_down,
-                        account_ratio, volume_24h, market_cap
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        price, change_24h, change_short, rush_up, rush_down,
+                        account_ratio, ratio1, ratio2,
+                        decline, high_price, high_time,
+                        priority, update_time,
+                        volume_24h, market_cap
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     snapshot_datetime,
                     coin.get('symbol', ''),
                     coin.get('rank', 0),
                     coin.get('current_price', 0),
                     coin.get('change_24h', 0),
+                    coin.get('change', 0),  # 短期变化
                     coin.get('rush_up', 0),
                     coin.get('rush_down', 0),
-                    # 解析账户比例 ratio1
-                    float(str(coin.get('ratio1', '0')).replace('%', '')) if coin.get('ratio1') else 0,
-                    0,  # volume_24h not available in this API
-                    0   # market_cap not available in this API
+                    ratio1_num,  # 解析后的数字
+                    coin.get('ratio1', ''),  # 原始字符串
+                    coin.get('ratio2', ''),  # 原始字符串
+                    coin.get('decline', 0),  # 相对最高价的跌幅
+                    coin.get('high_price', 0),  # 历史最高价
+                    coin.get('high_time', ''),  # 最高价时间
+                    coin.get('priority', ''),  # 等级
+                    coin.get('update_time', ''),  # API更新时间
+                    0,  # volume_24h - API未提供
+                    0   # market_cap - API未提供
                 ))
             except Exception as e:
                 print(f"⚠️  插入币种数据失败 ({coin.get('symbol', 'UNKNOWN')}): {str(e)}")

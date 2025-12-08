@@ -150,9 +150,17 @@ def get_snapshot_detail(snapshot_datetime):
                 'rank': row['rank'],
                 'price': row['price'],
                 'change_24h': row['change_24h'],
+                'change_short': row['change_short'] if 'change_short' in row.keys() else 0,
                 'rush_up': row['rush_up'],
                 'rush_down': row['rush_down'],
                 'account_ratio': row['account_ratio'],
+                'ratio1': row['ratio1'] if 'ratio1' in row.keys() else '',
+                'ratio2': row['ratio2'] if 'ratio2' in row.keys() else '',
+                'decline': row['decline'] if 'decline' in row.keys() else 0,
+                'high_price': row['high_price'] if 'high_price' in row.keys() else 0,
+                'high_time': row['high_time'] if 'high_time' in row.keys() else '',
+                'priority': row['priority'] if 'priority' in row.keys() else '',
+                'update_time': row['update_time'] if 'update_time' in row.keys() else '',
                 'volume_24h': row['volume_24h'],
                 'market_cap': row['market_cap']
             })
