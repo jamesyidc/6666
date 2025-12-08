@@ -71,10 +71,20 @@ def parse_and_store_data(data):
         max_change_24h = max(changes_24h) if changes_24h else 0
         min_change_24h = min(changes_24h) if changes_24h else 0
         
-        # 账户比例（从API数据中没有这个字段，设为0或从币种数据中计算）
-        account_ratio_avg = 0.0
-        account_ratio_max = 0.0
-        account_ratio_min = 0.0
+        # 账户比例（从币种数据的ratio1和ratio2字段中提取）
+        ratios = []
+        for coin in coins:
+            # ratio1 和 ratio2 格式: "72.35%"
+            try:
+                if 'ratio1' in coin and coin['ratio1']:
+                    ratio_str = str(coin['ratio1']).replace('%', '')
+                    ratios.append(float(ratio_str))
+            except:
+                pass
+        
+        account_ratio_avg = sum(ratios) / len(ratios) if ratios else 0.0
+        account_ratio_max = max(ratios) if ratios else 0.0
+        account_ratio_min = min(ratios) if ratios else 0.0
         
         # 插入快照数据
         cursor.execute("""
@@ -114,7 +124,8 @@ def parse_and_store_data(data):
                     coin.get('change_24h', 0),
                     coin.get('rush_up', 0),
                     coin.get('rush_down', 0),
-                    0,  # account_ratio not available in this API
+                    # 解析账户比例 ratio1
+                    float(str(coin.get('ratio1', '0')).replace('%', '')) if coin.get('ratio1') else 0,
                     0,  # volume_24h not available in this API
                     0   # market_cap not available in this API
                 ))

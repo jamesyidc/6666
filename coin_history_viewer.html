@@ -354,7 +354,10 @@
     </div>
 
     <script>
-        const API_BASE = 'https://5002-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai';
+        // API地址 - 可以自动切换本地和远程
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:5002'
+            : 'https://5002-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai';
         let snapshotsData = [];
         let currentIndex = 0;
         let isPlaying = false;
