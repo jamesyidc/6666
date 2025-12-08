@@ -377,14 +377,18 @@
                 
                 if (data.success && data.dates.length > 0) {
                     const select = document.getElementById('dateSelect');
-                    select.innerHTML = '<option value="">-- 选择日期 --</option>';
+                    select.innerHTML = '';
                     
-                    data.dates.forEach(date => {
+                    data.dates.forEach((date, index) => {
                         const option = document.createElement('option');
                         option.value = date.date;
                         option.textContent = `${date.date} (${date.snapshots}个快照)`;
                         select.appendChild(option);
                     });
+                    
+                    // 自动选择最新日期（第一个）并加载数据
+                    select.value = data.dates[0].date;
+                    await loadDateData();
                 } else {
                     document.getElementById('dateSelect').innerHTML = '<option value="">暂无数据</option>';
                 }
