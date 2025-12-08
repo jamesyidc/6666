@@ -496,6 +496,27 @@
                 </div>
                 <a href="/position-system" class="module-btn">查看位置</a>
             </div>
+            
+            <div class="module-card" onclick="location.href='coin_history_viewer.html'">
+                <div class="module-icon">🪙</div>
+                <h2>全币数据统计系统</h2>
+                <p>每分钟自动采集全币种数据，历史回看，时间轴回放</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">今日快照:</span>
+                        <span class="stats-value" id="coin-history-snapshots">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">币种数:</span>
+                        <span class="stats-value" id="coin-history-coins">29</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后更新:</span>
+                        <span class="stats-value" id="coin-history-time">-</span>
+                    </div>
+                </div>
+                <a href="coin_history_viewer.html" class="module-btn">查看统计</a>
+            </div>
         </div>
         
         <div class="stats-bar">
@@ -990,6 +1011,45 @@
                 })
                 .catch(err => console.error('刷新位置系统数据失败:', err));
         }, 30000);
+        
+        // 加载全币数据统计系统数据
+        function loadCoinHistoryStats() {
+            // 获取今天的日期
+            const today = new Date().toISOString().split('T')[0];
+            
+            fetch('https://5002-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai/api/history/snapshots?date=' + today)
+                .then(res => res.json())
+                .then(response => {
+                    if (response.success) {
+                        const snapshotsEl = document.getElementById('coin-history-snapshots');
+                        const timeEl = document.getElementById('coin-history-time');
+                        
+                        if (snapshotsEl) {
+                            snapshotsEl.textContent = response.total || 0;
+                        }
+                        
+                        // 获取最新快照时间
+                        if (response.snapshots && response.snapshots.length > 0) {
+                            const latest = response.snapshots[response.snapshots.length - 1];
+                            if (timeEl) {
+                                timeEl.textContent = formatTime(latest.datetime);
+                            }
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('获取全币数据统计失败:', err);
+                    // 使用备用数据
+                    const snapshotsEl = document.getElementById('coin-history-snapshots');
+                    if (snapshotsEl) snapshotsEl.textContent = '-';
+                });
+        }
+        
+        // 初始加载
+        loadCoinHistoryStats();
+        
+        // 每30秒刷新一次全币数据统计
+        setInterval(loadCoinHistoryStats, 30000);
     </script>
 </body>
 </html>
