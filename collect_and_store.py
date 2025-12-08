@@ -451,31 +451,19 @@ def parse_and_store_data(content, filename, current_hour):
         if not is_new_day_reset and last_count > 0:
             count_change = new_count - last_count
             
-            # 🔴 优先级高：原则2 - 计次最多增加1（先检查和修正）
+            # 🔴 优先级高：原则2 - 计次最多增加1（先检查）
             if count_change > 1:
                 print(f"\n⚠️  【优先级高】计次增加过多检测！")
                 print(f"   上一条记录 ({last_time}): 计次={last_count}")
                 print(f"   当前数据（源文件）: 计次={new_count}")
                 print(f"   ❌ 计次增加了 {count_change}（超过最大允许值1）")
+                print(f"   🔄 拒绝存储，需要重新采集数据")
+                print(f"   📝 说明：根据原则2'计次相隔两轮最多增加1'，本轮数据异常")
                 
-                # 自动修正：最多只能增加1
-                corrected_count = last_count + 1
-                print(f"   🔧 自动修正：计次 {new_count} → {corrected_count}（最多增加1）")
-                data['计次'] = str(corrected_count)
-                new_count = corrected_count  # 更新new_count用于后续检查
-                
-                # 重新计算计次得分
-                count_times = corrected_count
-                star_count, star_type, star_display = calculate_count_score(count_times, current_hour)
-                data['计次得分_数量'] = star_count
-                data['计次得分_类型'] = star_type
-                data['计次得分_显示'] = star_display
-                
-                print(f"   ✅ 修正后数据: 计次={corrected_count}")
-                print(f"   📝 说明：根据原则2'计次相隔两轮最多增加1'，自动修正为 {last_count}+1")
-                
-                # 重新计算count_change用于下一步检查
-                count_change = new_count - last_count
+                # 关闭数据库连接
+                conn.close()
+                # 返回None表示拒绝存储，需要重新采集
+                return None
             
             # 🟡 优先级中：原则1 - 计次不能减小（在优先级高之后检查）
             if count_change < 0:
