@@ -3485,5 +3485,10 @@ def coin_history_viewer_full():
     """全币数据统计系统 - 完整数据视图（显示所有字段）"""
     return send_from_directory('.', 'coin_history_viewer_full.html')
 
+@app.route('/coin_scores_viewer.html')
+def coin_scores_viewer():
+    """币种多空评分数据统计系统 - 完整56字段视图"""
+    return send_from_directory('.', 'coin_scores_viewer.html')
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
