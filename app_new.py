@@ -3475,5 +3475,10 @@ def api_position_stats_history():
             'message': f'获取历史统计失败: {str(e)}'
         })
 
+@app.route('/coin_history_viewer.html')
+def coin_history_viewer():
+    """全币数据统计系统 - 历史回看页面"""
+    return send_from_directory('.', 'coin_history_viewer.html')
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
