@@ -3480,5 +3480,10 @@ def coin_history_viewer():
     """全币数据统计系统 - 历史回看页面"""
     return send_from_directory('.', 'coin_history_viewer.html')
 
+@app.route('/coin_history_viewer_full.html')
+def coin_history_viewer_full():
+    """全币数据统计系统 - 完整数据视图（显示所有字段）"""
+    return send_from_directory('.', 'coin_history_viewer_full.html')
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
