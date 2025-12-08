@@ -273,7 +273,7 @@ def get_statistics():
 
 @app.route('/api/coin-scores/timeline', methods=['GET'])
 def get_timeline():
-    """获取历史时间轴（所有快照时间点），支持按日期筛选"""
+    """获取历史时间轴（按采集批次分组），支持按日期筛选"""
     try:
         # 获取查询参数：日期（格式：YYYY-MM-DD）
         date_filter = request.args.get('date', None)
@@ -281,21 +281,28 @@ def get_timeline():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # 获取所有唯一的时间点
+        # 按分钟分组，每分钟取最新的一条作为代表
+        # 使用 strftime 截取到分钟，这样同一分钟的所有记录会被归为一组
         if date_filter:
             # 按日期筛选
             cursor.execute('''
-                SELECT DISTINCT beijing_time, timestamp
+                SELECT 
+                    strftime('%Y-%m-%d %H:%M', beijing_time) || ':00' as minute_time,
+                    MAX(timestamp) as max_timestamp
                 FROM coin_scores
                 WHERE DATE(beijing_time) = ?
-                ORDER BY timestamp DESC
+                GROUP BY strftime('%Y-%m-%d %H:%M', beijing_time)
+                ORDER BY max_timestamp DESC
             ''', (date_filter,))
         else:
             # 获取所有时间点
             cursor.execute('''
-                SELECT DISTINCT beijing_time, timestamp
+                SELECT 
+                    strftime('%Y-%m-%d %H:%M', beijing_time) || ':00' as minute_time,
+                    MAX(timestamp) as max_timestamp
                 FROM coin_scores
-                ORDER BY timestamp DESC
+                GROUP BY strftime('%Y-%m-%d %H:%M', beijing_time)
+                ORDER BY max_timestamp DESC
             ''')
         
         rows = cursor.fetchall()
