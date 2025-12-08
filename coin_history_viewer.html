@@ -420,7 +420,8 @@
 
                 if (data.success && data.snapshots.length > 0) {
                     snapshotsData = data.snapshots;
-                    currentIndex = 0;
+                    // 默认显示最新快照（最后一个）
+                    currentIndex = data.snapshots.length - 1;
 
                     // 显示统计信息
                     updateStats(data.snapshots);
@@ -428,8 +429,8 @@
                     // 初始化时间轴
                     initializeTimeline(data.snapshots);
 
-                    // 加载第一个快照的详细数据
-                    loadSnapshotDetail(data.snapshots[0].datetime);
+                    // 加载最新快照的详细数据
+                    loadSnapshotDetail(data.snapshots[currentIndex].datetime);
 
                     // 显示所有区域
                     document.getElementById('statsSection').style.display = 'grid';
@@ -463,7 +464,8 @@
         function initializeTimeline(snapshots) {
             const slider = document.getElementById('timelineSlider');
             slider.max = snapshots.length - 1;
-            slider.value = 0;
+            // 默认显示最新快照
+            slider.value = currentIndex;
             
             slider.oninput = function() {
                 currentIndex = parseInt(this.value);
