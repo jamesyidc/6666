@@ -74,7 +74,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 2000px;
+            min-width: 4500px; /* 35列超宽表格 */
         }
 
         th, td {
@@ -149,8 +149,11 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>💎 全币数据统计系统 - 完整数据视图</h1>
-            <p style="margin-top: 10px; color: #a8b8d8;">显示所有20+字段的完整币种数据</p>
+            <h1>💎 全币数据统计系统 - 完整数据视图 (35列)</h1>
+            <p style="margin-top: 10px; color: #a8b8d8;">显示35个字段的超级完整币种数据表格</p>
+            <p style="margin-top: 5px; color: #feca57; font-size: 12px;">
+                ⚠️ 部分字段暂无数据源（显示"-"），未来将逐步补充
+            </p>
         </div>
 
         <div class="controls">
@@ -301,57 +304,115 @@
             document.getElementById('statsSection').innerHTML = html;
         }
 
-        // 显示完整数据表格
+        // 显示完整数据表格 - 35列完整版
         function displayFullTable(coins) {
             let html = `
                 <table>
                     <thead>
                         <tr>
+                            <!-- 基础信息 (5列) -->
+                            <th class="field-group group-basic">序号</th>
                             <th class="field-group group-basic">排名</th>
                             <th class="field-group group-basic">币种</th>
-                            <th class="field-group group-price">价格</th>
-                            <th class="field-group group-price">24h涨跌</th>
-                            <th class="field-group group-price">短期变化</th>
-                            <th class="field-group group-signal">急涨</th>
-                            <th class="field-group group-signal">急跌</th>
+                            <th class="field-group group-basic">等级</th>
+                            <th class="field-group group-basic">更新时间</th>
+                            
+                            <!-- 价格数据 (7列) -->
+                            <th class="field-group group-price">当前价格</th>
+                            <th class="field-group group-price">24h涨跌%</th>
+                            <th class="field-group group-price">短期变化%</th>
+                            <th class="field-group group-price">历史最高价</th>
+                            <th class="field-group group-price">最高价时间</th>
+                            <th class="field-group group-price">跌幅%</th>
+                            <th class="field-group group-price">24h最低</th>
+                            
+                            <!-- 信号指标 (6列) -->
+                            <th class="field-group group-signal">急涨次数</th>
+                            <th class="field-group group-signal">急跌次数</th>
+                            <th class="field-group group-signal">累计急涨</th>
+                            <th class="field-group group-signal">累计急跌</th>
+                            <th class="field-group group-signal">做多信号</th>
+                            <th class="field-group group-signal">做空信号</th>
+                            
+                            <!-- 账户比例 (5列) -->
                             <th class="field-group group-ratio">账户比例</th>
                             <th class="field-group group-ratio">比例1</th>
                             <th class="field-group group-ratio">比例2</th>
-                            <th class="field-group group-history">跌幅</th>
-                            <th class="field-group group-history">历史最高价</th>
-                            <th class="field-group group-history">最高价时间</th>
-                            <th class="field-group group-basic">等级</th>
-                            <th class="field-group group-basic">更新时间</th>
+                            <th class="field-group group-ratio">多空比</th>
+                            <th class="field-group group-ratio">持仓量</th>
+                            
+                            <!-- 技术指标 (6列) -->
+                            <th class="field-group group-history">RSI</th>
+                            <th class="field-group group-history">MACD</th>
+                            <th class="field-group group-history">KDJ</th>
+                            <th class="field-group group-history">布林带位置</th>
+                            <th class="field-group group-history">SAR趋势</th>
+                            <th class="field-group group-history">成交量变化</th>
+                            
+                            <!-- 市场数据 (6列) -->
                             <th>24h成交量</th>
                             <th>市值</th>
+                            <th>流通量</th>
+                            <th>总供应量</th>
+                            <th>市值排名</th>
+                            <th>备注</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
 
-            coins.forEach(coin => {
+            coins.forEach((coin, index) => {
                 const changeClass = coin.change_24h >= 0 ? 'positive' : 'negative';
                 const shortChangeClass = coin.change_short >= 0 ? 'positive' : (coin.change_short < 0 ? 'negative' : 'neutral');
                 
                 html += `
                     <tr>
+                        <!-- 基础信息 -->
+                        <td>${index + 1}</td>
                         <td>${coin.rank}</td>
                         <td><strong>${coin.symbol}</strong></td>
+                        <td>${coin.priority || '-'}</td>
+                        <td>${coin.update_time || '-'}</td>
+                        
+                        <!-- 价格数据 -->
                         <td>$${coin.price.toFixed(4)}</td>
                         <td class="${changeClass}">${coin.change_24h.toFixed(2)}%</td>
-                        <td class="${shortChangeClass}">${coin.change_short || '-'}</td>
-                        <td>${coin.rush_up || '-'}</td>
-                        <td>${coin.rush_down || '-'}</td>
+                        <td class="${shortChangeClass}">${coin.change_short ? coin.change_short.toFixed(2) + '%' : '-'}</td>
+                        <td>${coin.high_price ? '$' + coin.high_price.toFixed(2) : '-'}</td>
+                        <td>${coin.high_time || '-'}</td>
+                        <td class="negative">${coin.decline ? coin.decline.toFixed(2) + '%' : '-'}</td>
+                        <td>-</td>
+                        
+                        <!-- 信号指标 -->
+                        <td>${coin.rush_up || '0'}</td>
+                        <td>${coin.rush_down || '0'}</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        
+                        <!-- 账户比例 -->
                         <td>${coin.account_ratio.toFixed(2)}%</td>
                         <td>${coin.ratio1 || '-'}</td>
                         <td>${coin.ratio2 || '-'}</td>
-                        <td class="negative">${coin.decline || '-'}</td>
-                        <td>${coin.high_price ? '$' + coin.high_price.toFixed(2) : '-'}</td>
-                        <td>${coin.high_time || '-'}</td>
-                        <td>${coin.priority || '-'}</td>
-                        <td>${coin.update_time || '-'}</td>
+                        <td>-</td>
+                        <td>-</td>
+                        
+                        <!-- 技术指标 -->
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        
+                        <!-- 市场数据 -->
                         <td>${coin.volume_24h || '-'}</td>
                         <td>${coin.market_cap || '-'}</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
                     </tr>
                 `;
             });
@@ -368,7 +429,7 @@
             }
         }
 
-        // 导出CSV
+        // 导出CSV - 35列完整版
         function exportToCSV() {
             if (!currentData || !currentData.coins) {
                 alert('没有数据可导出');
@@ -376,39 +437,46 @@
             }
 
             const coins = currentData.coins;
-            const headers = ['排名', '币种', '价格', '24h涨跌', '短期变化', '急涨', '急跌', 
-                            '账户比例', '比例1', '比例2', '跌幅', '历史最高价', '最高价时间', 
-                            '等级', '更新时间', '24h成交量', '市值'];
+            const headers = [
+                // 基础信息
+                '序号', '排名', '币种', '等级', '更新时间',
+                // 价格数据
+                '当前价格', '24h涨跌%', '短期变化%', '历史最高价', '最高价时间', '跌幅%', '24h最低',
+                // 信号指标
+                '急涨次数', '急跌次数', '累计急涨', '累计急跌', '做多信号', '做空信号',
+                // 账户比例
+                '账户比例', '比例1', '比例2', '多空比', '持仓量',
+                // 技术指标
+                'RSI', 'MACD', 'KDJ', '布林带位置', 'SAR趋势', '成交量变化',
+                // 市场数据
+                '24h成交量', '市值', '流通量', '总供应量', '市值排名', '备注'
+            ];
             
             let csv = headers.join(',') + '\n';
             
-            coins.forEach(coin => {
+            coins.forEach((coin, index) => {
                 const row = [
-                    coin.rank,
-                    coin.symbol,
-                    coin.price,
-                    coin.change_24h,
-                    coin.change_short || '',
-                    coin.rush_up || '',
-                    coin.rush_down || '',
-                    coin.account_ratio,
-                    coin.ratio1 || '',
-                    coin.ratio2 || '',
-                    coin.decline || '',
-                    coin.high_price || '',
-                    coin.high_time || '',
-                    coin.priority || '',
-                    coin.update_time || '',
-                    coin.volume_24h || '',
-                    coin.market_cap || ''
+                    // 基础信息
+                    index + 1, coin.rank, coin.symbol, coin.priority || '', coin.update_time || '',
+                    // 价格数据
+                    coin.price, coin.change_24h, coin.change_short || '', coin.high_price || '', 
+                    coin.high_time || '', coin.decline || '', '',
+                    // 信号指标
+                    coin.rush_up || 0, coin.rush_down || 0, '', '', '', '',
+                    // 账户比例
+                    coin.account_ratio, coin.ratio1 || '', coin.ratio2 || '', '', '',
+                    // 技术指标
+                    '', '', '', '', '', '',
+                    // 市场数据
+                    coin.volume_24h || '', coin.market_cap || '', '', '', '', ''
                 ];
                 csv += row.join(',') + '\n';
             });
 
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `coin_data_${currentData.snapshot.datetime.replace(/[: ]/g, '_')}.csv`;
+            link.download = `coin_data_35_columns_${currentData.snapshot.datetime.replace(/[: ]/g, '_')}.csv`;
             link.click();
         }
     </script>
