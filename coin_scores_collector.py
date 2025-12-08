@@ -252,6 +252,7 @@ class CoinScoresCollector:
 def main():
     """主函数"""
     import sys
+    from datetime import datetime
     
     collector = CoinScoresCollector()
     
@@ -259,12 +260,18 @@ def main():
         # 单次采集
         collector.collect_once()
     else:
-        # 持续采集 (每1分钟)
+        # 持续采集 (严格每1分钟)
         while True:
             try:
+                start_time = time.time()
                 collector.collect_once()
-                logging.info("⏱️  等待1分钟后下次采集...")
-                time.sleep(60)  # 1分钟
+                
+                # 计算到下一个整分钟的等待时间
+                elapsed = time.time() - start_time
+                wait_time = max(0, 60 - elapsed)
+                
+                logging.info(f"⏱️  本次采集耗时 {elapsed:.2f}秒，等待 {wait_time:.2f}秒后下次采集...")
+                time.sleep(wait_time)
             except KeyboardInterrupt:
                 logging.info("👋 用户中断，退出采集")
                 break

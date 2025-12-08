@@ -287,7 +287,10 @@
         <div class="timeline-section">
             <div class="timeline-header">
                 <div class="timeline-title">📅 历史时间轴（点击查看历史快照）</div>
-                <div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select class="btn" id="dateSelector" onchange="filterTimelineByDate()" style="padding: 10px 15px; background: white; color: #667eea; border: 2px solid #667eea;">
+                        <option value="">🗓️ 选择日期...</option>
+                    </select>
                     <button class="btn btn-primary" onclick="loadLatest()">📍 回到最新</button>
                 </div>
             </div>
@@ -322,12 +325,16 @@
         let allData = [];
         let filteredData = [];
         let timeline = [];
+        let allTimeline = [];  // 保存所有时间点
+        let availableDates = [];
         let currentSnapshotTime = null;
         let autoRefresh = true;
         let refreshTimer = null;
+        let selectedDate = '';
 
         // 初始化
         window.addEventListener('DOMContentLoaded', () => {
+            loadAvailableDates();
             loadTimeline();
             loadLatest();
             startAutoRefresh();
@@ -339,14 +346,53 @@
             });
         });
 
-        // 加载时间轴
-        async function loadTimeline() {
+        // 加载可用日期列表
+        async function loadAvailableDates() {
             try {
-                const response = await fetch(`${API_BASE}/api/coin-scores/timeline`);
+                const response = await fetch(`${API_BASE}/api/coin-scores/dates`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    availableDates = data.data;
+                    renderDateSelector();
+                }
+            } catch (error) {
+                console.error('日期列表加载失败:', error);
+            }
+        }
+
+        // 渲染日期选择器
+        function renderDateSelector() {
+            const selector = document.getElementById('dateSelector');
+            let html = '<option value="">🗓️ 所有日期</option>';
+            availableDates.forEach(date => {
+                html += `<option value="${date}">${date}</option>`;
+            });
+            selector.innerHTML = html;
+        }
+
+        // 按日期筛选时间轴
+        async function filterTimelineByDate() {
+            const selector = document.getElementById('dateSelector');
+            selectedDate = selector.value;
+            await loadTimeline(selectedDate);
+        }
+
+        // 加载时间轴
+        async function loadTimeline(date = '') {
+            try {
+                const url = date 
+                    ? `${API_BASE}/api/coin-scores/timeline?date=${date}`
+                    : `${API_BASE}/api/coin-scores/timeline`;
+                    
+                const response = await fetch(url);
                 const data = await response.json();
                 
                 if (data.success) {
                     timeline = data.data;
+                    if (!date) {
+                        allTimeline = data.data;  // 保存完整时间轴
+                    }
                     document.getElementById('snapshotCount').textContent = timeline.length;
                     renderTimeline();
                 }

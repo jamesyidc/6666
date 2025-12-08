@@ -273,17 +273,30 @@ def get_statistics():
 
 @app.route('/api/coin-scores/timeline', methods=['GET'])
 def get_timeline():
-    """获取历史时间轴（所有快照时间点）"""
+    """获取历史时间轴（所有快照时间点），支持按日期筛选"""
     try:
+        # 获取查询参数：日期（格式：YYYY-MM-DD）
+        date_filter = request.args.get('date', None)
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
         # 获取所有唯一的时间点
-        cursor.execute('''
-            SELECT DISTINCT beijing_time, timestamp
-            FROM coin_scores
-            ORDER BY timestamp DESC
-        ''')
+        if date_filter:
+            # 按日期筛选
+            cursor.execute('''
+                SELECT DISTINCT beijing_time, timestamp
+                FROM coin_scores
+                WHERE DATE(beijing_time) = ?
+                ORDER BY timestamp DESC
+            ''', (date_filter,))
+        else:
+            # 获取所有时间点
+            cursor.execute('''
+                SELECT DISTINCT beijing_time, timestamp
+                FROM coin_scores
+                ORDER BY timestamp DESC
+            ''')
         
         rows = cursor.fetchall()
         conn.close()
@@ -293,7 +306,38 @@ def get_timeline():
         return jsonify({
             'success': True,
             'count': len(timeline),
+            'date': date_filter,
             'data': timeline
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/coin-scores/dates', methods=['GET'])
+def get_available_dates():
+    """获取所有有数据的日期列表"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT DISTINCT DATE(beijing_time) as date
+            FROM coin_scores
+            ORDER BY date DESC
+        ''')
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        dates = [row[0] for row in rows]
+        
+        return jsonify({
+            'success': True,
+            'count': len(dates),
+            'data': dates
         })
         
     except Exception as e:
