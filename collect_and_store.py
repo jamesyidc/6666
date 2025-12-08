@@ -443,17 +443,41 @@ def parse_and_store_data(content, filename, current_hour):
             print(f"   ✅ 修正后数据: 急涨={new_rush_up}, 急跌={new_rush_down}, 差值={new_diff}")
             print(f"   📝 说明：根据原则'1天内急涨/急跌不能减小'，自动保持为上一时刻的值")
         
+        # ===== 原则1b：检查计次是否减小（计次也不能减小） =====
         # ===== 原则2：检查计次是否合理（相邻两轮最多增加1） =====
         new_count = int(data.get('计次', 0))
         
         if not is_new_day_reset and last_count > 0:
-            count_increase = new_count - last_count
+            count_change = new_count - last_count
             
-            if count_increase > 1:
-                print(f"\n⚠️  计次异常检测！")
+            # 原则1b：计次不能减小
+            if count_change < 0:
+                print(f"\n⚠️  计次减小检测！")
                 print(f"   上一条记录 ({last_time}): 计次={last_count}")
                 print(f"   当前数据（源文件）: 计次={new_count}")
-                print(f"   ❌ 计次增加了 {count_increase}（超过最大允许值1）")
+                print(f"   ❌ 计次减少了 {abs(count_change)}（违反原则1：计次不能减小）")
+                
+                # 自动修正：保持不变
+                print(f"   🔧 自动修正：计次 {new_count} → {last_count}（保持不变）")
+                data['计次'] = str(last_count)
+                new_count = last_count
+                
+                # 重新计算计次得分
+                count_times = last_count
+                star_count, star_type, star_display = calculate_count_score(count_times, current_hour)
+                data['计次得分_数量'] = star_count
+                data['计次得分_类型'] = star_type
+                data['计次得分_显示'] = star_display
+                
+                print(f"   ✅ 修正后数据: 计次={last_count}")
+                print(f"   📝 说明：根据原则'1天内计次不能减小'，自动保持为上一时刻的值")
+            
+            # 原则2：计次最多增加1
+            elif count_change > 1:
+                print(f"\n⚠️  计次增加过多检测！")
+                print(f"   上一条记录 ({last_time}): 计次={last_count}")
+                print(f"   当前数据（源文件）: 计次={new_count}")
+                print(f"   ❌ 计次增加了 {count_change}（超过最大允许值1）")
                 
                 # 自动修正：最多只能增加1
                 corrected_count = last_count + 1
@@ -461,12 +485,11 @@ def parse_and_store_data(content, filename, current_hour):
                 data['计次'] = str(corrected_count)
                 
                 # 重新计算计次得分
-                if '计次' in data:
-                    count_times = corrected_count
-                    star_count, star_type, star_display = calculate_count_score(count_times, current_hour)
-                    data['计次得分_数量'] = star_count
-                    data['计次得分_类型'] = star_type
-                    data['计次得分_显示'] = star_display
+                count_times = corrected_count
+                star_count, star_type, star_display = calculate_count_score(count_times, current_hour)
+                data['计次得分_数量'] = star_count
+                data['计次得分_类型'] = star_type
+                data['计次得分_显示'] = star_display
                 
                 print(f"   ✅ 修正后数据: 计次={corrected_count}")
                 print(f"   📝 说明：根据原则'计次相隔两轮最多增加1'，自动修正为 {last_count}+1")
