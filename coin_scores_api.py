@@ -355,16 +355,29 @@ def get_available_dates():
 
 @app.route('/api/coin-scores/snapshot/<snapshot_time>', methods=['GET'])
 def get_snapshot(snapshot_time):
-    """获取指定时间点的快照数据"""
+    """获取指定时间点的快照数据（支持分钟级查询）"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute('''
-            SELECT * FROM coin_scores 
-            WHERE beijing_time = ?
-            ORDER BY symbol
-        ''', (snapshot_time,))
+        # 如果传入的是整分钟格式 (例如: 2025-12-08 16:43:00)
+        # 则查询该分钟内的所有数据
+        if snapshot_time.endswith(':00'):
+            # 提取分钟前缀，查询该分钟的所有数据
+            minute_prefix = snapshot_time[:-3]  # 去掉 :00，得到 "2025-12-08 16:43"
+            
+            cursor.execute('''
+                SELECT * FROM coin_scores 
+                WHERE strftime('%Y-%m-%d %H:%M', beijing_time) = ?
+                ORDER BY symbol
+            ''', (minute_prefix,))
+        else:
+            # 精确时间查询（保持向后兼容）
+            cursor.execute('''
+                SELECT * FROM coin_scores 
+                WHERE beijing_time = ?
+                ORDER BY symbol
+            ''', (snapshot_time,))
         
         rows = cursor.fetchall()
         
