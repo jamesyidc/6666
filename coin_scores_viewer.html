@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>币种多空评分数据统计系统 - 完整43字段 + 历史时间轴</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        
+        .home-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .home-btn:hover {
+            background: white;
+            color: #667eea;
+        }
+        
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item { text-align: center; }
+        .stat-label { font-size: 0.9rem; color: #6c757d; margin-bottom: 5px; }
+        .stat-value { font-size: 1.8rem; font-weight: bold; color: #667eea; }
+        .stat-value.long { color: #28a745; }
+        .stat-value.short { color: #dc3545; }
+        
+        .timeline-section {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .timeline-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .timeline-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .timeline-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+        }
+        
+        .timeline-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .timeline-item:hover {
+            border-color: #667eea;
+            background: #e7ecff;
+        }
+        
+        .timeline-item.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .timeline-time {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .search-input {
+            padding: 12px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .table-container {
+            padding: 30px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+        }
+        
+        th.group-header {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        
+        tr:hover { background: #f8f9fa; }
+        
+        .symbol-cell {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1rem;
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 5;
+        }
+        
+        tr:hover .symbol-cell { background: #f8f9fa; }
+        
+        .trend-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        
+        .trend-long { background: #d4edda; color: #155724; }
+        .trend-short { background: #f8d7da; color: #721c24; }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: #667eea;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #dc3545;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.8rem; }
+            .stats-bar { flex-direction: column; gap: 15px; }
+            .controls { flex-direction: column; }
+            .table-container { padding: 15px; }
+            th, td { padding: 8px 6px; font-size: 0.8rem; }
+            .home-btn { position: relative; top: 0; left: 0; margin-bottom: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="home-btn" onclick="location.href='/'">🏠 返回首页</button>
+            <h1>🎯 币种多空评分数据统计系统</h1>
+            <p>完整43字段数据视图 + 历史时间轴回放 | 实时更新(每1分钟)</p>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-label">总币种数</div>
+                <div class="stat-value" id="totalCoins">-</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">多头币种</div>
+                <div class="stat-value long" id="longCount">-</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">空头币种</div>
+                <div class="stat-value short" id="shortCount">-</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">数据时间</div>
+                <div class="stat-value" style="font-size: 1.2rem; color: #6c757d;" id="updateTime">-</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">历史快照</div>
+                <div class="stat-value" id="snapshotCount">-</div>
+            </div>
+        </div>
+
+        <div class="timeline-section">
+            <div class="timeline-header">
+                <div class="timeline-title">📅 历史时间轴（点击查看历史快照）</div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select class="btn" id="dateSelector" onchange="filterTimelineByDate()" style="padding: 10px 15px; background: white; color: #667eea; border: 2px solid #667eea;">
+                        <option value="">🗓️ 选择日期...</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="loadLatest()">📍 回到最新</button>
+                </div>
+            </div>
+            <div class="timeline-container">
+                <div class="timeline-grid" id="timelineGrid">
+                    <div class="loading">加载时间轴中...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 搜索币种 (如: BTC, ETH...)">
+            <button class="btn btn-primary" onclick="loadData()">🔄 手动刷新</button>
+            <button class="btn btn-primary" onclick="toggleAutoRefresh()" id="autoRefreshBtn">⏸️ 关闭自动刷新</button>
+            <button class="btn btn-primary" onclick="exportToCSV()">📊 导出CSV</button>
+        </div>
+
+        <div class="table-container">
+            <div id="loading" class="loading">正在加载数据...</div>
+            <div id="error" class="error" style="display: none;"></div>
+            <div id="tableWrapper" style="display: none;">
+                <table id="dataTable"></table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:5003'
+            : 'https://5003-iik759kgm7i3zqlxvfrfx-cc2fbc16.sandbox.novita.ai';
+
+        let allData = [];
+        let filteredData = [];
+        let timeline = [];
+        let allTimeline = [];  // 保存所有时间点
+        let availableDates = [];
+        let currentSnapshotTime = null;
+        let autoRefresh = true;
+        let refreshTimer = null;
+        let selectedDate = '';
+
+        // 初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAvailableDates();
+            loadTimeline();
+            loadLatest();
+            startAutoRefresh();
+            
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                filteredData = allData.filter(coin => coin.symbol.toLowerCase().includes(searchTerm));
+                renderTable();
+            });
+        });
+
+        // 加载可用日期列表
+        async function loadAvailableDates() {
+            try {
+                const response = await fetch(`${API_BASE}/api/coin-scores/dates`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    availableDates = data.data;
+                    renderDateSelector();
+                }
+            } catch (error) {
+                console.error('日期列表加载失败:', error);
+            }
+        }
+
+        // 渲染日期选择器
+        function renderDateSelector() {
+            const selector = document.getElementById('dateSelector');
+            let html = '<option value="">🗓️ 所有日期</option>';
+            availableDates.forEach(date => {
+                html += `<option value="${date}">${date}</option>`;
+            });
+            selector.innerHTML = html;
+        }
+
+        // 按日期筛选时间轴
+        async function filterTimelineByDate() {
+            const selector = document.getElementById('dateSelector');
+            selectedDate = selector.value;
+            await loadTimeline(selectedDate);
+        }
+
+        // 加载时间轴
+        async function loadTimeline(date = '') {
+            try {
+                const url = date 
+                    ? `${API_BASE}/api/coin-scores/timeline?date=${date}`
+                    : `${API_BASE}/api/coin-scores/timeline`;
+                    
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    timeline = data.data;
+                    if (!date) {
+                        allTimeline = data.data;  // 保存完整时间轴
+                    }
+                    document.getElementById('snapshotCount').textContent = timeline.length;
+                    renderTimeline();
+                }
+            } catch (error) {
+                console.error('时间轴加载失败:', error);
+            }
+        }
+
+        // 渲染时间轴
+        function renderTimeline() {
+            const grid = document.getElementById('timelineGrid');
+            if (timeline.length === 0) {
+                grid.innerHTML = '<div class="loading">暂无历史数据</div>';
+                return;
+            }
+            
+            let html = '';
+            timeline.forEach(item => {
+                const isActive = item.time === currentSnapshotTime ? 'active' : '';
+                html += `
+                    <div class="timeline-item ${isActive}" onclick="loadSnapshot('${item.time}')">
+                        <div class="timeline-time">${item.time}</div>
+                    </div>
+                `;
+            });
+            grid.innerHTML = html;
+        }
+
+        // 加载最新数据
+        async function loadLatest() {
+            currentSnapshotTime = null;
+            await loadData();
+            renderTimeline();
+        }
+
+        // 加载指定快照
+        async function loadSnapshot(time) {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('tableWrapper').style.display = 'none';
+                
+                const response = await fetch(`${API_BASE}/api/coin-scores/snapshot/${encodeURIComponent(time)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    currentSnapshotTime = time;
+                    allData = data.data;
+                    filteredData = [...allData];
+                    
+                    document.getElementById('totalCoins').textContent = data.count;
+                    document.getElementById('longCount').textContent = data.long_count;
+                    document.getElementById('shortCount').textContent = data.short_count;
+                    document.getElementById('updateTime').textContent = time;
+                    
+                    renderTable();
+                    renderTimeline();
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('tableWrapper').style.display = 'block';
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `❌ 加载失败: ${error.message}`;
+            }
+        }
+
+        // 加载最新数据
+        async function loadData() {
+            try {
+                const response = await fetch(`${API_BASE}/api/coin-scores/latest`);
+                const data = await response.json();
+
+                if (data.success) {
+                    allData = data.data;
+                    filteredData = [...allData];
+                    
+                    document.getElementById('totalCoins').textContent = data.count;
+                    document.getElementById('longCount').textContent = data.long_count;
+                    document.getElementById('shortCount').textContent = data.short_count;
+                    document.getElementById('updateTime').textContent = data.update_time;
+                    
+                    renderTable();
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('error').style.display = 'none';
+                    document.getElementById('tableWrapper').style.display = 'block';
+                    
+                    loadTimeline();
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `❌ 加载失败: ${error.message}`;
+            }
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const table = document.getElementById('dataTable');
+            let html = `<thead><tr><th rowspan="2" class="symbol-cell">币种</th><th rowspan="2">时间</th>`;
+            html += `<th colspan="2" class="group-header">实时评分</th><th colspan="2" class="group-header">3m平均</th>`;
+            html += `<th colspan="2" class="group-header">1h平均</th><th colspan="2" class="group-header">3h平均</th>`;
+            html += `<th colspan="2" class="group-header">12h平均</th><th colspan="2" class="group-header">24h平均</th>`;
+            html += `<th colspan="3" class="group-header">持仓量</th><th colspan="5" class="group-header">SAR-5m</th>`;
+            html += `<th colspan="5" class="group-header">SAR-1h</th><th colspan="2" class="group-header">RSI</th>`;
+            html += `<th colspan="4" class="group-header">布林带-5m</th><th colspan="4" class="group-header">布林带-1h</th></tr>`;
+            html += `<tr><th>多</th><th>空</th><th>多</th><th>空</th><th>多</th><th>空</th><th>多</th><th>空</th>`;
+            html += `<th>多</th><th>空</th><th>多</th><th>空</th><th>多头量</th><th>空头量</th><th>多空比</th>`;
+            html += `<th>SAR</th><th>象限</th><th>价格</th><th>趋势</th><th>周期</th>`;
+            html += `<th>SAR</th><th>象限</th><th>价格</th><th>趋势</th><th>周期</th>`;
+            html += `<th>5m</th><th>1h</th><th>上</th><th>中</th><th>下</th><th>位置</th>`;
+            html += `<th>上</th><th>中</th><th>下</th><th>位置</th></tr></thead><tbody>`;
+
+            filteredData.forEach(coin => {
+                const symbol = coin.symbol.replace('-USDT-SWAP', '');
+                const time = coin.beijing_time ? coin.beijing_time.split(' ')[1] : '-';
+                html += `<tr><td class="symbol-cell">${symbol}</td><td>${time}</td>`;
+                html += `<td style="color:#28a745;font-weight:600;">${coin.long_score?.toFixed(2)||'-'}</td>`;
+                html += `<td style="color:#dc3545;font-weight:600;">${coin.short_score?.toFixed(2)||'-'}</td>`;
+                html += `<td>${coin.long_score_3m_avg?.toFixed(2)||'-'}</td><td>${coin.short_score_3m_avg?.toFixed(2)||'-'}</td>`;
+                html += `<td>${coin.long_score_1h_avg?.toFixed(2)||'-'}</td><td>${coin.short_score_1h_avg?.toFixed(2)||'-'}</td>`;
+                html += `<td>${coin.long_score_3h_avg?.toFixed(2)||'-'}</td><td>${coin.short_score_3h_avg?.toFixed(2)||'-'}</td>`;
+                html += `<td>${coin.long_score_12h_avg?.toFixed(2)||'-'}</td><td>${coin.short_score_12h_avg?.toFixed(2)||'-'}</td>`;
+                html += `<td>${coin.long_score_24h_avg?.toFixed(2)||'-'}</td><td>${coin.short_score_24h_avg?.toFixed(2)||'-'}</td>`;
+                html += `<td>${coin.long_volume?(coin.long_volume/1000000).toFixed(2)+'M':'-'}</td>`;
+                html += `<td>${coin.short_volume?(coin.short_volume/1000000).toFixed(2)+'M':'-'}</td>`;
+                html += `<td style="font-weight:600;">${coin.long_short_ratio?.toFixed(4)||'-'}</td>`;
+                html += `<td>${coin.sar_5m?.toFixed(2)||'-'}</td><td>${coin.sar_5m_quadrant||'-'}</td>`;
+                html += `<td>${coin.price_5m?.toFixed(2)||'-'}</td>`;
+                html += `<td><span class="trend-badge trend-${coin.sar_5m_trend==='多头'?'long':'short'}">${coin.sar_5m_trend||'-'}</span></td>`;
+                html += `<td>${coin.sar_5m_duration?String(coin.sar_5m_duration).padStart(2,'0'):'-'}</td>`;
+                html += `<td>${coin.sar_1h?.toFixed(2)||'-'}</td><td>${coin.sar_1h_quadrant||'-'}</td>`;
+                html += `<td>${coin.price_1h?.toFixed(2)||'-'}</td>`;
+                html += `<td><span class="trend-badge trend-${coin.sar_1h_trend==='多头'?'long':'short'}">${coin.sar_1h_trend||'-'}</span></td>`;
+                html += `<td>${coin.sar_1h_duration?String(coin.sar_1h_duration).padStart(2,'0'):'-'}</td>`;
+                html += `<td style="font-weight:600;">${coin.rsi_5m?.toFixed(2)||'-'}</td>`;
+                html += `<td style="font-weight:600;">${coin.rsi_1h?.toFixed(2)||'-'}</td>`;
+                html += `<td>${coin.bb_upper_5m?.toFixed(2)||'-'}</td><td>${coin.bb_middle_5m?.toFixed(2)||'-'}</td>`;
+                html += `<td>${coin.bb_lower_5m?.toFixed(2)||'-'}</td><td>${coin.bb_position_5m?.toFixed(4)||'-'}</td>`;
+                html += `<td>${coin.bb_upper_1h?.toFixed(2)||'-'}</td><td>${coin.bb_middle_1h?.toFixed(2)||'-'}</td>`;
+                html += `<td>${coin.bb_lower_1h?.toFixed(2)||'-'}</td><td>${coin.bb_position_1h?.toFixed(4)||'-'}</td>`;
+                html += `</tr>`;
+            });
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        // CSV导出
+        function exportToCSV() {
+            const headers = ['币种','时间','多头分','空头分','3m多','3m空','1h多','1h空','3h多','3h空','12h多','12h空','24h多','24h空','多头量','空头量','多空比','SAR5m','象限5m','价格5m','趋势5m','周期5m','SAR1h','象限1h','价格1h','趋势1h','周期1h','RSI5m','RSI1h','BB上5m','BB中5m','BB下5m','BB位5m','BB上1h','BB中1h','BB下1h','BB位1h'];
+            let csv = '\uFEFF' + headers.join(',') + '\n';
+            filteredData.forEach(coin => {
+                const row = [coin.symbol.replace('-USDT-SWAP',''),coin.beijing_time,coin.long_score,coin.short_score,coin.long_score_3m_avg,coin.short_score_3m_avg,coin.long_score_1h_avg,coin.short_score_1h_avg,coin.long_score_3h_avg,coin.short_score_3h_avg,coin.long_score_12h_avg,coin.short_score_12h_avg,coin.long_score_24h_avg,coin.short_score_24h_avg,coin.long_volume,coin.short_volume,coin.long_short_ratio,coin.sar_5m,coin.sar_5m_quadrant,coin.price_5m,coin.sar_5m_trend,coin.sar_5m_duration,coin.sar_1h,coin.sar_1h_quadrant,coin.price_1h,coin.sar_1h_trend,coin.sar_1h_duration,coin.rsi_5m,coin.rsi_1h,coin.bb_upper_5m,coin.bb_middle_5m,coin.bb_lower_5m,coin.bb_position_5m,coin.bb_upper_1h,coin.bb_middle_1h,coin.bb_lower_1h,coin.bb_position_1h];
+                csv += row.join(',') + '\n';
+            });
+            const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `币种评分_${currentSnapshotTime||new Date().toISOString().slice(0,19).replace(/:/g,'-')}.csv`;
+            link.click();
+        }
+
+        // 自动刷新
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            const btn = document.getElementById('autoRefreshBtn');
+            if (autoRefresh) {
+                btn.textContent = '⏸️ 关闭自动刷新';
+                startAutoRefresh();
+            } else {
+                btn.textContent = '▶️ 开启自动刷新';
+                stopAutoRefresh();
+            }
+        }
+
+        function startAutoRefresh() {
+            refreshTimer = setInterval(() => {
+                if (autoRefresh && !currentSnapshotTime) { loadData(); }
+            }, 30000);
+        }
+
+        function stopAutoRefresh() {
+            if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+        }
+    </script>
+</body>
+</html>
