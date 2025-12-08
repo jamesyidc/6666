@@ -271,6 +271,84 @@ def get_statistics():
             'error': str(e)
         }), 500
 
+@app.route('/api/coin-scores/timeline', methods=['GET'])
+def get_timeline():
+    """获取历史时间轴（所有快照时间点）"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # 获取所有唯一的时间点
+        cursor.execute('''
+            SELECT DISTINCT beijing_time, timestamp
+            FROM coin_scores
+            ORDER BY timestamp DESC
+        ''')
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        timeline = [{'time': row[0], 'timestamp': row[1]} for row in rows]
+        
+        return jsonify({
+            'success': True,
+            'count': len(timeline),
+            'data': timeline
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/coin-scores/snapshot/<snapshot_time>', methods=['GET'])
+def get_snapshot(snapshot_time):
+    """获取指定时间点的快照数据"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT * FROM coin_scores 
+            WHERE beijing_time = ?
+            ORDER BY symbol
+        ''', (snapshot_time,))
+        
+        rows = cursor.fetchall()
+        
+        if not rows:
+            return jsonify({
+                'success': False,
+                'error': f'没有找到时间 {snapshot_time} 的数据'
+            }), 404
+        
+        coins = []
+        for row in rows:
+            coin = dict(row)
+            coins.append(coin)
+        
+        conn.close()
+        
+        # 统计多空数量
+        long_count = sum(1 for c in coins if c.get('sar_5m_trend') == '多头')
+        short_count = sum(1 for c in coins if c.get('sar_5m_trend') == '空头')
+        
+        return jsonify({
+            'success': True,
+            'snapshot_time': snapshot_time,
+            'count': len(coins),
+            'long_count': long_count,
+            'short_count': short_count,
+            'data': coins
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     print("=" * 60)
     print("币种多空评分数据API服务")

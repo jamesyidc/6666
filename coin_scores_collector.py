@@ -259,12 +259,12 @@ def main():
         # 单次采集
         collector.collect_once()
     else:
-        # 持续采集 (每3分钟)
+        # 持续采集 (每1分钟)
         while True:
             try:
                 collector.collect_once()
-                logging.info("⏱️  等待3分钟后下次采集...")
-                time.sleep(180)  # 3分钟
+                logging.info("⏱️  等待1分钟后下次采集...")
+                time.sleep(60)  # 1分钟
             except KeyboardInterrupt:
                 logging.info("👋 用户中断，退出采集")
                 break
